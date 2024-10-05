@@ -1,0 +1,8 @@
+export const REGISTER_USER = '@auth/REGISTER_USER';
+export const REGISTER_USER_SUCCESS = '@auth/REGISTER_USER_SUCCESS';
+export const REGISTER_USER_FAILURE = '@auth/REGISTER_USER_FAILURE';
+
+
+export const LOGIN_USER = '@auth/LOGIN_USER';
+export const LOGIN_USER_SUCCESS = '@auth/LOGIN_USER_SUCCESS';
+export const LOGIN_USER_FAILURE = '@auth/LOGIN_USER_FAILURE';
