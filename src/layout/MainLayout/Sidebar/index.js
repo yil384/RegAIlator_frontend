@@ -28,9 +28,9 @@ const useStyles = makeStyles((theme) => ({
         background: theme.palette.background.default,
         color: theme.palette.text.primary,
         borderRight: 'none',
-        [theme.breakpoints.up('md')]: {
-            top: '88px'
-        }
+        position: 'fixed',
+        top: '54px',
+        marginTop: '54px',
     },
     ScrollHeight: {
         height: 'calc(100vh - 88px)',
