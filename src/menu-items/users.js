@@ -11,7 +11,7 @@ const icons = {
     SupervisedUserCircle: SupervisedUserCircle
 };
 
-export const usersMenu = {
+export const adminMenu = {
     id: 'users_menu',
     title: 'Accounts',
     caption: 'Praxi Users',
@@ -31,30 +31,12 @@ export const usersMenu = {
                     icon: icons['PeopleOutline'],
                     breadcrumbs: false
                 },
-                {
-                    id: 'users_menu_instructors',
-                    title: 'Instructors',
-                    type: 'item',
-                    url: '/instructors',
-                    // url: '/users?role=instructor',
-                    icon: icons['SupervisedUserCircle'],
-                    breadcrumbs: false
-                },
-                {
-                    id: 'users_menu_students',
-                    title: 'Students',
-                    type: 'item',
-                    url: '/students',
-                    // url: '/users?role=student',
-                    icon: icons['SupervisorAccount'],
-                    breadcrumbs: false
-                }
             ]
         }
     ]
 };
 
-export const instructorMenu = {
+export const usersMenu = {
     id: 'users_menu',
     title: 'Accounts',
     caption: 'Praxi Users',
@@ -62,17 +44,24 @@ export const instructorMenu = {
     children: [
         {
             id: 'users_menu',
-            title: 'Explorer Users',
+            title: 'People',
             type: 'collapse',
             icon: icons['IconUsers'],
             children: [
                 {
-                    id: 'users_menu_students',
-                    title: 'Students',
+                    id: 'menu_suppliers',
+                    title: 'Suppliers',
                     type: 'item',
                     url: '/students',
-                    // url: '/users?role=student',
                     icon: icons['SupervisorAccount'],
+                    breadcrumbs: false
+                },
+                {
+                    id: 'menu_contacts',
+                    title: 'Contacts',
+                    type: 'item',
+                    url: '/instructors',
+                    icon: icons['SupervisedUserCircle'],
                     breadcrumbs: false
                 }
             ]

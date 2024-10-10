@@ -1,41 +1,42 @@
 // assets
-import { IconVideoPlus, IconFolders, IconListSearch, IconVideo, IconFolderPlus } from '@tabler/icons';
-import { VideoLibrary } from '@material-ui/icons';
+import { IconFolders, IconListSearch, IconFolderPlus, IconFile, IconFilePlus, IconFiles } from '@tabler/icons';
 
 // constant
 const icons = {
-    IconVideo,
-    IconVideoPlus,
+    IconFile,
+    IconFilePlus,
+    IconFiles,
+
     IconFolders,
-    VideoLibrary,
     IconListSearch,
     IconFolderPlus
 };
 
 //-----------------------|| SAMPLE PAGE & DOCUMENTATION MENU ITEMS ||-----------------------//
 
-export const videosMenu = {
+export const filesMenu = {
     id: 'videos_menu',
     title: 'Praxi Manager',
+    caption: 'Praxi Manager',
     type: 'group',
     children: [
         {
-            id: 'videos_groups_menu',
-            title: 'Video Groups',
+            id: 'file_groups_menu',
+            title: 'File Groups',
             icon: icons['IconFolders'],
             type: 'collapse',
             children: [
                 {
-                    id: 'videos_groups_all',
-                    title: 'All Video Groups',
+                    id: 'file_groups_all',
+                    title: 'All File Groups',
                     type: 'item',
                     url: '/video-groups',
                     icon: icons['IconFolders'],
                     breadcrumbs: false
                 },
                 {
-                    id: 'add_videos_groups',
-                    title: 'Add Video Groups',
+                    id: 'add_file_groups',
+                    title: 'Add File Groups',
                     type: 'item',
                     url: '/video-groups/add',
                     icon: icons['IconFolderPlus'],
@@ -44,27 +45,27 @@ export const videosMenu = {
             ]
         },
         {
-            id: 'videos_list_menu',
-            title: 'Videos',
+            id: 'files_list_menu',
+            title: 'Files',
             type: 'collapse',
             url: '/videos',
-            icon: icons['IconVideo'],
+            icon: icons['IconFile'],
             breadcrumbs: false,
             children: [
                 {
-                    id: 'videos_all',
-                    title: 'All Videos',
+                    id: 'files_all',
+                    title: 'All Files',
                     type: 'item',
                     url: '/videos',
-                    icon: icons['VideoLibrary'],
+                    icon: icons['IconFiles'],
                     breadcrumbs: false
                 },
                 {
-                    id: 'add_videos_all',
-                    title: 'Add Videos',
+                    id: 'add_files_all',
+                    title: 'Add Files',
                     type: 'item',
                     url: '/videos/add',
-                    icon: icons['IconVideoPlus'],
+                    icon: icons['IconFilePlus'],
                     breadcrumbs: false
                 }
             ]

@@ -1,7 +1,7 @@
 import { dashboard } from './dashboard';
 import { videoViewer } from './videoViewer';
-import { usersMenu, instructorMenu } from './users';
-import { videosMenu } from './video';
+import { usersMenu, instructorMenu, adminMenu } from './users';
+import { filesMenu as filesMenu } from './video';
 import { logsMenu, watchLogsMenu } from './logs';
 // import { other } from './other';
 // import { pages } from './pages';
@@ -12,43 +12,22 @@ import { logsMenu, watchLogsMenu } from './logs';
 const adminMenuItems = {
     items: [
         dashboard,
-        usersMenu,
-        videosMenu,
+        adminMenu,
+        filesMenu,
         videoViewer,
         logsMenu
-        // utilities,
-        // pages,
-        // other,
-    ]
-};
-
-const studentMenuItems = {
-    items: [
-        dashboard,
-        videoViewer,
-        watchLogsMenu
-    ]
-};
-
-const instructorMenuItems = {
-    items: [
-        dashboard,
-        instructorMenu,
-        videosMenu,
-        videoViewer,
-        watchLogsMenu
     ]
 };
 
 const defaultMenuItems = {
     items: [
-        dashboard
+        dashboard,
+        usersMenu,
+        filesMenu,
     ]
 };
 
 export {
     adminMenuItems,
-    instructorMenuItems,
-    studentMenuItems,
     defaultMenuItems
 };

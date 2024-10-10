@@ -14,14 +14,21 @@ import {
     FormHelperText,
     Grid,
     InputLabel, MenuItem,
-    Select
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper
 } from '@material-ui/core';
 
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import { fetchVideoGroupsAction } from '../video-group/video-groups.actions';
 import FileUploadIcon from '@material-ui/icons/FileUpload';
-import ClearIcon from '@material-ui/icons//Clear';
+import ClearIcon from '@material-ui/icons/Clear';
 
 import { useStyles } from './videos.styles';
 import { fetchApi } from '../../utils/fetchHelper';
@@ -42,6 +49,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     const [selectedFiles, setSelectedFiles] = React.useState([]);
     const [uploadPercentage, setUploadPercentage] = React.useState(null);
     const [processingVideo, setProcessingVideo] = React.useState(false);
+    const [tableData, setTableData] = React.useState([]); // Updated to store an array of table data
 
     const onDrop = React.useCallback(acceptedFiles => {
         setSelectedFiles([...selectedFiles, ...acceptedFiles]);
@@ -64,37 +72,42 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     };
 
     const files = selectedFiles?.map(file => (
-        <div className={classes.selectedFileTitle}>
-            <li key={file.path}>
+        <div className={classes.selectedFileTitle} key={file.path}>
+            <li>
                 {file.path} - {file.size} bytes
+                <Box sx={{ ml: 10 }}>
+                    <ClearIcon onClick={removeFile(file)} />
+                </Box>
             </li>
-            <Box sx={{ ml: 10 }}>
-                <ClearIcon onClick={removeFile(file)} />
-            </Box>
         </div>
     ));
 
     const handleVideoGroupChange = (value) => {
-        // console.log('value', value);
         setSelectedVideoGroup(value);
     };
 
-    const uploadFile = (data) => fetchApi({
-        method: 'POST',
-        // url: `${config[config.env].URL}${endpoints.upload_file}`,
-        url: endpoints.upload_file,
-        data: data,
-        onUploadProgress: progressEvent => {
-            setProcessingVideo(true);
-            const { total, loaded } = progressEvent;
-            const totalSizeInMB = total / 1000000;
-            const loadedSizeInMB = loaded / 1000000;
-            const uploadPercentage = (loadedSizeInMB / totalSizeInMB) * 100;
-            setUploadPercentage(uploadPercentage.toFixed(2));
-            // console.log('total size in MB ==> ', totalSizeInMB);
-            // console.log('uploaded size in MB ==> ', loadedSizeInMB);
-        } // TO SHOW UPLOAD STATUS
-    }, true);
+    const uploadFile = async (data) => {
+        const response = await fetchApi({
+            method: 'POST',
+            url: endpoints.upload_file,
+            data: data,
+            onUploadProgress: progressEvent => {
+                const { total, loaded } = progressEvent;
+                const uploadPercentage = (loaded / total) * 100;
+                setUploadPercentage(uploadPercentage.toFixed(2));
+            }
+        }, true);
+    
+        return response; // Return the full response including status and message
+    };    
+
+    // Update to handle the correct parsing of table data
+    const handleFilePreview = (response) => {
+        if (response?.status && response.files.length > 0) {
+            const newTableData = response.files[0]?.result?.data || [];
+            setTableData(newTableData); // Save the table data
+        }
+    };
 
     React.useEffect(() => {
         fetchVideoGroups();
@@ -108,46 +121,33 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
         setUploadPercentage(null);
     }, []);
 
-    // console.log('uploadPercentage', uploadPercentage);
-
     return (
         <MainCard title='Add Video' boxShadow shadow={theme.shadows[2]}>
             <Box sx={{ ml: 2, mb: 2, height: '70vh', overflow: 'scroll' }}>
                 <Formik
                     initialValues={{}}
                     validationSchema={Yup.object().shape({
-                        // name: Yup.string().min(2).required('Video name is required'),
                         videoGroup: Yup.string().required('Please select the video group')
                     })}
                     onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                         try {
-                            if (scriptedRef.current) {
-                                setStatus({ success: true });
-                                setSubmitting(true);
-                                const data = new FormData();
-                                if (selectedFiles?.length) {
-                                    for (const single_file of selectedFiles) {
-                                        // console.log('single_file', single_file);
-                                        data.append('file', single_file);
-                                    }
-                                    data.set('group', selectedVideoGroup);
+                            const data = new FormData();
+                            if (selectedFiles?.length) {
+                                for (const file of selectedFiles) {
+                                    data.append('file', file);
                                 }
-                                const response = await uploadFile(data);
-                                if (response?.status) {
-                                    setProcessingVideo(false);
-                                    // console.log(response);
-                                    // setSelectedFiles([]);
-                                    toast.success('Upload successful!');
-                                    // history.push('videos');
-                                }
+                                data.set('group', selectedVideoGroup);
+                            }
+                            const response = await uploadFile(data); // Upload and get JSON response
+                            console.log('response', response);
+                            if (response?.status) {
+                                toast.success('Upload successful!');
+                                handleFilePreview(response);  // Pass the full response to the preview handler
                             }
                         } catch (err) {
                             console.error(err);
-                            if (scriptedRef.current) {
-                                setStatus({ success: false });
-                                setErrors({ submit: err.message });
-                                setSubmitting(false);
-                            }
+                            setErrors({ submit: err.message });
+                            setSubmitting(false);
                         }
                     }}
                 >
@@ -155,28 +155,6 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                         <form onSubmit={handleSubmit}>
                             <Grid container>
                                 <Grid item xs={12} sm={12} md={12} lg={6}>
-                                    {/*<FormControl fullWidth className={classes.input}>*/}
-                                    {/*    <InputLabel htmlFor='video-name'>Video Name</InputLabel>*/}
-                                    {/*    <OutlinedInput*/}
-                                    {/*        id='video-name'*/}
-                                    {/*        type='text'*/}
-                                    {/*        value={values?.name}*/}
-                                    {/*        name='name'*/}
-                                    {/*        onBlur={handleBlur}*/}
-                                    {/*        onChange={handleChange}*/}
-                                    {/*        label='Video Name'*/}
-                                    {/*        inputProps={{*/}
-                                    {/*            classes: {*/}
-                                    {/*                notchedOutline: classes.notchedOutline*/}
-                                    {/*            }*/}
-                                    {/*        }}*/}
-                                    {/*    />*/}
-                                    {/*    {errors.name && (*/}
-                                    {/*        <FormHelperText error id='standard-weight-helper-text-video-name'>*/}
-                                    {/*            {errors.name}*/}
-                                    {/*        </FormHelperText>*/}
-                                    {/*    )}*/}
-                                    {/*</FormControl>*/}
                                     <FormControl fullWidth className={classes.selectInput}>
                                         <InputLabel htmlFor='video-group'>Video Group</InputLabel>
                                         <Select
@@ -198,15 +176,12 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                             <MenuItem value=''>
                                                 <em>None</em>
                                             </MenuItem>
-                                            {videoGroupOpts?.map(({ id, groupName }) => {
-                                                return (
-                                                    <MenuItem key={id} value={id}>{groupName}</MenuItem>
-                                                );
-                                            })}
+                                            {videoGroupOpts?.map(({ id, groupName }) => (
+                                                <MenuItem key={id} value={id}>{groupName}</MenuItem>
+                                            ))}
                                         </Select>
                                         {errors.videoGroup && (
-                                            <FormHelperText error
-                                                            id='standard-weight-helper-text-video-group'>
+                                            <FormHelperText error id='standard-weight-helper-text-video-group'>
                                                 {errors.videoGroup}
                                             </FormHelperText>
                                         )}
@@ -219,7 +194,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                         {!uploadPercentage && (<div {...getRootProps({ className: 'dropzone' })}>
                                             <input {...getInputProps()} />
                                             <FileUploadIcon />
-                                            <p>Drag 'n' drop some files here, or click to select video file</p>
+                                            <p>Drag 'n' drop some files here, or click to select PDF or Excel file</p>
                                         </div>)}
                                         {!!selectedFiles?.length && (<aside>
                                             <div className={classes.selectedFileTitle}>
@@ -274,6 +249,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                                     setSelectedVideoGroup(null);
                                                     setSelectedFiles([]);
                                                     setUploadPercentage(null);
+                                                    setTableData([]); // Clear table data on new upload
                                                 }}
                                             >
                                                 Upload more videos
@@ -286,6 +262,30 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                     )}
                 </Formik>
             </Box>
+            {tableData.length > 0 && (
+                <Box sx={{ mt: 2, mb: 2 }}>
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    {Object.keys(tableData[0]).map((header, index) => (
+                                        <TableCell key={index}>{header}</TableCell>
+                                    ))}
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {tableData.map((row, rowIndex) => (
+                                    <TableRow key={rowIndex}>
+                                        {Object.values(row).map((cell, cellIndex) => (
+                                            <TableCell key={cellIndex}>{cell}</TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Box>
+            )}
         </MainCard>
     );
 };

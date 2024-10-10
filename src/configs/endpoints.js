@@ -1,3 +1,5 @@
+import { mentionUsers } from "../views/authentication/session/auth.helper";
+
 const endpoints = {
     register: `/auth/register`,
     registerInstructors: `/auth/register-instructors`,
@@ -5,6 +7,7 @@ const endpoints = {
     verifyEmail: `/auth/verify-email`,
     forgotPassword: `/auth/forgot-password`,
     resetPassword: `/auth/reset-password`,
+    mentionUsers: `/auth/send-mention-email`,
     users: `/users`,
     userById: (id) => `/users/${id}`,
     instructors: `/instructors`,

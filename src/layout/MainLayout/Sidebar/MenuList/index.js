@@ -16,18 +16,11 @@ import {
 //-----------------------|| SIDEBAR MENU LIST ||-----------------------//
 
 const MenuList = ({ session_user }) => {
-    let menuItems = instructorMenuItems;
+    let menuItems = defaultMenuItems;
 
+    // FIXME: Uncomment this code when the role is implemented
     // if (session_user.role === 'admin') {
     //     menuItems = adminMenuItems;
-    // }
-
-    // if (session_user.role === 'instructor') {
-    //     menuItems = instructorMenuItems;
-    // }
-
-    // if (session_user.role === 'student') {
-    //     menuItems = studentMenuItems;
     // }
 
     const navItems = menuItems.items.map((item) => {
