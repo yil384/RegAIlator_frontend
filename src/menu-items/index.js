@@ -24,6 +24,7 @@ const defaultMenuItems = {
         dashboard,
         usersMenu,
         filesMenu,
+        logsMenu
     ]
 };
 

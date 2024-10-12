@@ -20,6 +20,7 @@ import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/Cu
 import Typography from '@material-ui/core/Typography';
 import EditIcon from '@material-ui/icons/Edit';
 import { NotificationsActive } from '@material-ui/icons';
+import EmailListener from '../../utils/emailListener';
 
 const statusOptions = ['inactive', 'replied', 'read', 'unread']; // 定义状态选项
 
@@ -325,6 +326,7 @@ const StudentsComponent = ({ user }) => {
                     }}
                 />
             </div>
+            <EmailListener />
         </MainCard>
     );
 };

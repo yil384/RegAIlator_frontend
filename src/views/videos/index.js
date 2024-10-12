@@ -141,7 +141,7 @@ const VideosComponent = ({ user }) => {
     ];
 
     return (
-        <MainCard title='All Videos' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title='All Files' boxShadow shadow={theme.shadows[2]}>
             <div style={{ width: '100%' }}>
                 {
                     isLoading ? <LoaderInnerCircular /> :

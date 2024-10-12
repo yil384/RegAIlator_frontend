@@ -26,6 +26,8 @@ import {
 
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
+import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import { fetchVideoGroupsAction } from '../video-group/video-groups.actions';
 import FileUploadIcon from '@material-ui/icons/FileUpload';
 import ClearIcon from '@material-ui/icons/Clear';
@@ -49,7 +51,31 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     const [selectedFiles, setSelectedFiles] = React.useState([]);
     const [uploadPercentage, setUploadPercentage] = React.useState(null);
     const [processingVideo, setProcessingVideo] = React.useState(false);
-    const [tableData, setTableData] = React.useState([]); // Updated to store an array of table data
+    const [tableData, setTableData] = React.useState([
+        {
+            id: 1,
+            name: 'John Doe',
+            age: 25,
+            email: 'hh',
+            phone: '1234567890',
+            address: '1234 Main St',
+            city: 'New York',
+            state: 'NY',
+            country: 'USA'
+
+        },
+        {
+            id: 2,
+            name: 'Jane Doe',
+            age: 32,
+            email: 'hh',
+            phone: '1234567890',
+            address: '1234 Main St',
+            city: 'New York',
+            state: 'NY',
+            country: 'USA'
+        }
+    ]); // Updated to store an array of table data
 
     const onDrop = React.useCallback(acceptedFiles => {
         setSelectedFiles([...selectedFiles, ...acceptedFiles]);
@@ -123,7 +149,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
 
     return (
         <MainCard title='Add Video' boxShadow shadow={theme.shadows[2]}>
-            <Box sx={{ ml: 2, mb: 2, height: '70vh', overflow: 'scroll' }}>
+            <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
                 <Formik
                     initialValues={{}}
                     validationSchema={Yup.object().shape({
@@ -263,27 +289,33 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                 </Formik>
             </Box>
             {tableData.length > 0 && (
-                <Box sx={{ mt: 2, mb: 2 }}>
-                    <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    {Object.keys(tableData[0]).map((header, index) => (
-                                        <TableCell key={index}>{header}</TableCell>
-                                    ))}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {tableData.map((row, rowIndex) => (
-                                    <TableRow key={rowIndex}>
-                                        {Object.values(row).map((cell, cellIndex) => (
-                                            <TableCell key={cellIndex}>{cell}</TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
+                    <DataGrid
+                        rows={tableData}
+                        columns={[
+                            // 根据 tableData 中的数据动态生成列
+                            ...Object.keys(tableData[0]).map((key) => ({
+                                field: key,
+                                headerName: key.charAt(0).toUpperCase() + key.slice(1), // 将字段名称首字母大写
+                                width: 150, // 根据需要设置列宽
+                                // description: 'This column has a value getter and is not sortable.',
+                                sortable: false,
+                                resizable: false,
+                            }))
+                        ]}
+                        pageSize={10}
+                        checkboxSelection={false}
+                        autoHeight
+                        autoPageSize
+                        density={'standard'}
+                        disableSelectionOnClick
+                        loading={isLoading} // 根据需要调整是否显示加载状态
+                        components={{
+                            Toolbar: GridToolbar,
+                            LoadingOverlay: CustomLoadingOverlay, // 自定义加载组件
+                            NoRowsOverlay: CustomNoRowsOverlay // 自定义无数据组件
+                        }}
+                    />
                 </Box>
             )}
         </MainCard>

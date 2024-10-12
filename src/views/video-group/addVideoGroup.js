@@ -44,7 +44,7 @@ const AddVideoGroupComponent = ({ addVideoGroupAction, isLoading, videoGroups, .
     // }, []);
 
     return (
-        <MainCard title='Add Video Group' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title='Add File Group' boxShadow shadow={theme.shadows[2]}>
             <Box sx={{ ml: 2, mb: 2, height: '70vh' }}>
                 <Formik
                     initialValues={{

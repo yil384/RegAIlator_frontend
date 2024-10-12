@@ -112,7 +112,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, isLoading, videoGroups, u
     }, [fetchVideoGroupsAction]);
 
     return (
-        <MainCard title='Video Groups' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title='File Groups' boxShadow shadow={theme.shadows[2]}>
             <div style={{ width: '100%' }}>
                 <DataGrid
                     rows={videoGroups?.results || []}

@@ -28,6 +28,7 @@ function* loginUserSaga(action) {
     try {
         const { rememberMe, history, ...loginCredentials } = action.payload.loginDetails;
         const response = yield call(loginUser, loginCredentials);
+        console.log(response);
         yield put(authActions.loginUserSuccessAction({ rememberMe, loginCredentials, ...response }));
         yield call(handleAuthSuccess, response, history);
     } catch (e) {
