@@ -7,10 +7,17 @@ const config = {
     // fontFamily: `'Roboto', sans-serif`,
     fontFamily: `'Poppins', sans-serif`,
     borderRadius: 12,
-    env: 'prod',
+    // env: 'prod',
+    env: 'local',
     prod: {
-        baseURL: 'http://3.137.84.84/api/v1/',
-        // baseURL: 'http://localhost:3000/v1/',
+        baseURL: 'http://3.137.84.84',
+        httpURL: 'http://3.137.84.84/api/v1',
+        wsURL: 'http://3.137.84.84/socket.io'
+    },
+    local: {
+        baseURL: 'http://localhost:3000/',
+        httpURL: 'http://localhost:3000/api/v1',
+        wsURL: 'http://localhost:3000/socket.io'
     }
 };
 

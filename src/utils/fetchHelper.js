@@ -4,7 +4,7 @@ import config from './../configs';
 import { getAccessToken, softLogout } from '../services/authService';
 
 const instance = axios.create({
-    baseURL: config[config.env].baseURL,
+    baseURL: config[config.env].httpURL,
     responseType: 'json'
 });
 

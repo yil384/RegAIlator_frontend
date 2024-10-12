@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import io from 'socket.io-client';
+import config from './../configs';
 
 const EmailListener = () => {
   const [emails, setEmails] = useState([]);
 
   useEffect(() => {
     // FIXME: 请将服务器地址替换为实际的服务器地址
-    const socket = io('http://3.137.84.84', {
+    const socket = io(config[config.env].baseURL, {
         path: '/socket.io',  // 确保使用 WebSocket 的路径代理
-        });      
+        });   
 
     // 监听服务器发送的初始化邮件数据
     socket.on('initialEmails', (initialEmails) => {
