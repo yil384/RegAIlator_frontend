@@ -25,6 +25,8 @@ const UsersComponent = Loadable(lazy(() => import('../views/users')));
 const UserDetailsComponent = Loadable(lazy(() => import('../views/users/userDetails')));
 const InstructorsComponent = Loadable(lazy(() => import('../views/instructors')));
 const InstructorDetailsComponent = Loadable(lazy(() => import('../views/instructors/details')));
+const SurveyTemplatesComponent = Loadable(lazy(() => import('../views/survey-templates')));
+const SurveyTemplateDetailsComponent = Loadable(lazy(() => import('../views/survey-templates/details')));
 const StudentsComponent = Loadable(lazy(() => import('../views/students')));
 const StudentDetailsComponent = Loadable(lazy(() => import('../views/students/details')));
 const VideoGroupsComponent = Loadable(lazy(() => import('../views/video-group')));
@@ -46,6 +48,8 @@ const routePaths = {
     userById: '/users/:id',
     instructors: '/instructors',
     instructorById: '/instructors/:id',
+    surveyTemplates: '/survey-templates',
+    surveyTemplateById: '/survey-templates/:id',
     students: '/students',
     studentById: '/students/:id',
     videoViewer: '/video-explorer/viewer',
@@ -84,6 +88,8 @@ const MainRoutes = () => {
                 routePaths.users,
                 routePaths.instructorById,
                 routePaths.instructors,
+                routePaths.surveyTemplateById,
+                routePaths.surveyTemplates,
                 routePaths.studentById,
                 routePaths.students,
                 routePaths.videoViewer,
@@ -113,6 +119,9 @@ const MainRoutes = () => {
 
                     <PrivateRoute path={routePaths.instructorById} component={InstructorDetailsComponent} />
                     <PrivateRoute path={routePaths.instructors} component={InstructorsComponent} />
+
+                    <PrivateRoute path={routePaths.surveyTemplateById} component={SurveyTemplateDetailsComponent} />
+                    <PrivateRoute path={routePaths.surveyTemplates} component={SurveyTemplatesComponent} />
 
                     <PrivateRoute path={routePaths.studentById} component={StudentDetailsComponent} />
                     <PrivateRoute path={routePaths.students} component={StudentsComponent} />

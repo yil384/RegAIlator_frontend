@@ -1,15 +1,22 @@
 // assets
 import { IconUsers, IconUserExclamation } from '@tabler/icons';
-import { SupervisorAccount, SupervisedUserCircle, PeopleOutline } from '@material-ui/icons';
+import { SupervisorAccountOutlined, PeopleOutline, BallotOutlined, FaceOutlined, ChromeReaderModeOutlined } from '@material-ui/icons';
+import SvgIcon from '@mui/material/SvgIcon';
+import React from 'react';
+import {ReactComponent as DeliveryIconSvg} from '../assets/images/delivery.svg';
 
-// constant
-const icons = {
-    IconUsers: IconUsers,
-    PeopleOutline: PeopleOutline,
-    IconUserExclamation: IconUserExclamation,
-    SupervisorAccount: SupervisorAccount,
-    SupervisedUserCircle: SupervisedUserCircle
-};
+function DeliveryIcon(props) {
+    return (
+      <SvgIcon {...props}>
+        {/* 在这里嵌入你的 SVG */}
+        <DeliveryIconSvg />
+      </SvgIcon>
+    );
+  }
+  
+export function DeliveryOutlined() {
+return <DeliveryIcon />;
+}
 
 export const adminMenu = {
     id: 'users_menu',
@@ -21,14 +28,14 @@ export const adminMenu = {
             id: 'users_menu',
             title: 'Explorer Users',
             type: 'collapse',
-            icon: icons['IconUsers'],
+            icon: IconUsers,
             children: [
                 {
                     id: 'users_menu_all',
                     title: 'All Users',
                     type: 'item',
                     url: '/users',
-                    icon: icons['PeopleOutline'],
+                    icon: PeopleOutline,
                     breadcrumbs: false
                 },
             ]
@@ -44,24 +51,32 @@ export const usersMenu = {
     children: [
         {
             id: 'users_menu',
-            title: 'People',
+            title: 'Product',
             type: 'collapse',
-            icon: icons['IconUsers'],
+            icon: BallotOutlined,
             children: [
                 {
                     id: 'menu_suppliers',
                     title: 'Suppliers',
                     type: 'item',
                     url: '/students',
-                    icon: icons['SupervisorAccount'],
+                    icon: SupervisorAccountOutlined,
+                    breadcrumbs: false
+                },
+                {
+                    id: 'menu_templates',
+                    title: 'Survey Templates',
+                    type: 'item',
+                    url: '/survey-templates',
+                    icon: ChromeReaderModeOutlined,
                     breadcrumbs: false
                 },
                 {
                     id: 'menu_contacts',
-                    title: 'Contacts',
+                    title: 'Bill of Materials',
                     type: 'item',
                     url: '/instructors',
-                    icon: icons['SupervisedUserCircle'],
+                    icon: DeliveryOutlined,
                     breadcrumbs: false
                 }
             ]

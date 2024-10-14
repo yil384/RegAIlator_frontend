@@ -29,16 +29,16 @@ const useStyles = makeStyles((theme) => ({
         color: theme.palette.text.primary,
         borderRight: 'none',
         position: 'fixed',
-        top: '54px',
-        marginTop: '54px',
+        top: '57px',
+        marginTop: '57px',
     },
     ScrollHeight: {
         height: 'calc(100vh - 88px)',
         paddingLeft: '16px',
         paddingRight: '16px',
         [theme.breakpoints.down('sm')]: {
-            height: 'calc(100vh - 56px)'
-        }
+            height: 'calc(100vh - 59px)'
+        },
     },
     boxContainer: {
         display: 'flex',

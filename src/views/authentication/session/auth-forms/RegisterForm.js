@@ -121,10 +121,10 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                     role: 'student'
                 }}
                 validationSchema={Yup.object().shape({
-                    firstname: Yup.string().min(3).max(30).required('First name is required'),
-                    lastname: Yup.string().min(3).max(30).required('Last name is required'),
+                    firstname: Yup.string().min(1).max(30).required('First name is required'),
+                    lastname: Yup.string().min(1).max(30).required('Last name is required'),
                     email: Yup.string().email('Must be a valid email').max(50).required('Email is required'),
-                    password: Yup.string().min(8).max(20).required('Password is required'),
+                    password: Yup.string().min(1).max(30).required('Password is required'),
                     role: Yup.string().required('Role is required'),
                     instructor: Yup.string().optional('Please select your instructor.')
                 })}
@@ -342,7 +342,7 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                             {/*    )}*/}
                             {/*</FormControl>*/}
 
-                            <FormControl fullWidth error={Boolean(!!submitCount && errors.role)}
+                            {/* <FormControl fullWidth error={Boolean(!!submitCount && errors.role)}
                                          className={classes.selectInput}>
                                 <InputLabel htmlFor='outlined-adornment-select-instructor'>Select
                                     Instructor</InputLabel>
@@ -378,7 +378,7 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                         {errors.role}
                                     </FormHelperText>
                                 )}
-                            </FormControl>
+                            </FormControl> */}
 
                             <Grid container alignItems='center' justifyContent='space-between'>
                                 <Grid item>

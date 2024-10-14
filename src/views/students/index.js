@@ -22,6 +22,10 @@ import EditIcon from '@material-ui/icons/Edit';
 import { NotificationsActive } from '@material-ui/icons';
 import EmailListener from '../../utils/emailListener';
 
+import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // 实心圆带对号
+import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // 空心圆
+import Checkbox from '@material-ui/core/Checkbox'; // 用于全选
+
 const statusOptions = ['inactive', 'replied', 'read', 'unread']; // 定义状态选项
 
 const StudentsComponent = ({ user }) => {
@@ -30,23 +34,23 @@ const StudentsComponent = ({ user }) => {
 
     const [students, setStudents] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [selectedIds, setSelectedIds] = React.useState([]); // 记录选中的行
+    const [filteredIds, setFilteredIds] = React.useState([]); // 记录筛选后的行ID
 
     const loadData = React.useCallback(async () => {
         try {
-            await setIsLoading(true);
-            const response = await fetchStudents({
-                deepPopulate: 'userId'
-            });
+            setIsLoading(true);
+            const response = await fetchStudents();
             setStudents(response?.results || []);
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
         }
-    });
+    }, []);
 
     React.useEffect(() => {
         loadData();
-    }, []);
+    }, [loadData]);
 
     // 处理 Excel 文件的上传
     const handleExcelUpload = (event) => {
@@ -61,7 +65,7 @@ const StudentsComponent = ({ user }) => {
 
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             jsonData.forEach(row => {
-                const email = row.email || row.userId; // 读取邮箱或 userId
+                const email = row.email; // 读取邮箱
                 if (email) {
                     mentionUsers({ email, mention: 'Hello' });
                 }
@@ -80,22 +84,78 @@ const StudentsComponent = ({ user }) => {
         setStudents(updatedStudents);
     };
 
+    // 切换某一行的选中状态
+    const handleSelect = (id) => {
+        if (selectedIds.includes(id)) {
+            // 如果已经选中，则取消选中
+            setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
+        } else {
+            // 如果未选中，则添加到选中列表中
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    // 全选/取消全选功能
+    const handleSelectAll = () => {
+        const allRowIds = students.map((row) => row.id); // 获取所有行的id
+        if (selectedIds.length === allRowIds.length) {
+            // 如果所有行已被选中，则取消全选
+            setSelectedIds([]);
+        } else {
+            // 否则，选中所有行
+            setSelectedIds(allRowIds);
+        }
+    };
+
     const columns = [
+        {
+            field: 'select',
+            headerName: (
+                <Checkbox
+                    checked={selectedIds.length === students.length && students.length > 0} // 全选状态
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < students.length} // 部分选中
+                    onChange={handleSelectAll} // 处理全选逻辑
+                    style={{ padding: 0 }} // 去掉默认的 padding
+                />
+            ),
+            description: 'This column has a value getter and is not sortable.',
+            width: 60,
+            sortable: false,
+            filterable: false,
+            resizable: false,
+            editable: false,
+            disableClickEventBubbling: true,
+            disableColumnMenu: true, // 禁用列头的菜单（三个点的菜单）
+            headerAlign: 'center',
+            renderCell: (params) => {
+                const isSelected = selectedIds.includes(params.row.id);
+                return (
+                    // 居中显示
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <IconButton onClick={() => handleSelect(params.row.id)}>
+                            {isSelected ? (
+                                <CheckCircleIcon style={{ color: 'green' }} /> // 已选中
+                            ) : (
+                                <RadioButtonUncheckedIcon /> // 未选中
+                            )}
+                        </IconButton>
+                    </div>
+                );
+            }
+        },
         // { field: 'id', width: 140, headerName: 'ID', hide: false },
         {
             field: 'fullName',
             headerName: 'Full name',
-            description: 'This column has a value getter and is not sortable.',
-            sortable: false,
+            description: 'This column has a value getter and is sortable.',
+            sortable: true,
             width: 160,
             resizable: false,
-            valueFormatter: (params) => `${params.getValue(params.id, 'userId').firstname || ''} ${params.getValue(params.id, 'userId').lastname || ''
-            }`,
+            valueGetter: (params) => `${params.row?.firstname} ${params.row?.lastname}`,
             renderCell: (params) => {
                 return (
                     <Typography variant='link1' component={Link} to={`students/${params.row.id}`}>
-                        {`${params.getValue(params.id, 'userId').firstname || ''} ${params.getValue(params.id, 'userId').lastname || ''
-                        }`}
+                        {params.row?.firstname} {params.row?.lastname}
                     </Typography>
                 );
             }
@@ -103,15 +163,17 @@ const StudentsComponent = ({ user }) => {
         {
             field: 'email',
             headerName: 'Email',
-            type: 'email',
+            description: 'This column is sortable and filterable.',
+            sortable: true,
+            filterable: true,
             width: 270,
             editable: true,
             resizable: false,
-            valueFormatter: (params) => params.row?.userId.email,
+            valueGetter: (params) => params.row?.email,
             renderCell: (params) => {
                 return (
                     <Typography variant='value1'>
-                        {params.row?.userId.email}
+                        {params.row?.email}
                     </Typography>
                 );
             }
@@ -120,15 +182,15 @@ const StudentsComponent = ({ user }) => {
             field: 'Role',
             headerName: 'Role',
             description: 'User privilege',
-            sortable: false,
+            sortable: true,
             width: 160,
             resizable: false,
             disableClickEventBubbling: true,
-            valueFormatter: (params) => params.row?.userId.role.toUpperCase(),
+            valueGetter: (params) => params.row?.role,
             renderCell: (params) => {
                 return (
                     <Typography variant='value1'>
-                        {params.row?.userId.role.toUpperCase()}
+                        {params.row?.role.toUpperCase()}
                     </Typography>
                 );
             }
@@ -158,11 +220,11 @@ const StudentsComponent = ({ user }) => {
             headerName: 'Email Mention',
             headerAlign: 'center',
             description: 'Mention the user to upload the regulation we requested.',
-            sortable: false,
+            sortable: true,
             width: 190,
             resizable: false,
             hide: false,
-            valueFormatter: (params) => params,
+            valueGetter: (params) => params.row?.email,
             renderCell: (params) => {
                 return (
                     <strong>
@@ -173,7 +235,7 @@ const StudentsComponent = ({ user }) => {
                             style={{ marginLeft: 16 }}
                             startIcon={<NotificationsActive />}
                             // 按下后调用 mentionUsers 函数
-                            onClick={() => mentionUsers({ email: params.row?.userId.email, mention: 'Hello' })}
+                            onClick={() => mentionUsers({ email: params.row?.email, mention: 'Hello' })}
                         >
                             Mention
                         </Button>
@@ -186,10 +248,11 @@ const StudentsComponent = ({ user }) => {
             headerName: 'Remark',
             headerAlign: 'center',
             description: 'Remark the user in case that we need to remember something.',
-            sortable: false,
+            sortable: true,
             width: 190,
             resizable: false,
             disableExport: true,
+            valueGetter: (params) => params.row?.remark,
             renderCell: (params) => {
                 return (
                     <strong>
@@ -258,12 +321,13 @@ const StudentsComponent = ({ user }) => {
         {
             field: 'Status',
             headerName: 'Status',
-            sortable: false,
+            sortable: true,
             width: 270,
             resizable: false,
             disableClickEventBubbling: true,
             hide: false,
             editable: true, // 允许编辑
+            valueGetter: (params) => params.row?.status,
             renderCell: (params) => {
                 return (
                     <Typography variant='value1'>
@@ -286,6 +350,22 @@ const StudentsComponent = ({ user }) => {
                 );
             }
         },
+        {
+            field: 'reply', // 回信字段
+            headerName: 'Reply Status',
+            width: 200,
+            sortable: false,
+            resizable: false,
+            description: 'This column shows the reply status of the user.',
+            valueGetter: (params) => params.row.reply,
+            renderCell: (params) => {
+                return (
+                    <Typography variant='value1'>
+                        {params.row.reply}
+                    </Typography>
+                );
+            }
+        }
     ];
 
     return (

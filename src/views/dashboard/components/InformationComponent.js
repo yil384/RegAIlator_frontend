@@ -23,10 +23,10 @@ const InformationComponent = ({ isLoading }) => {
                                 <Grid item>
                                     <Grid container direction='column' spacing={1}>
                                         <Grid item>
-                                            <Typography variant='h2'>Extended Reality Initiative</Typography>
+                                            {/* <Typography variant='h2'>Extended Reality Initiative</Typography> */}
                                         </Grid>
                                         <Grid item>
-                                            <Typography>The Extended Reality Initiative (XRi) at Kent State
+                                            {/* <Typography>The Extended Reality Initiative (XRi) at Kent State
                                                 is focused on developing immersive
                                                 educational experiences in the realm of extended reality!
                                             </Typography>
@@ -38,7 +38,7 @@ const InformationComponent = ({ isLoading }) => {
                                         of the
                                         author(s) and do not necessarily reflect the views of the National Science
                                         Foundation.
-                                </span>
+                                </span> */}
                                         </Grid>
                                     </Grid>
                                 </Grid>
