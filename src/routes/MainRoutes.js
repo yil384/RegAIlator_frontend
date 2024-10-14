@@ -26,7 +26,7 @@ const UserDetailsComponent = Loadable(lazy(() => import('../views/users/userDeta
 const InstructorsComponent = Loadable(lazy(() => import('../views/instructors')));
 const InstructorDetailsComponent = Loadable(lazy(() => import('../views/instructors/details')));
 const SurveyTemplatesComponent = Loadable(lazy(() => import('../views/survey-templates')));
-const SurveyTemplateDetailsComponent = Loadable(lazy(() => import('../views/survey-templates/details')));
+// const SurveyTemplateDetailsComponent = Loadable(lazy(() => import('../views/survey-templates/details')));
 const StudentsComponent = Loadable(lazy(() => import('../views/students')));
 const StudentDetailsComponent = Loadable(lazy(() => import('../views/students/details')));
 const VideoGroupsComponent = Loadable(lazy(() => import('../views/video-group')));
@@ -120,7 +120,7 @@ const MainRoutes = () => {
                     <PrivateRoute path={routePaths.instructorById} component={InstructorDetailsComponent} />
                     <PrivateRoute path={routePaths.instructors} component={InstructorsComponent} />
 
-                    <PrivateRoute path={routePaths.surveyTemplateById} component={SurveyTemplateDetailsComponent} />
+                    {/* <PrivateRoute path={routePaths.surveyTemplateById} component={SurveyTemplateDetailsComponent} /> */}
                     <PrivateRoute path={routePaths.surveyTemplates} component={SurveyTemplatesComponent} />
 
                     <PrivateRoute path={routePaths.studentById} component={StudentDetailsComponent} />

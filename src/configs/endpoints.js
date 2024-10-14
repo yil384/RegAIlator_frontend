@@ -12,7 +12,7 @@ const endpoints = {
     userById: (id) => `/users/${id}`,
     instructors: `/instructors`,
     instructorById: (id) => `/instructors/${id}`,
-    surveyTemplates: `/survey-templates`,
+    surveys: `/survey-templates`,
     surveyTemplateById: (id) => `/survey-templates/${id}`,
     students: `/students`,
     studentById: (id) => `/students/${id}`,

@@ -291,9 +291,12 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
             {tableData.length > 0 && (
                 <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
                     <DataGrid
-                        rows={tableData}
+                        rows={tableData.map((row, index) => ({
+                            ...row,
+                            id: index + 1, // 为每一行动态添加唯一的 id
+                        }))}
                         columns={[
-                            // 根据 tableData 中的数据动态生成列
+                            // 根据 tableData 中的数据动态生成列，同时加上一列id
                             ...Object.keys(tableData[0]).map((key) => ({
                                 field: key,
                                 headerName: key.charAt(0).toUpperCase() + key.slice(1), // 将字段名称首字母大写

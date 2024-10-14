@@ -1,35 +1,32 @@
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from './../../configs/endpoints';
 
-export const addStudents = (instructorDetails) =>
-    fetchApi({
-        method: 'POST',
-        url: endpoints.students,
-        data: instructorDetails
-    }, true);
+// Create a new survey
+export const addSurvey = (surveyData) =>
+  fetchApi({
+    method: 'POST',
+    url: endpoints.surveys,
+    data: surveyData,
+  });
 
-export const fetchStudents = (params) =>
-    fetchApi({
-        method: 'GET',
-        url: endpoints.students,
-        params: params
-    }, true);
+// Update an existing survey
+export const updateSurvey = (surveyId, surveyData) =>
+  fetchApi({
+    method: 'PATCH',
+    url: `${endpoints.surveys}/${surveyId}`,
+    data: surveyData,
+  });
 
-export const fetchStudentDetails = (id) =>
-    fetchApi({
-        method: 'GET',
-        url: endpoints.studentById(id)
-    }, true);
+// Delete a survey
+export const deleteSurvey = (surveyId) =>
+  fetchApi({
+    method: 'DELETE',
+    url: `${endpoints.surveys}/${surveyId}`,
+  });
 
-export const updateStudent = (id, instructorDetails) =>
-    fetchApi({
-        method: 'PATCH',
-        url: endpoints.studentById(id),
-        data: instructorDetails
-    }, true);
-
-export const deleteStudent = (id) =>
-    fetchApi({
-        method: 'DELETE',
-        url: endpoints.studentById(id)
-    }, true);
+// Get survey by ID
+export const getSurveyById = (surveyId) =>
+  fetchApi({
+    method: 'GET',
+    url: `${endpoints.surveys}/${surveyId}`,
+  });
