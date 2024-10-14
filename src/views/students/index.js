@@ -35,13 +35,24 @@ const StudentsComponent = ({ user }) => {
     const [students, setStudents] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]); // 记录选中的行
-    const [filteredIds, setFilteredIds] = React.useState([]); // 记录筛选后的行ID
+    const [filterIds, setFilterIds] = React.useState([]); // 记录筛选的行
 
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
             const response = await fetchStudents();
-            setStudents(response?.results || []);
+            const tmepStudents = response?.results || [];
+            // 将students的每个元素做转换：
+            tmepStudents.forEach((student) => {
+                student.fullName = `${student.firstname} ${student.lastname}`; // 生成全名
+                student.email = student.email; // 生成邮箱
+                student.role = student.role; // 生成角色
+                student.remark = student.remark; // 生成备注
+                student.status = student.status; // 生成状态
+                student.reply = student.reply; // 生成回信状态
+            });
+            setStudents(tmepStudents);
+            setFilterIds(tmepStudents.map((student) => student.id)); // 初始化filterIds
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
@@ -97,13 +108,14 @@ const StudentsComponent = ({ user }) => {
 
     // 全选/取消全选功能
     const handleSelectAll = () => {
-        const allRowIds = students.map((row) => row.id); // 获取所有行的id
-        if (selectedIds.length === allRowIds.length) {
-            // 如果所有行已被选中，则取消全选
-            setSelectedIds([]);
+        const allRowIds = filterIds.map((id) => id); // 获取所有行的id
+        if (filterIds.every((id) => selectedIds.includes(id))) {
+            // 如果所有行已被选中，则取消全选filterIds
+            console.log('all selected', filterIds);
+            setSelectedIds(selectedIds.filter((id) => !filterIds.includes(id)));
         } else {
-            // 否则，选中所有行
-            setSelectedIds(allRowIds);
+            // 否则，选中所有行，去重，保证不会重复添加，之前的selectedIds不会被覆盖
+            setSelectedIds([...new Set([...selectedIds, ...allRowIds])]);
         }
     };
 
@@ -112,8 +124,13 @@ const StudentsComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={selectedIds.length === students.length && students.length > 0} // 全选状态
-                    indeterminate={selectedIds.length > 0 && selectedIds.length < students.length} // 部分选中
+                    checked={filterIds.length > 0 && 
+                        filterIds.every((id) => selectedIds.includes(id))
+                    } // 全选状态，selectedIds和filterIds内容相同
+                    indeterminate={filterIds.length > 0 && 
+                        filterIds.some((id) => selectedIds.includes(id)) &&
+                        !filterIds.every((id) => selectedIds.includes(id))
+                    } // 部分选中状态
                     onChange={handleSelectAll} // 处理全选逻辑
                     style={{ padding: 0 }} // 去掉默认的 padding
                 />
@@ -404,6 +421,33 @@ const StudentsComponent = ({ user }) => {
                         LoadingOverlay: CustomLoadingOverlay,
                         NoRowsOverlay: CustomNoRowsOverlay
                     }}
+                    onFilterModelChange={(model) => {
+                        const filter = model.items.map((item) => {
+                            return [item.columnField, item.operatorValue, item.value];
+                        });
+                        const filterids = students.filter((student) => {
+                            return filter.every((filter) => {
+                                if (filter[1] == 'isEmpty') {
+                                    return student[filter[0]] === '' || student[filter[0]] === undefined;
+                                } else if (filter[1] == 'isNotEmpty') {
+                                    return student[filter[0]] !== '' && student[filter[0]] !== undefined;
+                                } else if (filter[2] === undefined) {
+                                    return true;
+                                } else if (filter[1] === 'contains') {
+                                    return student[filter[0]].toLowerCase().includes(filter[2].toLowerCase())
+                                } else if (filter[1] === 'equals') {
+                                    return student[filter[0]].toLowerCase() === filter[2].toLowerCase();
+                                } else if (filter[1] === 'startsWith') {
+                                    return student[filter[0]].toLowerCase().startsWith(filter[2].toLowerCase());
+                                } else if (filter[1] === 'endsWith') {
+                                    return student[filter[0]].toLowerCase().endsWith(filter[2].toLowerCase());
+                                } else {
+                                    return false;
+                                }
+                            }); 
+                        }).map((student) => student.id);
+                        setFilterIds(filterids);
+                    }}
                 />
             </div>
             <EmailListener />
@@ -416,5 +460,3 @@ const mapStateToProps = (state) => ({
 });
 
 export default connect(mapStateToProps, null)(StudentsComponent);
-
-// TODO
