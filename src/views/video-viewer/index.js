@@ -11,8 +11,7 @@ import { useTheme } from '@material-ui/styles';
 import useStyles from './styles';
 
 import { fetchVideoGroupsAction } from '../video-group/video-groups.actions';
-import { fetchStudents } from '../students/helper';
-import { fetchInstructors } from '../instructors/helper';
+import { fetchUsers } from '../users/users.helper';
 
 const VideoViewer = ({ user, fetchVideoGroupsAction, videoGroups, isLoading }) => {
     const theme = useTheme();
@@ -62,7 +61,7 @@ const VideoViewer = ({ user, fetchVideoGroupsAction, videoGroups, isLoading }) =
                 await fetchVideoGroupsAction();
             }
             if (user.role === 'student') {
-                const response = await fetchStudents({
+                const response = await fetchUsers({
                     userId: user.id,
                     deepPopulate: 'videoGroups'
                 });
@@ -80,7 +79,7 @@ const VideoViewer = ({ user, fetchVideoGroupsAction, videoGroups, isLoading }) =
                 setVideoGroups(mergedVideoGroups);
             }
             if (user.role === 'instructor') {
-                const response = await fetchInstructors({
+                const response = await fetchUsers({
                     userId: user.id
                 });
                 setVideoGroups(response.results?.[0]?.videoGroups);

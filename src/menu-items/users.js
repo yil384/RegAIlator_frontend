@@ -56,10 +56,18 @@ export const usersMenu = {
             icon: BallotOutlined,
             children: [
                 {
+                    id: 'menu_contacts',
+                    title: 'Contacts',
+                    type: 'item',
+                    url: '/users',
+                    icon: PeopleOutline,
+                    breadcrumbs: false
+                },
+                {
                     id: 'menu_suppliers',
                     title: 'Suppliers',
                     type: 'item',
-                    url: '/students',
+                    url: '/suppliers',
                     icon: SupervisorAccountOutlined,
                     breadcrumbs: false
                 },
@@ -75,7 +83,7 @@ export const usersMenu = {
                     id: 'menu_contacts',
                     title: 'Bill of Materials',
                     type: 'item',
-                    url: '/instructors',
+                    url: '/users',
                     icon: DeliveryOutlined,
                     breadcrumbs: false
                 }

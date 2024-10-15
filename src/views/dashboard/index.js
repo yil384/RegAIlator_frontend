@@ -3,19 +3,17 @@ import { connect } from 'react-redux';
 
 import AdminDashboard from './AdminDashboard';
 import StudentDashboard from './StudentDashboard';
-import InstructorDashboard from './InstructorDashboard';
 
 const Dashboard = ({ isLoading, user }) => {
-    const userRole = user.role;
+    // const userRole = user.role;
+    // switch (userRole) {
+    //     case 'student':
+    //         return <StudentDashboard />;
+    //     default:
+    //         return <AdminDashboard />;
+    // }
 
-    switch (userRole) {
-        case 'student':
-            return <StudentDashboard />;
-        case 'instructor':
-            return <InstructorDashboard />;
-        default:
-            return <AdminDashboard />;
-    }
+    return <AdminDashboard/ >;
 };
 
 const mapStateToProps = (state) => ({

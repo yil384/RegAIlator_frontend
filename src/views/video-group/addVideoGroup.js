@@ -26,6 +26,7 @@ import { addVideoGroupAction } from './video-groups.actions';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import SubCard from '../../ui-component/cards/SubCard';
+import { CONSTANTS } from "../../configs/constants";
 
 const AddVideoGroupComponent = ({ addVideoGroupAction, isLoading, videoGroups, ...others }) => {
     const history = useHistory();

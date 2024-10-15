@@ -14,7 +14,7 @@ import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select'; // Import Select component
 import MenuItem from '@material-ui/core/MenuItem'; // Import MenuItem component
 
-import { fetchStudents, deleteStudent } from './helper';
+import { fetchUsers, deleteUser } from '../users/users.helper';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
@@ -40,7 +40,7 @@ const StudentsComponent = ({ user }) => {
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
-            const response = await fetchStudents();
+            const response = await fetchUsers();
             const tmepStudents = response?.results || [];
             // 将students的每个元素做转换：
             tmepStudents.forEach((student) => {

@@ -23,12 +23,10 @@ const VideoViewer = Loadable(lazy(() => import('../views/video-viewer')));
 
 const UsersComponent = Loadable(lazy(() => import('../views/users')));
 const UserDetailsComponent = Loadable(lazy(() => import('../views/users/userDetails')));
-const InstructorsComponent = Loadable(lazy(() => import('../views/instructors')));
-const InstructorDetailsComponent = Loadable(lazy(() => import('../views/instructors/details')));
+const SuppliersComponent = Loadable(lazy(() => import('../views/suppliers')));
+// const SupplierDetailsComponent = Loadable(lazy(() => import('../views/suppliers/supplierDetails')));
 const SurveyTemplatesComponent = Loadable(lazy(() => import('../views/survey-templates')));
 // const SurveyTemplateDetailsComponent = Loadable(lazy(() => import('../views/survey-templates/details')));
-const StudentsComponent = Loadable(lazy(() => import('../views/students')));
-const StudentDetailsComponent = Loadable(lazy(() => import('../views/students/details')));
 const VideoGroupsComponent = Loadable(lazy(() => import('../views/video-group')));
 const AddVideoGroupsComponent = Loadable(lazy(() => import('../views/video-group/addVideoGroup')));
 const VideoGroupDetailsComponent = Loadable(lazy(() => import('../views/video-group/videoGroupDetails')));
@@ -46,12 +44,10 @@ const routePaths = {
     dashboard: '/dashboard',
     users: '/users',
     userById: '/users/:id',
-    instructors: '/instructors',
-    instructorById: '/instructors/:id',
+    suppliers: '/suppliers',
+    supplierById: '/suppliers/:id',
     surveyTemplates: '/survey-templates',
     surveyTemplateById: '/survey-templates/:id',
-    students: '/students',
-    studentById: '/students/:id',
     videoViewer: '/video-explorer/viewer',
     videoGroupById: '/video-groups/:id',
     videoGroups: '/video-groups',
@@ -86,12 +82,10 @@ const MainRoutes = () => {
                 routePaths.dashboard,
                 routePaths.userById,
                 routePaths.users,
-                routePaths.instructorById,
-                routePaths.instructors,
+                routePaths.supplierById,
+                routePaths.suppliers,
                 routePaths.surveyTemplateById,
                 routePaths.surveyTemplates,
-                routePaths.studentById,
-                routePaths.students,
                 routePaths.videoViewer,
                 routePaths.videoGroupById,
                 routePaths.addVideoGroups,
@@ -117,14 +111,11 @@ const MainRoutes = () => {
                     <PrivateRoute path={routePaths.userById} component={UserDetailsComponent} />
                     <PrivateRoute path={routePaths.users} component={UsersComponent} />
 
-                    <PrivateRoute path={routePaths.instructorById} component={InstructorDetailsComponent} />
-                    <PrivateRoute path={routePaths.instructors} component={InstructorsComponent} />
+                    <PrivateRoute path={routePaths.suppliers} component={SuppliersComponent} />
+                    {/* <PrivateRoute path={routePaths.supplierById} component={SupplierDetailsComponent} /> */}
 
                     {/* <PrivateRoute path={routePaths.surveyTemplateById} component={SurveyTemplateDetailsComponent} /> */}
                     <PrivateRoute path={routePaths.surveyTemplates} component={SurveyTemplatesComponent} />
-
-                    <PrivateRoute path={routePaths.studentById} component={StudentDetailsComponent} />
-                    <PrivateRoute path={routePaths.students} component={StudentsComponent} />
 
                     <PrivateRoute path={routePaths.addVideoGroups} component={AddVideoGroupsComponent} />
                     <PrivateRoute path={routePaths.videoGroupById} component={VideoGroupDetailsComponent} />
