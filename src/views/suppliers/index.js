@@ -13,7 +13,8 @@ import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 
-import { fetchSuppliers, addSupplier } from './helper'; // Adjust the path as needed
+import { fetchSuppliers, addSupplier } from './helper'; // 确保 fetchSurveys 已导入
+import {fetchSurveys} from '../survey-templates/helper'; // 导入 fetchSurveys
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
@@ -31,9 +32,9 @@ import * as Yup from 'yup';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
-import { useStyles } from './styles'; // Adjust the path or create a styles file as needed
+import { useStyles } from './styles'; // 调整路径或创建样式文件
 
-const statusOptions = ['inactive', 'replied', 'read', 'unread']; // Define status options
+const statusOptions = ['inactive', 'replied', 'read', 'unread']; // 定义状态选项
 
 const SuppliersComponent = ({ user }) => {
     const theme = useTheme();
@@ -44,6 +45,7 @@ const SuppliersComponent = ({ user }) => {
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
     const [openDialog, setOpenDialog] = React.useState(false);
+    const [surveys, setSurveys] = React.useState([]); // 新增调查状态
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -67,11 +69,25 @@ const SuppliersComponent = ({ user }) => {
         }
     }, []);
 
+    // 获取调查数据
+    React.useEffect(() => {
+        const loadSurveys = async () => {
+            try {
+                const response = await fetchSurveys();
+                setSurveys(response); // 假设 response 是一个数组，包含每个调查的 _id 和 name
+            } catch (error) {
+                console.error("Failed to fetch surveys:", error);
+                toast.error("Failed to load surveys");
+            }
+        };
+        loadSurveys();
+    }, []);
+
     React.useEffect(() => {
         loadData();
     }, [loadData]);
 
-    // Handle Excel file upload
+    // 处理 Excel 文件上传
     const handleExcelUpload = (event) => {
         const file = event.target.files[0];
         const reader = new FileReader();
@@ -103,7 +119,7 @@ const SuppliersComponent = ({ user }) => {
         setSuppliers(updatedSuppliers);
     };
 
-    // Toggle selection of a row
+    // 切换选择行
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
@@ -112,7 +128,7 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // Select/Deselect all rows
+    // 全选/取消全选
     const handleSelectAll = () => {
         const allRowIds = filterIds.map((id) => id);
         if (filterIds.every((id) => selectedIds.includes(id))) {
@@ -122,7 +138,7 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // Handle dialog open and close
+    // 处理对话框打开和关闭
     const handleOpenDialog = () => {
         setOpenDialog(true);
     };
@@ -132,7 +148,7 @@ const SuppliersComponent = ({ user }) => {
     };
 
     const handleAddSuccess = () => {
-        loadData(); // Reload data after adding a supplier
+        loadData(); // 添加供应商后重新加载数据
     };
 
     const columns = [
@@ -225,11 +241,17 @@ const SuppliersComponent = ({ user }) => {
             headerName: 'Choose Survey',
             sortable: true,
             width: 200,
-            renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.chooseSurvey?.join(', ')}
-                </Typography>
-            ),
+            renderCell: (params) => {
+                const selectedSurveyIds = params.row?.chooseSurvey || [];
+                const selectedSurveyNames = surveys
+                    .filter(survey => selectedSurveyIds.includes(survey._id))
+                    .map(survey => survey.name);
+                return (
+                    <Typography variant="value1">
+                        {selectedSurveyNames.join(', ')}
+                    </Typography>
+                );
+            },
         },
         {
             field: 'status',
@@ -279,7 +301,7 @@ const SuppliersComponent = ({ user }) => {
         },
     ];
 
-    // Add Supplier Dialog Component
+    // 添加供应商对话框组件
     const AddSupplierDialog = ({ open, handleClose }) => {
         return (
             <Dialog
@@ -316,7 +338,7 @@ const SuppliersComponent = ({ user }) => {
                             contact: Yup.string().required('Contact is required'),
                             materialName: Yup.string().required('Material Name is required'),
                             partNumber: Yup.string().required('Part Number is required'),
-                            chooseSurvey: Yup.array().of(Yup.string()),
+                            chooseSurvey: Yup.array().of(Yup.string()), // 存储 ObjectId
                             status: Yup.string().oneOf(statusOptions).required('Status is required'),
                             feedback: Yup.string(),
                             supplierDocuments: Yup.string()
@@ -324,7 +346,7 @@ const SuppliersComponent = ({ user }) => {
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             try {
                                 if (scriptedRef.current) {
-                                    await addSupplier(values);
+                                    await addSupplier(values); // 确保 addSupplier 能处理 ObjectId 数组
                                     setStatus({ success: true });
                                     setSubmitting(false);
                                     handleClose();
@@ -424,12 +446,16 @@ const SuppliersComponent = ({ user }) => {
                                                 name="chooseSurvey"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                renderValue={(selected) => selected.join(', ')}
+                                                renderValue={(selected) => {
+                                                    const selectedSurveys = surveys.filter(survey => selected.includes(survey._id));
+                                                    return selectedSurveys.map(survey => survey.name).join(', ');
+                                                }}
                                             >
-                                                {/* Replace with actual survey options */}
-                                                <MenuItem value="Survey 1">Survey 1</MenuItem>
-                                                <MenuItem value="Survey 2">Survey 2</MenuItem>
-                                                <MenuItem value="Survey 3">Survey 3</MenuItem>
+                                                {surveys.map((survey) => (
+                                                    <MenuItem key={survey._id} value={survey._id}>
+                                                        {survey.name}
+                                                    </MenuItem>
+                                                ))}
                                             </Select>
                                             {errors.chooseSurvey && (
                                                 <FormHelperText error>{errors.chooseSurvey}</FormHelperText>

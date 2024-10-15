@@ -21,3 +21,13 @@ export const addSupplier = (data) =>
         },
         true // 包含身份验证
     );
+    
+export const updateSupplier = (supplierId, data) =>
+    fetchApi(
+        {
+            method: 'PUT', // 通常更新操作使用 PUT 或 PATCH
+            url: `${endpoints.suppliers}/${supplierId}`,
+            data
+        },
+        true // 包含身份验证
+    );
