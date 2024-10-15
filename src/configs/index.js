@@ -7,8 +7,8 @@ const config = {
     // fontFamily: `'Roboto', sans-serif`,
     fontFamily: `'Poppins', sans-serif`,
     borderRadius: 12,
-    // env: 'prod',
-    env: 'local',
+    env: 'prod',
+    // env: 'local',
     prod: {
         baseURL: 'http://3.137.84.84',
         httpURL: 'http://3.137.84.84/api/v1',
