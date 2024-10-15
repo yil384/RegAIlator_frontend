@@ -502,8 +502,8 @@ const SurveysComponent = ({ user }) => {
                     loading={isLoading}
                     components={{
                         Toolbar: GridToolbar,
-                        LoadingOverlay: CustomLoadingOverlay,
-                        NoRowsOverlay: CustomNoRowsOverlay,
+                        // LoadingOverlay: CustomLoadingOverlay,
+                        // NoRowsOverlay: CustomNoRowsOverlay,
                     }}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {

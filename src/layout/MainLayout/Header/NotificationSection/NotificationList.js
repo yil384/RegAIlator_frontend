@@ -122,7 +122,7 @@ const NotificationList = () => {
                 </ListItem>
                 <Grid container direction='column' className={classes.listContainer}>
                     <Grid item xs={12} className={classes.paddingBottom}>
-                        <Typography variant='subtitle2'>Welcome to XRi Extended Reality Initiative Program</Typography>
+                        <Typography variant='subtitle2'>Welcome to RegAIlator Program</Typography>
                     </Grid>
                     {/*<Grid item xs={12}>*/}
                     {/*    <Grid container>*/}

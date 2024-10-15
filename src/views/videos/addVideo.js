@@ -40,6 +40,9 @@ import { useDropzone } from 'react-dropzone';
 import LinearProgressBar from '../../ui-component/LinearProgress';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
+import Backdrop from '@material-ui/core/Backdrop';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
 const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     const history = useHistory();
     const theme = useTheme();
@@ -62,7 +65,6 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
             city: 'New York',
             state: 'NY',
             country: 'USA'
-
         },
         {
             id: 2,
@@ -75,7 +77,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
             state: 'NY',
             country: 'USA'
         }
-    ]); // Updated to store an array of table data
+    ]); // 更新为存储表格数据的数组
 
     const onDrop = React.useCallback(acceptedFiles => {
         setSelectedFiles([...selectedFiles, ...acceptedFiles]);
@@ -121,17 +123,21 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                 const { total, loaded } = progressEvent;
                 const uploadPercentage = (loaded / total) * 100;
                 setUploadPercentage(uploadPercentage.toFixed(2));
+
+                if (uploadPercentage >= 100) {
+                    setProcessingVideo(true);
+                }
             }
         }, true);
-    
-        return response; // Return the full response including status and message
-    };    
 
-    // Update to handle the correct parsing of table data
+        return response; // 返回完整的响应，包括状态和消息
+    };
+
+    // 更新以处理正确解析的表格数据
     const handleFilePreview = (response) => {
         if (response?.status && response.files.length > 0) {
             const newTableData = response.files[0]?.result?.data || [];
-            setTableData(newTableData); // Save the table data
+            setTableData(newTableData); // 保存表格数据
         }
     };
 
@@ -164,12 +170,13 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                 }
                                 data.set('group', selectedVideoGroup);
                             }
-                            const response = await uploadFile(data); // Upload and get JSON response
+                            const response = await uploadFile(data); // 上传并获取 JSON 响应
                             console.log('response', response);
                             if (response?.status) {
                                 toast.success('Parse successful!');
-                                handleFilePreview(response);  // Pass the full response to the preview handler
+                                handleFilePreview(response);  // 传递完整的响应到预览处理器
                             }
+                            setProcessingVideo(false); // 处理完响应后设置为 false
                         } catch (err) {
                             if (err.status === 413) {
                                 setErrors({ submit: 'File size too large. Please upload a smaller file' });
@@ -178,6 +185,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                             console.error('Error uploading file', err);
                             setErrors({ submit: err.message });
                             setSubmitting(false);
+                            setProcessingVideo(false); // 在错误情况下也设置为 false
                         }
                     }}
                 >
@@ -221,20 +229,24 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                             <Box sx={{ mt: 2, mb: 2 }}>
                                 <Grid item xs={12} sm={12} md={12} lg={6}>
                                     <section className='container'>
-                                        {!uploadPercentage && (<div {...getRootProps({ className: 'dropzone' })}>
-                                            <input {...getInputProps()} />
-                                            <FileUploadIcon />
-                                            <p>Drag 'n' drop some files here, or click to select PDF or Excel file</p>
-                                        </div>)}
-                                        {!!selectedFiles?.length && (<aside>
-                                            <div className={classes.selectedFileTitle}>
-                                                <h4>Selected File</h4>
+                                        {!uploadPercentage && (
+                                            <div {...getRootProps({ className: 'dropzone' })}>
+                                                <input {...getInputProps()} />
+                                                <FileUploadIcon />
+                                                <p>Drag 'n' drop some files here, or click to select PDF or Excel file</p>
                                             </div>
-                                            <ul>{files}</ul>
-                                            <Grid item xs={4} sm={4} md={4} lg={4}>
-                                                {files.length > 1 && <button onClick={removeAll}>Remove All</button>}
-                                            </Grid>
-                                        </aside>)}
+                                        )}
+                                        {!!selectedFiles?.length && (
+                                            <aside>
+                                                <div className={classes.selectedFileTitle}>
+                                                    <h4>Selected File</h4>
+                                                </div>
+                                                <ul>{files}</ul>
+                                                <Grid item xs={4} sm={4} md={4} lg={4}>
+                                                    {files.length > 1 && <button onClick={removeAll}>Remove All</button>}
+                                                </Grid>
+                                            </aside>
+                                        )}
                                     </section>
                                     <Box sx={{ mt: 4, mb: 2 }}>
                                         {(!!uploadPercentage) &&
@@ -279,7 +291,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                                     setSelectedVideoGroup(null);
                                                     setSelectedFiles([]);
                                                     setUploadPercentage(null);
-                                                    setTableData([]); // Clear table data on new upload
+                                                    setTableData([]); // 在新上传时清除表格数据
                                                 }}
                                             >
                                                 Upload more videos
@@ -305,7 +317,6 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                 field: key,
                                 headerName: key.charAt(0).toUpperCase() + key.slice(1), // 将字段名称首字母大写
                                 width: 150, // 根据需要设置列宽
-                                // description: 'This column has a value getter and is not sortable.',
                                 sortable: false,
                                 resizable: false,
                             }))

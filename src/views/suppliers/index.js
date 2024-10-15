@@ -650,8 +650,8 @@ const SuppliersComponent = ({ user }) => {
                     loading={isLoading || loadingUpdate} // 添加更新加载状态
                     components={{
                         Toolbar: GridToolbar,
-                        LoadingOverlay: CustomLoadingOverlay,
-                        NoRowsOverlay: CustomNoRowsOverlay
+                        // LoadingOverlay: CustomLoadingOverlay,
+                        // NoRowsOverlay: CustomNoRowsOverlay
                     }}
                     processRowUpdate={processRowUpdate} // 添加行更新处理
                     experimentalFeatures={{ newEditingApi: true }} // 启用新编辑 API
