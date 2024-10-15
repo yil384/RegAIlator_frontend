@@ -1,3 +1,4 @@
+// 在 SuppliersComponent 中修改 chooseSurvey 列
 import React from 'react';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
@@ -13,8 +14,8 @@ import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 
-import { fetchSuppliers, addSupplier } from './helper'; // 确保 fetchSurveys 已导入
-import {fetchSurveys} from '../survey-templates/helper'; // 导入 fetchSurveys
+import { fetchSuppliers, addSupplier, updateSupplier } from './helper'; // 导入 updateSupplier
+import { fetchSurveys } from '../survey-templates/helper'; // 导入 fetchSurveys
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
@@ -46,6 +47,7 @@ const SuppliersComponent = ({ user }) => {
     const [filterIds, setFilterIds] = React.useState([]);
     const [openDialog, setOpenDialog] = React.useState(false);
     const [surveys, setSurveys] = React.useState([]); // 新增调查状态
+    const [loadingUpdate, setLoadingUpdate] = React.useState(false); // 更新加载状态
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -57,7 +59,8 @@ const SuppliersComponent = ({ user }) => {
             const suppliersData = response || [];
 
             suppliersData.forEach((supplier, index) => {
-                supplier.id = index + 1;
+                if (!supplier._id) supplier.id = index + 1;
+                else supplier.id = supplier._id;
             });
 
             setSuppliers(suppliersData);
@@ -74,6 +77,7 @@ const SuppliersComponent = ({ user }) => {
         const loadSurveys = async () => {
             try {
                 const response = await fetchSurveys();
+                console.log(response)
                 setSurveys(response); // 假设 response 是一个数组，包含每个调查的 _id 和 name
             } catch (error) {
                 console.error("Failed to fetch surveys:", error);
@@ -241,15 +245,60 @@ const SuppliersComponent = ({ user }) => {
             headerName: 'Choose Survey',
             sortable: true,
             width: 200,
+            editable: true, // 使列可编辑
             renderCell: (params) => {
-                const selectedSurveyIds = params.row?.chooseSurvey || [];
-                const selectedSurveyNames = surveys
-                    .filter(survey => selectedSurveyIds.includes(survey._id))
-                    .map(survey => survey.name);
+                const selectedSurveyId = params.row?.chooseSurvey || '';
+                const selectedSurvey = surveys.find(survey => survey._id === selectedSurveyId);
                 return (
                     <Typography variant="value1">
-                        {selectedSurveyNames.join(', ')}
+                        {selectedSurvey ? selectedSurvey.title : ''}
                     </Typography>
+                );
+            },
+            renderEditCell: (params) => {
+                const { id, value, api } = params; // id 是行的 id，value 是当前字段的值
+    
+                const handleChange = async (event) => {
+                    const selectedSurveyId = event.target.value;
+    
+                    try {
+                        setLoadingUpdate(true);
+                        // 发送更新请求到后端
+                        await updateSupplier(id, { chooseSurvey: selectedSurveyId });
+                        // 更新本地状态
+                        setSuppliers((prevSuppliers) =>
+                            prevSuppliers.map((supplier) =>
+                                supplier.id === id ? { ...supplier, chooseSurvey: selectedSurveyId } : supplier
+                            )
+                        );
+                        toast.success('Survey updated successfully');
+                        // 退出编辑模式
+                        api.setCellMode(id, 'chooseSurvey', 'view');
+                    } catch (error) {
+                        console.error('Failed to update survey:', error);
+                        toast.error('Failed to update survey');
+                    } finally {
+                        setLoadingUpdate(false);
+                    }
+                };
+    
+                return (
+                    <FormControl fullWidth>
+                        <Select
+                            value={value}
+                            onChange={handleChange}
+                            autoFocus
+                            // 确保选择后关闭下拉菜单
+                            onClose={() => api.setCellMode(id, 'chooseSurvey', 'view')}
+                        >
+                            {surveys.map((survey) => (
+                                <MenuItem key={survey._id} value={survey._id}>
+                                    <Checkbox checked={value === survey._id} />
+                                    <Typography variant="body2">{survey.name}</Typography>
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                 );
             },
         },
@@ -301,7 +350,26 @@ const SuppliersComponent = ({ user }) => {
         },
     ];
 
-    // 添加供应商对话框组件
+    // 添加行更新处理
+    const processRowUpdate = async (newRow, oldRow) => {
+        if (newRow.chooseSurvey !== oldRow.chooseSurvey) {
+            try {
+                setLoadingUpdate(true);
+                await updateSupplier(newRow.id, { chooseSurvey: newRow.chooseSurvey });
+                toast.success('Survey updated successfully');
+                return newRow;
+            } catch (error) {
+                console.error('Failed to update survey:', error);
+                toast.error('Failed to update survey');
+                return oldRow; // 回滚到旧行数据
+            } finally {
+                setLoadingUpdate(false);
+            }
+        }
+        return newRow;
+    };    
+
+    // 添加 Supplier Dialog 组件（保持不变）
     const AddSupplierDialog = ({ open, handleClose }) => {
         return (
             <Dialog
@@ -328,7 +396,7 @@ const SuppliersComponent = ({ user }) => {
                             contact: '',
                             materialName: '',
                             partNumber: '',
-                            chooseSurvey: [],
+                            chooseSurvey: '', // 单选，初始化为空字符串
                             status: 'inactive',
                             feedback: '',
                             supplierDocuments: ''
@@ -338,7 +406,7 @@ const SuppliersComponent = ({ user }) => {
                             contact: Yup.string().required('Contact is required'),
                             materialName: Yup.string().required('Material Name is required'),
                             partNumber: Yup.string().required('Part Number is required'),
-                            chooseSurvey: Yup.array().of(Yup.string()), // 存储 ObjectId
+                            chooseSurvey: Yup.string(), // 单选，存储单个 ObjectId
                             status: Yup.string().oneOf(statusOptions).required('Status is required'),
                             feedback: Yup.string(),
                             supplierDocuments: Yup.string()
@@ -441,15 +509,10 @@ const SuppliersComponent = ({ user }) => {
                                             <Select
                                                 labelId="chooseSurvey-label"
                                                 id="chooseSurvey"
-                                                multiple
                                                 value={values.chooseSurvey}
                                                 name="chooseSurvey"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                renderValue={(selected) => {
-                                                    const selectedSurveys = surveys.filter(survey => selected.includes(survey._id));
-                                                    return selectedSurveys.map(survey => survey.name).join(', ');
-                                                }}
                                             >
                                                 {surveys.map((survey) => (
                                                     <MenuItem key={survey._id} value={survey._id}>
@@ -584,12 +647,14 @@ const SuppliersComponent = ({ user }) => {
                     autoPageSize
                     density={'standard'}
                     disableSelectionOnClick
-                    loading={isLoading}
+                    loading={isLoading || loadingUpdate} // 添加更新加载状态
                     components={{
                         Toolbar: GridToolbar,
                         LoadingOverlay: CustomLoadingOverlay,
                         NoRowsOverlay: CustomNoRowsOverlay
                     }}
+                    processRowUpdate={processRowUpdate} // 添加行更新处理
+                    experimentalFeatures={{ newEditingApi: true }} // 启用新编辑 API
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];

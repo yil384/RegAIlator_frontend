@@ -52,7 +52,8 @@ const SurveysComponent = ({ user }) => {
             const surveysData = response || [];
 
             surveysData.forEach((survey, index) => {
-                survey.id = index + 1; // 确保每个调查都有一个 'id' 字段
+                if (!survey._id) survey.id = index + 1; // 确保每个调查都有一个 'id' 字段
+                else survey.id = survey._id;
             });
 
             setSurveys(surveysData);
