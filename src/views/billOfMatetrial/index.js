@@ -1,33 +1,24 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import Swal from 'sweetalert2';
-import toast from 'react-hot-toast';
-
+import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { useTheme } from '@material-ui/styles';
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import { DataGrid, GridToolbar } from '@material-ui/data-grid';
-import { useTheme } from '@material-ui/styles';
-import Select from '@material-ui/core/Select';
-import MenuItem from '@material-ui/core/MenuItem';
-
-import { fetchSurveys } from './helper'; // 根据路径进行调整
-import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
-import Typography from '@material-ui/core/Typography';
-import { NotificationsActive } from '@material-ui/icons';
-import EmailListener from '../../utils/emailListener';
-
+import Checkbox from '@material-ui/core/Checkbox';
+import { Typography } from '@material-ui/core';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
-import Checkbox from '@material-ui/core/Checkbox';
+import { fetchBillOfMaterials } from './helper'; // 假设有一个获取数据的API
 
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import * as XLSX from 'xlsx';  // 导入 xlsx 库
+import toast from 'react-hot-toast';
+import { NotificationsActive } from '@material-ui/icons';
 
-const SurveysComponent = ({ user }) => {
+const BillOfMaterials = () => {
     const theme = useTheme();
 
-    const [surveys, setSurveys] = React.useState([]);
+    const [materials, setMaterials] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
@@ -35,19 +26,19 @@ const SurveysComponent = ({ user }) => {
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
-            const response = await fetchSurveys();
-            const surveysData = response || [];
+            const response = await fetchBillOfMaterials();
+            const materialsData = response || [];
 
-            surveysData.forEach((survey, index) => {
-                survey.id = index + 1; // 确保每个调查都有一个 'id' 字段
+            materialsData.forEach((material, index) => {
+                material.id = index + 1;
             });
 
-            setSurveys(surveysData);
-            setFilterIds(surveysData.map((survey) => survey.id));
+            setMaterials(materialsData);
+            setFilterIds(materialsData.map((material) => material.id));
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
-            console.error('Failed to load surveys:', e);
+            console.error('加载物料清单失败:', e);
         }
     }, []);
 
@@ -55,7 +46,6 @@ const SurveysComponent = ({ user }) => {
         loadData();
     }, [loadData]);
 
-    // 切换某一行的选中状态
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
@@ -64,7 +54,6 @@ const SurveysComponent = ({ user }) => {
         }
     };
 
-    // 全选/取消全选功能
     const handleSelectAll = () => {
         const allRowIds = filterIds.map((id) => id);
         if (filterIds.every((id) => selectedIds.includes(id))) {
@@ -75,7 +64,6 @@ const SurveysComponent = ({ user }) => {
     };
 
     const columns = [
-        // 选择框列
         {
             field: 'select',
             headerName: (
@@ -96,11 +84,7 @@ const SurveysComponent = ({ user }) => {
             width: 60,
             sortable: false,
             filterable: false,
-            resizable: false,
-            editable: false,
-            disableClickEventBubbling: true,
             disableColumnMenu: true,
-            headerAlign: 'center',
             renderCell: (params) => {
                 const isSelected = selectedIds.includes(params.row.id);
                 return (
@@ -116,103 +100,44 @@ const SurveysComponent = ({ user }) => {
                 );
             },
         },
-        // 其他列（如上所述）
-        // 标题列
         {
-            field: 'title',
-            headerName: 'Title',
-            sortable: true,
+            field: 'partNumber',
+            headerName: '零件编号',
+            width: 150,
+            renderCell: (params) => (
+                <Typography variant="body1">{params.row?.partNumber}</Typography>
+            ),
+        },
+        {
+            field: 'partName',
+            headerName: '零件名称',
             width: 200,
             renderCell: (params) => (
-                <Typography variant="link1">
-                    {params.row?.title}
-                </Typography>
+                <Typography variant="body1">{params.row?.partName}</Typography>
             ),
         },
-        // 名称列
         {
-            field: 'name',
-            headerName: 'Name',
-            sortable: true,
-            width: 160,
+            field: 'quantity',
+            headerName: '数量',
+            width: 100,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.name}
-                </Typography>
+                <Typography variant="body1">{params.row?.quantity}</Typography>
             ),
         },
-        // 内容列
         {
-            field: 'content',
-            headerName: 'Content',
-            sortable: false,
-            width: 300,
+            field: 'unit',
+            headerName: '单位',
+            width: 100,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.content}
-                </Typography>
+                <Typography variant="body1">{params.row?.unit}</Typography>
             ),
         },
-        // 描述列
         {
             field: 'description',
-            headerName: 'Description',
-            sortable: false,
-            width: 200,
+            headerName: '描述',
+            width: 300,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.description}
-                </Typography>
-            ),
-        },
-        // 附件列
-        {
-            field: 'attachment',
-            headerName: 'Attachment',
-            sortable: false,
-            width: 200,
-            renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.attachment}
-                </Typography>
-            ),
-        },
-        // 版本号列
-        {
-            field: 'revision',
-            headerName: 'Revision',
-            sortable: true,
-            width: 120,
-            renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.revision}
-                </Typography>
-            ),
-        },
-        // 创建时间列
-        {
-            field: 'createdAt',
-            headerName: 'Created At',
-            sortable: true,
-            width: 180,
-            valueFormatter: (params) => new Date(params.value).toLocaleString(),
-            renderCell: (params) => (
-                <Typography variant="value1">
-                    {new Date(params.row?.createdAt).toLocaleString()}
-                </Typography>
-            ),
-        },
-        // 更新时间列
-        {
-            field: 'updatedAt',
-            headerName: 'Updated At',
-            sortable: true,
-            width: 180,
-            valueFormatter: (params) => new Date(params.value).toLocaleString(),
-            renderCell: (params) => (
-                <Typography variant="value1">
-                    {new Date(params.row?.updatedAt).toLocaleString()}
-                </Typography>
+                <Typography variant="body1">{params.row?.description}</Typography>
             ),
         },
     ];
@@ -243,7 +168,7 @@ const SurveysComponent = ({ user }) => {
     };
 
     return (
-        <MainCard title='Surveys' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title="Bill of Material" boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <Button
                     variant='contained'
@@ -253,7 +178,7 @@ const SurveysComponent = ({ user }) => {
                     startIcon={<NotificationsActive />}
                     component="label"
                 >
-                    Batch import suppliers' emails from Excel
+                    导入物料清单
                     <input
                         type="file"
                         accept=".xlsx, .xls"
@@ -264,47 +189,43 @@ const SurveysComponent = ({ user }) => {
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
                 <DataGrid
-                    rows={surveys}
+                    rows={materials}
                     columns={columns}
                     pageSize={10}
-                    checkboxSelection={false}
                     autoHeight
                     autoPageSize
-                    density={'standard'}
+                    density="standard"
                     disableSelectionOnClick
                     loading={isLoading}
                     components={{
                         Toolbar: GridToolbar,
-                        LoadingOverlay: CustomLoadingOverlay,
-                        NoRowsOverlay: CustomNoRowsOverlay,
                     }}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];
                         });
-                        const filterIds = surveys
-                            .filter((survey) => {
-                                return filter.every(([field, operator, value]) => {
-                                    const cellValue = survey[field];
-                                    if (operator === 'contains') {
-                                        return cellValue?.toString().toLowerCase().includes(value.toLowerCase());
+                        const filterids = materials
+                            .filter((material) => {
+                                return filter.every((filter) => {
+                                    if (filter[1] === 'contains') {
+                                        return (
+                                            material[filter[0]]
+                                                .toString()
+                                                .toLowerCase()
+                                                .includes(filter[2].toLowerCase())
+                                        );
+                                    } else {
+                                        return true;
                                     }
-                                    // 处理其他操作符，如 'equals'，'startsWith'，'endsWith' 等
-                                    return true;
                                 });
                             })
-                            .map((survey) => survey.id);
-                        setFilterIds(filterIds);
+                            .map((material) => material.id);
+                        setFilterIds(filterids);
                     }}
                 />
             </div>
-            {/* <EmailListener /> */}
         </MainCard>
     );
 };
 
-const mapStateToProps = (state) => ({
-    user: state.authReducer.user,
-});
-
-export default connect(mapStateToProps, null)(SurveysComponent);
+export default BillOfMaterials;

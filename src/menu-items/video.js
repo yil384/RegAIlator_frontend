@@ -23,26 +23,10 @@ export const filesMenu = {
         {
             id: 'file_groups_menu',
             title: 'File Groups',
+            type: 'item',
+            url: '/video-groups',
             icon: icons['IconFolders'],
-            type: 'collapse',
-            children: [
-                {
-                    id: 'file_groups_all',
-                    title: 'All File Groups',
-                    type: 'item',
-                    url: '/video-groups',
-                    icon: icons['IconFolders'],
-                    breadcrumbs: false
-                },
-                {
-                    id: 'add_file_groups',
-                    title: 'Add File Groups',
-                    type: 'item',
-                    url: '/video-groups/add',
-                    icon: icons['IconFolderPlus'],
-                    breadcrumbs: false
-                }
-            ]
+            breadcrumbs: false
         },
         {
             id: 'files_list_menu',

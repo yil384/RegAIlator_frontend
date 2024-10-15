@@ -1,13 +1,13 @@
-// surveys.helper.js
+// suppliers.helper.js
 
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from './../../configs/endpoints';
 
-export const fetchSurveys = () =>
+export const fetchSuppliers = () =>
     fetchApi(
         {
             method: 'GET',
-            url: endpoints.surveys,
+            url: endpoints.suppliers,
         },
         true // 包含身份验证
     );

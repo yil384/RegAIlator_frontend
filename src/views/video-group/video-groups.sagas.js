@@ -23,7 +23,8 @@ function* addVideoGroupSaga(action) {
         const response = yield call(addVideoGroup, groupDetails);
         yield put(videoGroupActions.addVideoGroupSuccessAction(response));
         toast.success('Group added successfully!');
-        yield call(history.push, '/video-groups');
+        // 刷新数据
+        yield put(videoGroupActions.fetchVideoGroupsAction());
     } catch (e) {
         toast.error(e.message || 'Something went wrong!');
         yield put(videoGroupActions.addVideoGroupFailureAction(e));

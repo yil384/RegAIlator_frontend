@@ -8,6 +8,7 @@ import Loadable from '../ui-component/Loadable';
 import { getAccessToken } from '../services/authService';
 
 import toast from 'react-hot-toast';
+import BillOfMaterials from '../views/billOfMatetrial';
 
 // dashboard routing
 const DashboardDefault = Loadable(lazy(() => import('../views/dashboard')));
@@ -28,13 +29,13 @@ const SuppliersComponent = Loadable(lazy(() => import('../views/suppliers')));
 const SurveyTemplatesComponent = Loadable(lazy(() => import('../views/survey-templates')));
 // const SurveyTemplateDetailsComponent = Loadable(lazy(() => import('../views/survey-templates/details')));
 const VideoGroupsComponent = Loadable(lazy(() => import('../views/video-group')));
-const AddVideoGroupsComponent = Loadable(lazy(() => import('../views/video-group/addVideoGroup')));
 const VideoGroupDetailsComponent = Loadable(lazy(() => import('../views/video-group/videoGroupDetails')));
 const VideosComponent = Loadable(lazy(() => import('../views/videos')));
 const VideosDetailsComponent = Loadable(lazy(() => import('../views/videos/videoDetails')));
 const AddVideoComponent = Loadable(lazy(() => import('../views/videos/addVideo')));
 const WatchLogsComponent = Loadable(lazy(() => import('../views/watch-logs')));
 const ErrorLogsComponent = Loadable(lazy(() => import('../views/error-logs')));
+const BillOfMaterialsComponent = Loadable(lazy(() => import('../views/billOfMatetrial')));
 
 //-----------------------|| MAIN ROUTING ||-----------------------//
 
@@ -49,12 +50,12 @@ const routePaths = {
     videoViewer: '/video-explorer/viewer',
     videoGroupById: '/video-groups/:id',
     videoGroups: '/video-groups',
-    addVideoGroups: '/video-groups/add',
     videos: '/videos',
     videosById: '/videos/:id',
     addVideo: '/videos/add',
     watchLogs: '/logs/watch-logs',
-    errorLogs: '/logs/error-logs'
+    errorLogs: '/logs/error-logs',
+    BillOfMaterials: '/bill-of-materials'
 };
 
 const MainRoutes = () => {
@@ -86,13 +87,13 @@ const MainRoutes = () => {
                 routePaths.surveyTemplates,
                 routePaths.videoViewer,
                 routePaths.videoGroupById,
-                routePaths.addVideoGroups,
                 routePaths.videoGroups,
                 routePaths.addVideo,
                 routePaths.videos,
                 routePaths.videosById,
                 routePaths.watchLogs,
                 routePaths.errorLogs,
+                routePaths.BillOfMaterials,
 
                 '/utils/util-typography',
                 '/utils/util-color',
@@ -114,7 +115,6 @@ const MainRoutes = () => {
                     {/* <PrivateRoute path={routePaths.surveyTemplateById} component={SurveyTemplateDetailsComponent} /> */}
                     <PrivateRoute path={routePaths.surveyTemplates} component={SurveyTemplatesComponent} />
 
-                    <PrivateRoute path={routePaths.addVideoGroups} component={AddVideoGroupsComponent} />
                     <PrivateRoute path={routePaths.videoGroupById} component={VideoGroupDetailsComponent} />
                     <PrivateRoute path={routePaths.videoGroups} component={VideoGroupsComponent} />
                     <PrivateRoute path={routePaths.addVideo} component={AddVideoComponent} />
@@ -126,12 +126,13 @@ const MainRoutes = () => {
                     <PrivateRoute path={routePaths.watchLogs} component={WatchLogsComponent} />
                     <PrivateRoute path={routePaths.errorLogs} component={ErrorLogsComponent} />
 
+                    <PrivateRoute path={routePaths.BillOfMaterials} component={BillOfMaterialsComponent} />
+
                     <PrivateRoute path='/utils/util-typography' component={UtilsTypography} />
                     <PrivateRoute path='/utils/util-color' component={UtilsColor} />
                     <PrivateRoute path='/utils/util-shadow' component={UtilsShadow} />
                     <PrivateRoute path='/icons/tabler-icons' component={UtilsTablerIcons} />
                     <PrivateRoute path='/icons/material-icons' component={UtilsMaterialIcons} />
-
                 </Switch>
             </MainLayout>
         </Route>

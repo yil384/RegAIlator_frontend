@@ -10,7 +10,8 @@ const endpoints = {
     mentionUsers: `/auth/send-mention-email`,
     users: `/users`,
     userById: (id) => `/users/${id}`,
-    surveys: `/survey-templates`,
+    suppliers: '/auth/my-suppliers',
+    surveys: `/auth/my-surveys`,
     surveyTemplateById: (id) => `/survey-templates/${id}`,
     videoGroups: `/video-groups`,
     videoGroupById: (id) => `/video-groups/${id}`,
@@ -20,7 +21,8 @@ const endpoints = {
     watchLogById: (id) => `/watch-logs/${id}`,
     errorLogs: `/error-logs`,
     errorLogById: (id) => `/error-logs/${id}`,
-    upload_file: `videos/upload_file`
+    upload_file: `videos/upload_file`,
+    billOfMaterials: '/auth/my-bill-of-materials',
 };
 
 export default endpoints;

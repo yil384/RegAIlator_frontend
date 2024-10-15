@@ -1,3 +1,5 @@
+// VideoGroupComponent.js
+
 import React from 'react';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
@@ -7,7 +9,7 @@ import { useTheme } from '@material-ui/styles';
 
 import { DataGrid } from '@material-ui/data-grid';
 
-import { fetchVideoGroupsAction } from './video-groups.actions';
+import { fetchVideoGroupsAction, addVideoGroupAction } from './video-groups.actions';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
@@ -17,10 +19,61 @@ import EditIcon from '@material-ui/icons/Edit';
 import { deleteVideoGroup } from './video-groups.helper';
 import Swal from 'sweetalert2';
 
-const VideoGroupComponent = ({ fetchVideoGroupsAction, isLoading, videoGroups, user }) => {
+import {
+    Box,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    FormHelperText,
+    Grid,
+    InputLabel,
+    MenuItem,
+    OutlinedInput,
+    Select,
+    IconButton as MuiIconButton
+} from '@material-ui/core';
+
+import CloseIcon from '@material-ui/icons/Close';
+
+import * as Yup from 'yup';
+import { Formik } from 'formik';
+
+import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
+
+import { useStyles } from './video-groups.styles';
+
+import AnimateButton from '../../ui-component/extended/AnimateButton';
+import useScriptRef from '../../hooks/useScriptRef';
+import toast from 'react-hot-toast';
+
+// 主组件
+const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLoading, videoGroups, user }) => {
     const history = useHistory();
     const theme = useTheme();
     const userRole = user?.role;
+
+    const classes = useStyles();
+    const scriptedRef = useScriptRef();
+
+    const [openDialog, setOpenDialog] = React.useState(false);
+    const [selectedAccessState, setSelectedAccessState] = React.useState('public');
+
+    const handleOpenDialog = () => {
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
+
+    const handleAccessStatusChange = (value) => {
+        setSelectedAccessState(value);
+    };
+
+    const handleAddSuccess = () => {
+        fetchVideoGroupsAction(); // 刷新列表
+    };
 
     const columns = [
         {
@@ -111,8 +164,143 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, isLoading, videoGroups, u
         fetchVideoGroupsAction();
     }, [fetchVideoGroupsAction]);
 
+    // 添加视频组对话框组件
+    const AddVideoGroupDialog = ({ open, handleClose }) => {
+        return (
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                fullWidth
+                maxWidth="sm"
+                aria-labelledby="add-video-group-dialog-title"
+            >
+                <DialogTitle id="add-video-group-dialog-title">
+                    Add File Group
+                    <MuiIconButton
+                        aria-label="close"
+                        onClick={handleClose}
+                        style={{ position: 'absolute', right: theme.spacing(1), top: theme.spacing(1) }}
+                    >
+                        <CloseIcon />
+                    </MuiIconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Formik
+                        initialValues={{
+                            groupName: '',
+                            accessState: 'public'
+                        }}
+                        validationSchema={Yup.object().shape({
+                            groupName: Yup.string().min(2).required('Group name is required'),
+                            accessState: Yup.string()
+                        })}
+                        onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+                            try {
+                                if (scriptedRef.current) {
+                                    await addVideoGroupAction(values);
+                                    setStatus({ success: true });
+                                    setSubmitting(false);
+                                    handleClose(); // 成功后关闭对话框
+                                    handleAddSuccess(); // 通知父组件刷新数据
+                                }
+                            } catch (err) {
+                                if (scriptedRef.current) {
+                                    setStatus({ success: false });
+                                    setErrors({ submit: err.message });
+                                    setSubmitting(false);
+                                }
+                            }
+                        }}
+                    >
+                        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+                            <form onSubmit={handleSubmit}>
+                                <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="group-name">Group Name</InputLabel>
+                                            <OutlinedInput
+                                                id="group-name"
+                                                type="text"
+                                                value={values?.groupName}
+                                                name="groupName"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Group Name"
+                                                inputProps={{
+                                                    classes: {
+                                                        notchedOutline: classes.notchedOutline
+                                                    }
+                                                }}
+                                            />
+                                            {errors.groupName && (
+                                                <FormHelperText error id="standard-weight-helper-text-group-name">
+                                                    {errors.groupName}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl fullWidth className={classes.selectInput}>
+                                            <InputLabel htmlFor="group-access-status">Access status</InputLabel>
+                                            <Select
+                                                id="group-access-status"
+                                                labelId="group-access-status"
+                                                value={selectedAccessState}
+                                                name="accessState"
+                                                onChange={(e) => {
+                                                    handleChange(e);
+                                                    handleAccessStatusChange(e.target.value);
+                                                }}
+                                                label="Access Status"
+                                                inputProps={{
+                                                    classes: {
+                                                        notchedOutline: classes.notchedOutline
+                                                    }
+                                                }}
+                                            >
+                                                <MenuItem value="public">Public</MenuItem>
+                                                <MenuItem value="private">Private</MenuItem>
+                                                <MenuItem value="code_access">Code Access</MenuItem>
+                                            </Select>
+                                            {errors.accessState && (
+                                                <FormHelperText error id="standard-weight-helper-text-access-state">
+                                                    {errors.accessState}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+
+                                <Box sx={{ mt: 2 }}>
+                                    <AnimateButton>
+                                        <Button
+                                            disableElevation
+                                            disabled={isLoading}
+                                            fullWidth
+                                            size="large"
+                                            type="submit"
+                                            variant="contained"
+                                            color="primary"
+                                        >
+                                            {isLoading ? <LoaderInnerCircular /> : 'Save'}
+                                        </Button>
+                                    </AnimateButton>
+                                </Box>
+                            </form>
+                        )}
+                    </Formik>
+                </DialogContent>
+            </Dialog>
+        );
+    };
+
     return (
         <MainCard title='File Groups' boxShadow shadow={theme.shadows[2]}>
+            <Box sx={{ mb: 2 }}>
+                <Button variant="contained" color="primary" onClick={handleOpenDialog}>
+                    Add Video Group
+                </Button>
+            </Box>
             <div style={{ width: '100%' }}>
                 <DataGrid
                     rows={videoGroups?.results || []}
@@ -131,6 +319,8 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, isLoading, videoGroups, u
                     }}
                 />
             </div>
+            {/* 添加对话框组件 */}
+            <AddVideoGroupDialog open={openDialog} handleClose={handleCloseDialog} />
         </MainCard>
     );
 };
@@ -142,7 +332,8 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    fetchVideoGroupsAction: (obj) => dispatch(fetchVideoGroupsAction(obj))
+    fetchVideoGroupsAction: (obj) => dispatch(fetchVideoGroupsAction(obj)),
+    addVideoGroupAction: (obj) => dispatch(addVideoGroupAction(obj))
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(VideoGroupComponent);

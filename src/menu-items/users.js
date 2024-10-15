@@ -19,7 +19,7 @@ return <DeliveryIcon />;
 }
 
 export const adminMenu = {
-    id: 'users_menu',
+    id: 'admin_users_menu',
     title: 'Accounts',
     caption: 'Praxi Users',
     type: 'group',
@@ -50,19 +50,28 @@ export const usersMenu = {
     type: 'group',
     children: [
         {
+            id: 'menu_contacts',
+            title: 'Contacts',
+            type: 'item',
+            url: '/users',
+            icon: PeopleOutline,
+            breadcrumbs: false
+        }
+    ]
+};
+
+export const productsMenu = {
+    id: 'products_menu',
+    title: 'Accounts',
+    caption: 'Praxi Users',
+    type: 'group',
+    children: [
+        {
             id: 'users_menu',
             title: 'Product',
             type: 'collapse',
             icon: BallotOutlined,
             children: [
-                {
-                    id: 'menu_contacts',
-                    title: 'Contacts',
-                    type: 'item',
-                    url: '/users',
-                    icon: PeopleOutline,
-                    breadcrumbs: false
-                },
                 {
                     id: 'menu_suppliers',
                     title: 'Suppliers',
@@ -80,10 +89,10 @@ export const usersMenu = {
                     breadcrumbs: false
                 },
                 {
-                    id: 'menu_contacts',
+                    id: 'menu_bill_of_materials',
                     title: 'Bill of Materials',
                     type: 'item',
-                    url: '/users',
+                    url: '/bill-of-materials',
                     icon: DeliveryOutlined,
                     breadcrumbs: false
                 }

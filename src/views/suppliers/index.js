@@ -14,7 +14,7 @@ import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select'; // Import Select component
 import MenuItem from '@material-ui/core/MenuItem'; // Import MenuItem component
 
-import { fetchUsers, deleteUser } from '../users/users.helper';
+import { fetchSuppliers } from './helper'; // 根据路径进行调整
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
@@ -32,7 +32,7 @@ const StudentsComponent = ({ user }) => {
     const theme = useTheme();
     const history = useHistory();
 
-    const [students, setStudents] = React.useState([]);
+    const [suppliers, setSuppliers] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]); // 记录选中的行
     const [filterIds, setFilterIds] = React.useState([]); // 记录筛选的行
@@ -40,24 +40,23 @@ const StudentsComponent = ({ user }) => {
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
-            const response = await fetchUsers();
-            const tmepStudents = response?.results || [];
-            // 将students的每个元素做转换：
-            tmepStudents.forEach((student) => {
-                student.fullName = `${student.firstname} ${student.lastname}`; // 生成全名
-                student.email = student.email; // 生成邮箱
-                student.role = student.role; // 生成角色
-                student.remark = student.remark; // 生成备注
-                student.status = student.status; // 生成状态
-                student.reply = student.reply; // 生成回信状态
+            const response = await fetchSuppliers();
+            const suppliersData = response || []; // 根据 API 响应结构进行调整
+    
+            // 处理供应商数据
+            suppliersData.forEach((supplier, index) => {
+                supplier.id = index + 1; // 确保每个供应商都有一个 'id' 字段供 DataGrid 使用
+                // 如果需要，映射其他字段
             });
-            setStudents(tmepStudents);
-            setFilterIds(tmepStudents.map((student) => student.id)); // 初始化filterIds
+    
+            setSuppliers(suppliersData);
+            setFilterIds(suppliersData.map((supplier) => supplier.id)); // 初始化 filterIds
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
+            console.error('Failed to load suppliers:', e);
         }
-    }, []);
+    }, []);    
 
     React.useEffect(() => {
         loadData();
@@ -89,10 +88,10 @@ const StudentsComponent = ({ user }) => {
     };
 
     const handleStatusChange = (id, newStatus) => {
-        const updatedStudents = students.map((student) =>
-            student.id === id ? { ...student, status: newStatus } : student
+        const updatedSuppliers = suppliers.map((supplier) =>
+            suppliers.id === id ? { ...supplier, status: newStatus } : supplier
         );
-        setStudents(updatedStudents);
+        setSuppliers(updatedSuppliers);
     };
 
     // 切换某一行的选中状态
@@ -120,270 +119,157 @@ const StudentsComponent = ({ user }) => {
     };
 
     const columns = [
+        // 选择框列（与之前相同）
         {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={filterIds.length > 0 && 
+                    checked={
+                        filterIds.length > 0 &&
                         filterIds.every((id) => selectedIds.includes(id))
-                    } // 全选状态，selectedIds和filterIds内容相同
-                    indeterminate={filterIds.length > 0 && 
+                    }
+                    indeterminate={
+                        filterIds.length > 0 &&
                         filterIds.some((id) => selectedIds.includes(id)) &&
                         !filterIds.every((id) => selectedIds.includes(id))
-                    } // 部分选中状态
-                    onChange={handleSelectAll} // 处理全选逻辑
-                    style={{ padding: 0 }} // 去掉默认的 padding
+                    }
+                    onChange={handleSelectAll}
+                    style={{ padding: 0 }}
                 />
             ),
-            description: 'This column has a value getter and is not sortable.',
             width: 60,
             sortable: false,
             filterable: false,
             resizable: false,
             editable: false,
             disableClickEventBubbling: true,
-            disableColumnMenu: true, // 禁用列头的菜单（三个点的菜单）
+            disableColumnMenu: true,
             headerAlign: 'center',
             renderCell: (params) => {
                 const isSelected = selectedIds.includes(params.row.id);
                 return (
-                    // 居中显示
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <IconButton onClick={() => handleSelect(params.row.id)}>
                             {isSelected ? (
-                                <CheckCircleIcon style={{ color: 'green' }} /> // 已选中
+                                <CheckCircleIcon style={{ color: 'green' }} />
                             ) : (
-                                <RadioButtonUncheckedIcon /> // 未选中
+                                <RadioButtonUncheckedIcon />
                             )}
                         </IconButton>
                     </div>
                 );
-            }
+            },
         },
-        // { field: 'id', width: 140, headerName: 'ID', hide: false },
+        // 供应商名称列
         {
-            field: 'fullName',
-            headerName: 'Full name',
-            description: 'This column has a value getter and is sortable.',
+            field: 'supplierName',
+            headerName: 'Supplier Name',
             sortable: true,
             width: 160,
-            resizable: false,
-            valueGetter: (params) => `${params.row?.firstname} ${params.row?.lastname}`,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='link1' component={Link} to={`students/${params.row.id}`}>
-                        {params.row?.firstname} {params.row?.lastname}
-                    </Typography>
-                );
-            }
+            renderCell: (params) => (
+                <Typography variant="link1">
+                    {params.row?.supplierName}
+                </Typography>
+            ),
         },
+        // 联系方式列
         {
-            field: 'email',
-            headerName: 'Email',
-            description: 'This column is sortable and filterable.',
+            field: 'contact',
+            headerName: 'Contact',
             sortable: true,
-            filterable: true,
             width: 270,
-            editable: true,
-            resizable: false,
-            valueGetter: (params) => params.row?.email,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
-                        {params.row?.email}
-                    </Typography>
-                );
-            }
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.contact}
+                </Typography>
+            ),
         },
+        // 材料名称列
         {
-            field: 'Role',
-            headerName: 'Role',
-            description: 'User privilege',
+            field: 'materialName',
+            headerName: 'Material Name',
             sortable: true,
-            width: 160,
-            resizable: false,
-            disableClickEventBubbling: true,
-            valueGetter: (params) => params.row?.role,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
-                        {params.row?.role.toUpperCase()}
-                    </Typography>
-                );
-            }
+            width: 200,
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.materialName}
+                </Typography>
+            ),
         },
-        // {
-        //     field: 'Instructors',
-        //     headerName: 'Instructors',
-        //     width: 220,
-        //     editable: true,
-        //     resizable: false,
-        //     valueFormatter: (params) => params.row?.instructors?.reduce((previousValue, currentValue) => {
-        //         return previousValue + `${currentValue.userId.firstname} ;`;
-        //     }, ''),
-        //     renderCell: (params) => {
-        //         return (
-        //             <Typography>
-        //                 ( {params.row?.instructors.length} )
-        //                 {params.row?.instructors?.map((item) => (
-        //                     <span key={item.id}> {item.userId.firstname}{' ; '} </span>
-        //                 ))}
-        //             </Typography>
-        //         );
-        //     }
-        // },
+        // 零件编号列
         {
-            field: 'Mention',
-            headerName: 'Email Mention',
-            headerAlign: 'center',
-            description: 'Mention the user to upload the regulation we requested.',
+            field: 'partNumber',
+            headerName: 'Part Number',
             sortable: true,
-            width: 190,
-            resizable: false,
-            hide: false,
-            valueGetter: (params) => params.row?.email,
-            renderCell: (params) => {
-                return (
-                    <strong>
-                        <Button
-                            variant='contained'
-                            color='primary'
-                            size='small'
-                            style={{ marginLeft: 16 }}
-                            startIcon={<NotificationsActive />}
-                            // 按下后调用 mentionUsers 函数
-                            onClick={() => mentionUsers({ email: params.row?.email, mention: 'Hello' })}
-                        >
-                            Mention
-                        </Button>
-                    </strong>
-                );
-            }
+            width: 150,
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.partNumber}
+                </Typography>
+            ),
         },
+        // 选择的调查列
         {
-            field: 'Remark',
-            headerName: 'Remark',
-            headerAlign: 'center',
-            description: 'Remark the user in case that we need to remember something.',
+            field: 'chooseSurvey',
+            headerName: 'Choose Survey',
             sortable: true,
-            width: 190,
-            resizable: false,
-            disableExport: true,
-            valueGetter: (params) => params.row?.remark,
-            renderCell: (params) => {
-                return (
-                    <strong>
-                        <Button
-                            variant='contained'
-                            color='primary'
-                            size='small'
-                            style={{ marginLeft: 16 }}
-                            startIcon={<EditIcon />}
-                            onClick={() => {
-                                history.push(`students/${params.row.id}`);
-                            }}
-                        >
-                            Details
-                        </Button>
-                        {/*{user.role === 'admin' && (*/}
-                        {/*    <IconButton*/}
-                        {/*        style={{ marginLeft: 16 }}*/}
-                        {/*        onClick={(event) => {*/}
-                        {/*            event.ignore = true;*/}
-                        {/*            Swal.fire({*/}
-                        {/*                text: `Are you sure you wish to delete this ${params.row.email} item?`,*/}
-                        {/*                icon: 'warning',*/}
-                        {/*                showCancelButton: true,*/}
-                        {/*                confirmButtonColor: theme.palette.primary['main'],*/}
-                        {/*                cancelButtonColor: theme.palette.error['dark'],*/}
-                        {/*                confirmButtonText: 'Yes, delete it!'*/}
-                        {/*            }).then(async (result) => {*/}
-                        {/*                if (result.isConfirmed) {*/}
-                        {/*                    await deleteStudent(params.row.id);*/}
-                        {/*                    await fetchStudents();*/}
-                        {/*                    toast.success('Your item has been deleted');*/}
-                        {/*                }*/}
-                        {/*            });*/}
-                        {/*        }}*/}
-                        {/*    >*/}
-                        {/*        <DeleteIcon color={'error'} />*/}
-                        {/*    </IconButton>*/}
-                        {/*)}*/}
-                    </strong>
-                );
-            }
+            width: 200,
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.chooseSurvey?.join(', ')}
+                </Typography>
+            ),
         },
-        // {
-        //     field: 'VideoGroups',
-        //     headerName: 'Video Groups',
-        //     sortable: false,
-        //     width: 270,
-        //     resizable: false,
-        //     disableClickEventBubbling: true,
-        //     hide: false,
-        //     valueFormatter: (params) => params.row?.videoGroups?.reduce((previousValue, currentValue) => {
-        //         return previousValue + `${currentValue.groupName} ;`;
-        //     }, ''),
-        //     renderCell: (params) => {
-        //         return (
-        //             <Typography variant='value1'>
-        //                 ( {params.row?.videoGroups.length} )
-        //                 {params.row?.videoGroups?.map((item) => (
-        //                     <span key={item.id}> {item.groupName} {' ; '}  </span>
-        //                 ))}
-        //             </Typography>
-        //         );
-        //     }
-        // },
+        // 状态列
         {
-            field: 'Status',
+            field: 'status',
             headerName: 'Status',
             sortable: true,
-            width: 270,
-            resizable: false,
-            disableClickEventBubbling: true,
-            hide: false,
-            editable: true, // 允许编辑
-            valueGetter: (params) => params.row?.status,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
-                        {params.row?.status}
-                    </Typography>
-                );
-            },
-            renderEditCell: (params) => {
-                return (
-                    <Select
-                        value={params.row.status}
-                        onChange={(event) => handleStatusChange(params.row.id, event.target.value)}
-                    >
-                        {statusOptions.map((status) => (
-                            <MenuItem key={status} value={status}>
-                                {status}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                );
-            }
+            width: 150,
+            editable: true,
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.status}
+                </Typography>
+            ),
+            renderEditCell: (params) => (
+                <Select
+                    value={params.row.status}
+                    onChange={(event) => handleStatusChange(params.row.id, event.target.value)}
+                >
+                    {statusOptions.map((status) => (
+                        <MenuItem key={status} value={status}>
+                            {status}
+                        </MenuItem>
+                    ))}
+                </Select>
+            ),
         },
+        // 反馈列
         {
-            field: 'reply', // 回信字段
-            headerName: 'Reply Status',
+            field: 'feedback',
+            headerName: 'Feedback',
+            sortable: true,
             width: 200,
-            sortable: false,
-            resizable: false,
-            description: 'This column shows the reply status of the user.',
-            valueGetter: (params) => params.row.reply,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
-                        {params.row.reply}
-                    </Typography>
-                );
-            }
-        }
-    ];
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.feedback}
+                </Typography>
+            ),
+        },
+        // 供应商文档列
+        {
+            field: 'supplierDocuments',
+            headerName: 'Supplier Documents',
+            sortable: true,
+            width: 200,
+            renderCell: (params) => (
+                <Typography variant="value1">
+                    {params.row?.supplierDocuments}
+                </Typography>
+            ),
+        },
+    ];    
 
     return (
         <MainCard title='Suppliers' boxShadow shadow={theme.shadows[2]}>
@@ -407,7 +293,7 @@ const StudentsComponent = ({ user }) => {
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
                 <DataGrid
-                    rows={students}
+                    rows={suppliers}
                     columns={columns}
                     pageSize={10}
                     checkboxSelection={false}
@@ -425,7 +311,7 @@ const StudentsComponent = ({ user }) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];
                         });
-                        const filterids = students.filter((student) => {
+                        const filterids = suppliers.filter((student) => {
                             return filter.every((filter) => {
                                 if (filter[1] == 'isEmpty') {
                                     return student[filter[0]] === '' || student[filter[0]] === undefined;
@@ -450,7 +336,7 @@ const StudentsComponent = ({ user }) => {
                     }}
                 />
             </div>
-            <EmailListener />
+            {/* <EmailListener /> */}
         </MainCard>
     );
 };
