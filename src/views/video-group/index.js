@@ -298,7 +298,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
         <MainCard title='File Groups' boxShadow shadow={theme.shadows[2]}>
             <Box sx={{ mb: 2 }}>
                 <Button variant="contained" color="primary" onClick={handleOpenDialog}>
-                    Add Video Group
+                    Add File Group
                 </Button>
             </Box>
             <div style={{ width: '100%' }}>

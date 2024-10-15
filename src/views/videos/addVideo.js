@@ -148,7 +148,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     }, []);
 
     return (
-        <MainCard title='Add Video' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title='Add File' boxShadow shadow={theme.shadows[2]}>
             <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
                 <Formik
                     initialValues={{}}
@@ -167,11 +167,15 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                             const response = await uploadFile(data); // Upload and get JSON response
                             console.log('response', response);
                             if (response?.status) {
-                                toast.success('Upload successful!');
+                                toast.success('Parse successful!');
                                 handleFilePreview(response);  // Pass the full response to the preview handler
                             }
                         } catch (err) {
-                            console.error(err);
+                            if (err.status === 413) {
+                                setErrors({ submit: 'File size too large. Please upload a smaller file' });
+                                toast.error('File size too large. Please upload a smaller file');
+                            }
+                            console.error('Error uploading file', err);
                             setErrors({ submit: err.message });
                             setSubmitting(false);
                         }
@@ -182,7 +186,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                             <Grid container>
                                 <Grid item xs={12} sm={12} md={12} lg={6}>
                                     <FormControl fullWidth className={classes.selectInput}>
-                                        <InputLabel htmlFor='video-group'>Video Group</InputLabel>
+                                        <InputLabel htmlFor='video-group'>File Group</InputLabel>
                                         <Select
                                             id='video-group'
                                             labelId='video-group'
