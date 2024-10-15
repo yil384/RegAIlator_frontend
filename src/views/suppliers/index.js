@@ -1,81 +1,90 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import * as XLSX from 'xlsx';  // 导入 xlsx 库
+import * as XLSX from 'xlsx';
 
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import DeleteIcon from '@material-ui/icons/DeleteForever';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
-import Select from '@material-ui/core/Select'; // Import Select component
-import MenuItem from '@material-ui/core/MenuItem'; // Import MenuItem component
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
 
-import { fetchSuppliers } from './helper'; // 根据路径进行调整
+import { fetchSuppliers, addSupplier } from './helper'; // Adjust the path as needed
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
-import EditIcon from '@material-ui/icons/Edit';
-import { NotificationsActive } from '@material-ui/icons';
+import { DownloadOutlined, NotificationsActive } from '@material-ui/icons';
 import EmailListener from '../../utils/emailListener';
 
-import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // 实心圆带对号
-import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // 空心圆
-import Checkbox from '@material-ui/core/Checkbox'; // 用于全选
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
+import Checkbox from '@material-ui/core/Checkbox';
 
-const statusOptions = ['inactive', 'replied', 'read', 'unread']; // 定义状态选项
+import { Dialog, DialogContent, DialogTitle, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
+import CloseIcon from '@material-ui/icons/Close';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
+import AnimateButton from '../../ui-component/extended/AnimateButton';
+import useScriptRef from '../../hooks/useScriptRef';
+import { useStyles } from './styles'; // Adjust the path or create a styles file as needed
 
-const StudentsComponent = ({ user }) => {
+const statusOptions = ['inactive', 'replied', 'read', 'unread']; // Define status options
+
+const SuppliersComponent = ({ user }) => {
     const theme = useTheme();
     const history = useHistory();
 
     const [suppliers, setSuppliers] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
-    const [selectedIds, setSelectedIds] = React.useState([]); // 记录选中的行
-    const [filterIds, setFilterIds] = React.useState([]); // 记录筛选的行
+    const [selectedIds, setSelectedIds] = React.useState([]);
+    const [filterIds, setFilterIds] = React.useState([]);
+    const [openDialog, setOpenDialog] = React.useState(false);
+
+    const classes = useStyles();
+    const scriptedRef = useScriptRef();
 
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
             const response = await fetchSuppliers();
-            const suppliersData = response || []; // 根据 API 响应结构进行调整
-    
-            // 处理供应商数据
+            const suppliersData = response || [];
+
             suppliersData.forEach((supplier, index) => {
-                supplier.id = index + 1; // 确保每个供应商都有一个 'id' 字段供 DataGrid 使用
-                // 如果需要，映射其他字段
+                supplier.id = index + 1;
             });
-    
+
             setSuppliers(suppliersData);
-            setFilterIds(suppliersData.map((supplier) => supplier.id)); // 初始化 filterIds
+            setFilterIds(suppliersData.map((supplier) => supplier.id));
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
             console.error('Failed to load suppliers:', e);
         }
-    }, []);    
+    }, []);
 
     React.useEffect(() => {
         loadData();
     }, [loadData]);
 
-    // 处理 Excel 文件的上传
+    // Handle Excel file upload
     const handleExcelUpload = (event) => {
         const file = event.target.files[0];
         const reader = new FileReader();
-        
+
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0]; // 获取第一个工作表
+            const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
 
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             jsonData.forEach(row => {
-                const email = row.email; // 读取邮箱
+                const email = row.email;
                 if (email) {
                     mentionUsers({ email, mention: 'Hello' });
                 }
@@ -89,37 +98,44 @@ const StudentsComponent = ({ user }) => {
 
     const handleStatusChange = (id, newStatus) => {
         const updatedSuppliers = suppliers.map((supplier) =>
-            suppliers.id === id ? { ...supplier, status: newStatus } : supplier
+            supplier.id === id ? { ...supplier, status: newStatus } : supplier
         );
         setSuppliers(updatedSuppliers);
     };
 
-    // 切换某一行的选中状态
+    // Toggle selection of a row
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
-            // 如果已经选中，则取消选中
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
         } else {
-            // 如果未选中，则添加到选中列表中
             setSelectedIds([...selectedIds, id]);
         }
     };
 
-    // 全选/取消全选功能
+    // Select/Deselect all rows
     const handleSelectAll = () => {
-        const allRowIds = filterIds.map((id) => id); // 获取所有行的id
+        const allRowIds = filterIds.map((id) => id);
         if (filterIds.every((id) => selectedIds.includes(id))) {
-            // 如果所有行已被选中，则取消全选filterIds
-            console.log('all selected', filterIds);
             setSelectedIds(selectedIds.filter((id) => !filterIds.includes(id)));
         } else {
-            // 否则，选中所有行，去重，保证不会重复添加，之前的selectedIds不会被覆盖
             setSelectedIds([...new Set([...selectedIds, ...allRowIds])]);
         }
     };
 
+    // Handle dialog open and close
+    const handleOpenDialog = () => {
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
+
+    const handleAddSuccess = () => {
+        loadData(); // Reload data after adding a supplier
+    };
+
     const columns = [
-        // 选择框列（与之前相同）
         {
             field: 'select',
             headerName: (
@@ -160,7 +176,6 @@ const StudentsComponent = ({ user }) => {
                 );
             },
         },
-        // 供应商名称列
         {
             field: 'supplierName',
             headerName: 'Supplier Name',
@@ -172,7 +187,6 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-        // 联系方式列
         {
             field: 'contact',
             headerName: 'Contact',
@@ -184,7 +198,6 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-        // 材料名称列
         {
             field: 'materialName',
             headerName: 'Material Name',
@@ -196,7 +209,6 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-        // 零件编号列
         {
             field: 'partNumber',
             headerName: 'Part Number',
@@ -208,7 +220,6 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-        // 选择的调查列
         {
             field: 'chooseSurvey',
             headerName: 'Choose Survey',
@@ -220,7 +231,6 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-        // 状态列
         {
             field: 'status',
             headerName: 'Status',
@@ -245,7 +255,6 @@ const StudentsComponent = ({ user }) => {
                 </Select>
             ),
         },
-        // 反馈列
         {
             field: 'feedback',
             headerName: 'Feedback',
@@ -257,7 +266,6 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-        // 供应商文档列
         {
             field: 'supplierDocuments',
             headerName: 'Supplier Documents',
@@ -269,7 +277,244 @@ const StudentsComponent = ({ user }) => {
                 </Typography>
             ),
         },
-    ];    
+    ];
+
+    // Add Supplier Dialog Component
+    const AddSupplierDialog = ({ open, handleClose }) => {
+        return (
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                fullWidth
+                maxWidth="sm"
+                aria-labelledby="add-supplier-dialog-title"
+            >
+                <DialogTitle id="add-supplier-dialog-title">
+                    Add Supplier
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleClose}
+                        style={{ position: 'absolute', right: theme.spacing(1), top: theme.spacing(1) }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Formik
+                        initialValues={{
+                            supplierName: '',
+                            contact: '',
+                            materialName: '',
+                            partNumber: '',
+                            chooseSurvey: [],
+                            status: 'inactive',
+                            feedback: '',
+                            supplierDocuments: ''
+                        }}
+                        validationSchema={Yup.object().shape({
+                            supplierName: Yup.string().required('Supplier Name is required'),
+                            contact: Yup.string().required('Contact is required'),
+                            materialName: Yup.string().required('Material Name is required'),
+                            partNumber: Yup.string().required('Part Number is required'),
+                            chooseSurvey: Yup.array().of(Yup.string()),
+                            status: Yup.string().oneOf(statusOptions).required('Status is required'),
+                            feedback: Yup.string(),
+                            supplierDocuments: Yup.string()
+                        })}
+                        onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+                            try {
+                                if (scriptedRef.current) {
+                                    await addSupplier(values);
+                                    setStatus({ success: true });
+                                    setSubmitting(false);
+                                    handleClose();
+                                    handleAddSuccess();
+                                    toast.success('Supplier added successfully');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                if (scriptedRef.current) {
+                                    setStatus({ success: false });
+                                    setErrors({ submit: err.message });
+                                    setSubmitting(false);
+                                    toast.error('Failed to add supplier');
+                                }
+                            }
+                        }}
+                    >
+                        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+                            <form onSubmit={handleSubmit}>
+                                <MuiGrid container spacing={2}>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="supplierName">Supplier Name</InputLabel>
+                                            <OutlinedInput
+                                                id="supplierName"
+                                                type="text"
+                                                value={values.supplierName}
+                                                name="supplierName"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Supplier Name"
+                                            />
+                                            {errors.supplierName && (
+                                                <FormHelperText error>{errors.supplierName}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <TextField
+                                                id="contact"
+                                                label="Contact"
+                                                multiline
+                                                rows={2}
+                                                value={values.contact}
+                                                name="contact"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                            />
+                                            {errors.contact && (
+                                                <FormHelperText error>{errors.contact}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="materialName">Material Name</InputLabel>
+                                            <OutlinedInput
+                                                id="materialName"
+                                                type="text"
+                                                value={values.materialName}
+                                                name="materialName"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Material Name"
+                                            />
+                                            {errors.materialName && (
+                                                <FormHelperText error>{errors.materialName}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="partNumber">Part Number</InputLabel>
+                                            <OutlinedInput
+                                                id="partNumber"
+                                                type="text"
+                                                value={values.partNumber}
+                                                name="partNumber"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Part Number"
+                                            />
+                                            {errors.partNumber && (
+                                                <FormHelperText error>{errors.partNumber}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel id="chooseSurvey-label">Choose Survey</InputLabel>
+                                            <Select
+                                                labelId="chooseSurvey-label"
+                                                id="chooseSurvey"
+                                                multiple
+                                                value={values.chooseSurvey}
+                                                name="chooseSurvey"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                renderValue={(selected) => selected.join(', ')}
+                                            >
+                                                {/* Replace with actual survey options */}
+                                                <MenuItem value="Survey 1">Survey 1</MenuItem>
+                                                <MenuItem value="Survey 2">Survey 2</MenuItem>
+                                                <MenuItem value="Survey 3">Survey 3</MenuItem>
+                                            </Select>
+                                            {errors.chooseSurvey && (
+                                                <FormHelperText error>{errors.chooseSurvey}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel id="status-label">Status</InputLabel>
+                                            <Select
+                                                labelId="status-label"
+                                                id="status"
+                                                value={values.status}
+                                                name="status"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                            >
+                                                {statusOptions.map((status) => (
+                                                    <MenuItem key={status} value={status}>
+                                                        {status}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                            {errors.status && (
+                                                <FormHelperText error>{errors.status}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <TextField
+                                                id="feedback"
+                                                label="Feedback"
+                                                multiline
+                                                rows={2}
+                                                value={values.feedback}
+                                                name="feedback"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                            />
+                                            {errors.feedback && (
+                                                <FormHelperText error>{errors.feedback}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="supplierDocuments">Supplier Documents</InputLabel>
+                                            <OutlinedInput
+                                                id="supplierDocuments"
+                                                type="text"
+                                                value={values.supplierDocuments}
+                                                name="supplierDocuments"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Supplier Documents"
+                                            />
+                                            {errors.supplierDocuments && (
+                                                <FormHelperText error>{errors.supplierDocuments}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                </MuiGrid>
+
+                                <AnimateButton>
+                                    <Button
+                                        disableElevation
+                                        disabled={isSubmitting}
+                                        fullWidth
+                                        size="large"
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
+                                        style={{ marginTop: '16px' }}
+                                    >
+                                        {isSubmitting ? <LoaderInnerCircular /> : 'Save'}
+                                    </Button>
+                                </AnimateButton>
+                            </form>
+                        )}
+                    </Formik>
+                </DialogContent>
+            </Dialog>
+        );
+    };
 
     return (
         <MainCard title='Suppliers' boxShadow shadow={theme.shadows[2]}>
@@ -278,11 +523,23 @@ const StudentsComponent = ({ user }) => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70 }} // 调整按钮位置, 使其与表格对齐, 70-31=39
-                    startIcon={<NotificationsActive />}
+                    style={{ top: -70 }}
+                    startIcon={<DownloadOutlined />}
+                    component="label"
+                    onClick={handleOpenDialog}
+                >
+                    Add Supplier
+                </Button>
+                {/* Excel Upload Button (if needed) */}
+                <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    startIcon={<DownloadOutlined />}
                     component="label"
                 >
-                    Batch import suppliers' emails from Excel
+                    Batch Import Suppliers from Excel
                     <input
                         type="file"
                         accept=".xlsx, .xls"
@@ -311,32 +568,33 @@ const StudentsComponent = ({ user }) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];
                         });
-                        const filterids = suppliers.filter((student) => {
+                        const filterids = suppliers.filter((supplier) => {
                             return filter.every((filter) => {
-                                if (filter[1] == 'isEmpty') {
-                                    return student[filter[0]] === '' || student[filter[0]] === undefined;
-                                } else if (filter[1] == 'isNotEmpty') {
-                                    return student[filter[0]] !== '' && student[filter[0]] !== undefined;
+                                if (filter[1] === 'isEmpty') {
+                                    return supplier[filter[0]] === '' || supplier[filter[0]] === undefined;
+                                } else if (filter[1] === 'isNotEmpty') {
+                                    return supplier[filter[0]] !== '' && supplier[filter[0]] !== undefined;
                                 } else if (filter[2] === undefined) {
                                     return true;
                                 } else if (filter[1] === 'contains') {
-                                    return student[filter[0]].toLowerCase().includes(filter[2].toLowerCase())
+                                    return supplier[filter[0]]?.toLowerCase().includes(filter[2].toLowerCase());
                                 } else if (filter[1] === 'equals') {
-                                    return student[filter[0]].toLowerCase() === filter[2].toLowerCase();
+                                    return supplier[filter[0]]?.toLowerCase() === filter[2].toLowerCase();
                                 } else if (filter[1] === 'startsWith') {
-                                    return student[filter[0]].toLowerCase().startsWith(filter[2].toLowerCase());
+                                    return supplier[filter[0]]?.toLowerCase().startsWith(filter[2].toLowerCase());
                                 } else if (filter[1] === 'endsWith') {
-                                    return student[filter[0]].toLowerCase().endsWith(filter[2].toLowerCase());
+                                    return supplier[filter[0]]?.toLowerCase().endsWith(filter[2].toLowerCase());
                                 } else {
                                     return false;
                                 }
-                            }); 
-                        }).map((student) => student.id);
+                            });
+                        }).map((supplier) => supplier.id);
                         setFilterIds(filterids);
                     }}
                 />
             </div>
             {/* <EmailListener /> */}
+            <AddSupplierDialog open={openDialog} handleClose={handleCloseDialog} />
         </MainCard>
     );
 };
@@ -345,4 +603,4 @@ const mapStateToProps = (state) => ({
     user: state.authReducer.user
 });
 
-export default connect(mapStateToProps, null)(StudentsComponent);
+export default connect(mapStateToProps, null)(SuppliersComponent);

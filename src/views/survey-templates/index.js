@@ -11,10 +11,10 @@ import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 
-import { fetchSurveys } from './helper'; // 根据路径进行调整
+import { fetchSurveys, addSurvey } from './helper'; // 根据路径进行调整
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
-import { NotificationsActive } from '@material-ui/icons';
+import { DownloadOutlined, ImportContactsOutlined, ImportExportOutlined, NotificationsActive } from '@material-ui/icons';
 import EmailListener from '../../utils/emailListener';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
@@ -24,6 +24,15 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import * as XLSX from 'xlsx';  // 导入 xlsx 库
 
+import { useStyles } from './styles'; // 创建一个 styles 文件，或者根据需要调整样式
+import AnimateButton from '../../ui-component/extended/AnimateButton';
+import useScriptRef from '../../hooks/useScriptRef';
+import { Dialog, DialogContent, DialogTitle, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
+import CloseIcon from '@material-ui/icons/Close';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
+
 const SurveysComponent = ({ user }) => {
     const theme = useTheme();
 
@@ -31,6 +40,10 @@ const SurveysComponent = ({ user }) => {
     const [isLoading, setIsLoading] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
+    const [openDialog, setOpenDialog] = React.useState(false);
+
+    const classes = useStyles();
+    const scriptedRef = useScriptRef();
 
     const loadData = React.useCallback(async () => {
         try {
@@ -54,6 +67,19 @@ const SurveysComponent = ({ user }) => {
     React.useEffect(() => {
         loadData();
     }, [loadData]);
+
+     // 处理打开和关闭弹出窗口
+     const handleOpenDialog = () => {
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
+
+    const handleAddSuccess = () => {
+        loadData(); // 新增调查后重新加载数据
+    };
 
     // 切换某一行的选中状态
     const handleSelect = (id) => {
@@ -242,6 +268,195 @@ const SurveysComponent = ({ user }) => {
         reader.readAsArrayBuffer(file);
     };
 
+    // 添加调查弹出窗口组件
+    const AddSurveyDialog = ({ open, handleClose }) => {
+        return (
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                fullWidth
+                maxWidth="sm"
+                aria-labelledby="add-survey-dialog-title"
+            >
+                <DialogTitle id="add-survey-dialog-title">
+                    Add Survey
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleClose}
+                        style={{ position: 'absolute', right: theme.spacing(1), top: theme.spacing(1) }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Formik
+                        initialValues={{
+                            title: '',
+                            name: '',
+                            content: '',
+                            description: '',
+                            attachment: '',
+                            revision: 1
+                        }}
+                        validationSchema={Yup.object().shape({
+                            title: Yup.string().required('Title is required'),
+                            name: Yup.string().required('Name is required'),
+                            content: Yup.string().required('Content is required'),
+                            description: Yup.string(),
+                            attachment: Yup.string(),
+                            revision: Yup.number().integer().min(1).required('Revision is required')
+                        })}
+                        onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+                            try {
+                                if (scriptedRef.current) {
+                                    await addSurvey(values);
+                                    setStatus({ success: true });
+                                    setSubmitting(false);
+                                    handleClose(); // 成功后关闭对话框
+                                    handleAddSuccess(); // 重新加载数据
+                                    toast.success('Survey added successfully');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                if (scriptedRef.current) {
+                                    setStatus({ success: false });
+                                    setErrors({ submit: err.message });
+                                    setSubmitting(false);
+                                    toast.error('Failed to add survey');
+                                }
+                            }
+                        }}
+                    >
+                        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+                            <form onSubmit={handleSubmit}>
+                                <MuiGrid container spacing={2}>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="title">Title</InputLabel>
+                                            <OutlinedInput
+                                                id="title"
+                                                type="text"
+                                                value={values.title}
+                                                name="title"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Title"
+                                            />
+                                            {errors.title && (
+                                                <FormHelperText error>{errors.title}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="name">Name</InputLabel>
+                                            <OutlinedInput
+                                                id="name"
+                                                type="text"
+                                                value={values.name}
+                                                name="name"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Name"
+                                            />
+                                            {errors.name && (
+                                                <FormHelperText error>{errors.name}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <TextField
+                                                id="content"
+                                                label="Content"
+                                                multiline
+                                                rows={4}
+                                                value={values.content}
+                                                name="content"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                            />
+                                            {errors.content && (
+                                                <FormHelperText error>{errors.content}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <TextField
+                                                id="description"
+                                                label="Description"
+                                                multiline
+                                                rows={2}
+                                                value={values.description}
+                                                name="description"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                            />
+                                            {errors.description && (
+                                                <FormHelperText error>{errors.description}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="attachment">Attachment</InputLabel>
+                                            <OutlinedInput
+                                                id="attachment"
+                                                type="text"
+                                                value={values.attachment}
+                                                name="attachment"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Attachment"
+                                            />
+                                            {errors.attachment && (
+                                                <FormHelperText error>{errors.attachment}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="revision">Revision</InputLabel>
+                                            <OutlinedInput
+                                                id="revision"
+                                                type="number"
+                                                value={values.revision}
+                                                name="revision"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Revision"
+                                                inputProps={{ min: 1 }}
+                                            />
+                                            {errors.revision && (
+                                                <FormHelperText error>{errors.revision}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                </MuiGrid>
+
+                                <AnimateButton>
+                                    <Button
+                                        disableElevation
+                                        disabled={isSubmitting}
+                                        fullWidth
+                                        size="large"
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
+                                        style={{ marginTop: '16px' }}
+                                    >
+                                        {isSubmitting ? <LoaderInnerCircular /> : 'Save'}
+                                    </Button>
+                                </AnimateButton>
+                            </form>
+                        )}
+                    </Formik>
+                </DialogContent>
+            </Dialog>
+        );
+    };
+
     return (
         <MainCard title='Surveys' boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -250,10 +465,21 @@ const SurveysComponent = ({ user }) => {
                     color='primary'
                     size='small'
                     style={{ top: -70 }} // 调整按钮位置, 使其与表格对齐, 70-31=39
-                    startIcon={<NotificationsActive />}
+                    startIcon={<DownloadOutlined />}
+                    component="label"
+                    onClick={handleOpenDialog}
+                >
+                    Add Survey
+                </Button>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    startIcon={<DownloadOutlined />}
                     component="label"
                 >
-                    Batch import suppliers' emails from Excel
+                    Batch Import Surveys from Excel
                     <input
                         type="file"
                         accept=".xlsx, .xls"
@@ -299,6 +525,7 @@ const SurveysComponent = ({ user }) => {
                 />
             </div>
             {/* <EmailListener /> */}
+            <AddSurveyDialog open={openDialog} handleClose={handleCloseDialog} />
         </MainCard>
     );
 };

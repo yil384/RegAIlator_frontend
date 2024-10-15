@@ -11,3 +11,13 @@ export const fetchSuppliers = () =>
         },
         true // 包含身份验证
     );
+
+export const addSupplier = (data) =>
+    fetchApi(
+        {
+            method: 'POST',
+            url: endpoints.suppliers,
+            data
+        },
+        true // 包含身份验证
+    );
