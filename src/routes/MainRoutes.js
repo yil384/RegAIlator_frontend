@@ -36,8 +36,6 @@ const AddVideoComponent = Loadable(lazy(() => import('../views/videos/addVideo')
 const WatchLogsComponent = Loadable(lazy(() => import('../views/watch-logs')));
 const ErrorLogsComponent = Loadable(lazy(() => import('../views/error-logs')));
 
-const SamplePage = Loadable(lazy(() => import('../views/sample-page')));
-
 //-----------------------|| MAIN ROUTING ||-----------------------//
 
 const routePaths = {
@@ -102,7 +100,6 @@ const MainRoutes = () => {
                 '/icons/tabler-icons',
                 '/icons/material-icons',
 
-                '/sample-page'
             ]}>
             <MainLayout>
                 <Switch location={location} key={location.pathname}>
@@ -135,7 +132,6 @@ const MainRoutes = () => {
                     <PrivateRoute path='/icons/tabler-icons' component={UtilsTablerIcons} />
                     <PrivateRoute path='/icons/material-icons' component={UtilsMaterialIcons} />
 
-                    <Route path='/sample-page' component={SamplePage} />
                 </Switch>
             </MainLayout>
         </Route>
