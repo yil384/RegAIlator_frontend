@@ -335,16 +335,16 @@ const SuppliersComponent = ({ user }) => {
             field: 'chooseSurvey',
             headerName: 'Choose Survey',
             sortable: true,
-            width: 200,
+            width: 300,
             editable: true,
             valueGetter: (params) => params.row?.chooseSurvey || '',
             renderCell: (params) => {
                 const selectedSurveyId = params.row?.chooseSurvey || '';
                 const selectedSurvey = surveys.find(survey => survey._id === selectedSurveyId);
                 return (
-                    <Tooltip title={selectedSurvey ? selectedSurvey.title : ''} arrow>
+                    <Tooltip title={selectedSurvey ? selectedSurvey.name : ''} arrow>
                         <Typography variant="body1" noWrap>
-                            {selectedSurvey ? selectedSurvey.title : ''}
+                            {selectedSurvey ? selectedSurvey.name : ''}
                         </Typography>
                     </Tooltip>
                 );
@@ -374,21 +374,25 @@ const SuppliersComponent = ({ user }) => {
                 };
 
                 return (
-                    <FormControl fullWidth>
-                        <Select
-                            value={value}
-                            onChange={handleChange}
-                            autoFocus
-                            onClose={() => api.setCellMode(id, 'chooseSurvey', 'view')}
-                        >
-                            {surveys.map((survey) => (
-                                <MenuItem key={survey._id} value={survey._id}>
-                                    <Checkbox checked={value === survey._id} />
-                                    <Typography variant="body2">{survey.name}</Typography>
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                    <Select
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'center',   // 水平居中
+                            alignItems: 'center',       // 垂直居中
+                            height: '100%',             // 使容器的高度占满单元格
+                            width: '100%'               // 使容器的宽度占满单元格
+                        }}
+                        value={value}
+                        onChange={handleChange}
+                        autoFocus
+                        onClose={() => api.setCellMode(id, 'chooseSurvey', 'view')}
+                    >
+                        {surveys.map((survey) => (
+                            <MenuItem key={survey._id} value={survey._id}>
+                                {survey.name}
+                            </MenuItem>
+                        ))}
+                    </Select>
                 );
             },
         },
@@ -409,6 +413,13 @@ const SuppliersComponent = ({ user }) => {
             ),
             renderEditCell: (params) => (
                 <Select
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'center',   // 水平居中
+                        alignItems: 'center',       // 垂直居中
+                        height: '100%',             // 使容器的高度占满单元格
+                        width: '100%'               // 使容器的宽度占满单元格
+                    }}
                     value={params.row.status}
                     onChange={(event) => handleStatusChange(params.row.id, event.target.value)}
                 >
