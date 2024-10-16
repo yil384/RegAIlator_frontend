@@ -296,12 +296,18 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
 
     return (
         <MainCard title='File Groups' boxShadow shadow={theme.shadows[2]}>
-            <Box sx={{ mb: 2 }}>
-                <Button variant="contained" color="primary" onClick={handleOpenDialog}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                <Button 
+                    variant="contained" 
+                    color="primary" 
+                    size='small'
+                    style={{ top: -70 }}
+                    onClick={handleOpenDialog}
+                >
                     Add File Group
                 </Button>
-            </Box>
-            <div style={{ width: '100%' }}>
+            </div>
+            <div style={{ width: '100%', marginTop: -31 }}>
                 <DataGrid
                     rows={videoGroups?.results || []}
                     columns={columns}
