@@ -22,7 +22,7 @@ import EmailListener from '../../utils/emailListener';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 import Checkbox from '@material-ui/core/Checkbox';
-import { Dialog, DialogContent, DialogTitle, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
+import { Dialog, DialogContent, DialogTitle, DialogActions, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -30,6 +30,7 @@ import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import { useStyles } from './styles';
+import Paper from '@material-ui/core/Paper';
 
 const statusOptions = ['inactive', 'replied', 'read', 'unread'];
 
@@ -48,6 +49,19 @@ const SuppliersComponent = ({ user }) => {
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
+
+    const [openDialogFeedback, setOpenDialogFeedback] = React.useState(false); // State for controlling dialog open/close
+    const [selectedFeedback, setSelectedFeedback] = React.useState([]); // State for selected feedback
+    // Function to open the dialog and set selected feedback
+    const handleOpenDialogFeedback = (feedbackArray) => {
+        setSelectedFeedback(feedbackArray);
+        setOpenDialogFeedback(true);
+    };
+    // Function to close the dialog
+    const handleCloseDialogFeedback = () => {
+        setOpenDialogFeedback(false);
+        setSelectedFeedback([]);
+    };
 
     const loadData = React.useCallback(async () => {
         try {
@@ -434,33 +448,30 @@ const SuppliersComponent = ({ user }) => {
         // Feedback Column
         {
             field: 'feedback',
-            headerName: 'Feedback',
+            headerName: 'Feedback & Documents',
             sortable: true,
-            width: 200,
-            valueGetter: (params) => params.row?.feedback || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.feedback || ''} arrow>
-                    <Typography variant="body1" noWrap>
-                        {params.row?.feedback}
-                    </Typography>
-                </Tooltip>
-            ),
-        },
-        // Supplier Documents Column
-        {
-            field: 'supplierDocuments',
-            headerName: 'Supplier Documents',
-            sortable: true,
-            width: 230,
-            valueGetter: (params) => params.row?.supplierDocuments || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.supplierDocuments || ''} arrow>
-                    <Typography variant="body1" noWrap>
-                        {params.row?.supplierDocuments}
-                    </Typography>
-                </Tooltip>
-            ),
-        },
+            width: 400,
+            valueGetter: (params) => params.row?.feedback || [], 
+            renderCell: (params) => {
+                const feedbackArray = params.row?.feedback || [];
+                return (
+                    <div
+                        style={{ width: '100%', cursor: 'pointer' }}
+                        onClick={() => handleOpenDialogFeedback(feedbackArray)}
+                    >
+                        {feedbackArray.length > 0 ? (
+                            <Typography variant="body1" noWrap>
+                                {`Feedbacks (${feedbackArray.length})`}
+                            </Typography>
+                        ) : (
+                            <Typography variant="body1" noWrap>
+                                No Feedback Available
+                            </Typography>
+                        )}
+                    </div>
+                );
+            },
+        },        
     ];
 
     const processRowUpdate = async (newRow, oldRow) => {
@@ -812,6 +823,82 @@ const SuppliersComponent = ({ user }) => {
                 />
             </div>
             <AddSupplierDialog open={openDialog} handleClose={handleCloseDialog} />
+            <Dialog open={openDialogFeedback} onClose={handleCloseDialogFeedback} maxWidth="md" fullWidth>
+                <DialogTitle>
+                    Feedback & Documents
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleCloseDialogFeedback}
+                        style={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    {selectedFeedback.length > 0 ? (
+                        <div style={{ height: 400, width: '100%' }}>
+                            <DataGrid
+                                rows={selectedFeedback.map((feedback, index) => ({
+                                    id: index, // 必须为每一行设置唯一的 `id`
+                                    subject: feedback.subject || 'No Subject',
+                                    content: feedback.content || 'No Content',
+                                    supplierDocument: Array.isArray(feedback.attachments) && feedback.attachments.length > 0 
+                                                        ? feedback.attachments[0].filename 
+                                                        : 'No Document', // 检查attachments数组是否存在并有内容
+                                }))}
+                                columns={[
+                                    {
+                                        field: 'subject',
+                                        headerName: 'Subject',
+                                        width: 300,
+                                        renderCell: (params) => (
+                                            <Tooltip title={params.value || 'No Subject'} arrow>
+                                                <Typography noWrap>{params.value}</Typography>
+                                            </Tooltip>
+                                        ),
+                                    },
+                                    {
+                                        field: 'content',
+                                        headerName: 'Content',
+                                        width: 300,
+                                        renderCell: (params) => (
+                                            <Tooltip title={params.value || 'No Content'} arrow>
+                                                <Typography noWrap>{params.value}</Typography>
+                                            </Tooltip>
+                                        ),
+                                    },
+                                    {
+                                        field: 'supplierDocument',
+                                        headerName: 'Document',
+                                        width: 300,
+                                        renderCell: (params) => (
+                                            <Tooltip title={params.value || 'No Document'} arrow>
+                                                <Typography noWrap>{params.value}</Typography>
+                                            </Tooltip>
+                                        ),
+                                    },
+                                ]}
+                                pageSize={5}
+                                autoHeight
+                                disableSelectionOnClick
+                                density={'standard'}
+                                components={{
+                                    Toolbar: GridToolbar,
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <Typography variant="body1">
+                            No Feedback Available
+                        </Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseDialogFeedback} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </MainCard>
     );
 };
