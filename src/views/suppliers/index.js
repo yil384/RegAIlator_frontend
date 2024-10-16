@@ -65,6 +65,7 @@ const SuppliersComponent = ({ user }) => {
         } catch (e) {
             setIsLoading(false);
             console.error('Failed to load suppliers:', e);
+            toast.error('Failed to load suppliers');
         }
     }, []);
 
@@ -72,7 +73,7 @@ const SuppliersComponent = ({ user }) => {
         const loadSurveys = async () => {
             try {
                 const response = await fetchSurveys();
-                console.log(response)
+                console.log(response);
                 setSurveys(response);
             } catch (error) {
                 console.error("Failed to fetch surveys:", error);
@@ -147,7 +148,7 @@ const SuppliersComponent = ({ user }) => {
     };
 
     const columns = [
-        // 选择列（保持不变）
+        // Selection Column (unchanged)
         {
             field: 'select',
             headerName: (
@@ -188,75 +189,80 @@ const SuppliersComponent = ({ user }) => {
                 );
             },
         },
-        // 供应商名称列
+        // Supplier Name Column
         {
             field: 'supplierName',
             headerName: 'Supplier Name',
             sortable: true,
             width: 160,
+            valueGetter: (params) => params.row?.supplierName || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.supplierName || ''} arrow>
-                    <Typography variant="link1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.supplierName}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 联系人列
+        // Contact Column
         {
             field: 'contact',
             headerName: 'Contact',
             sortable: true,
             width: 270,
+            valueGetter: (params) => params.row?.contact || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.contact || ''} arrow>
-                    <Typography variant="value1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.contact}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 材料名称列
+        // Material Name Column
         {
             field: 'materialName',
             headerName: 'Material Name',
             sortable: true,
             width: 200,
+            valueGetter: (params) => params.row?.materialName || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.materialName || ''} arrow>
-                    <Typography variant="value1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.materialName}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 零件编号列
+        // Part Number Column
         {
             field: 'partNumber',
             headerName: 'Part Number',
             sortable: true,
             width: 150,
+            valueGetter: (params) => params.row?.partNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.partNumber || ''} arrow>
-                    <Typography variant="value1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.partNumber}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 选择调查列
+        // Choose Survey Column
         {
             field: 'chooseSurvey',
             headerName: 'Choose Survey',
             sortable: true,
             width: 200,
             editable: true,
+            valueGetter: (params) => params.row?.chooseSurvey || '',
             renderCell: (params) => {
                 const selectedSurveyId = params.row?.chooseSurvey || '';
                 const selectedSurvey = surveys.find(survey => survey._id === selectedSurveyId);
                 return (
                     <Tooltip title={selectedSurvey ? selectedSurvey.title : ''} arrow>
-                        <Typography variant="value1" noWrap>
+                        <Typography variant="body1" noWrap>
                             {selectedSurvey ? selectedSurvey.title : ''}
                         </Typography>
                     </Tooltip>
@@ -305,16 +311,17 @@ const SuppliersComponent = ({ user }) => {
                 );
             },
         },
-        // 状态列
+        // Status Column
         {
             field: 'status',
             headerName: 'Status',
             sortable: true,
             width: 150,
             editable: true,
+            valueGetter: (params) => params.row?.status || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.status || ''} arrow>
-                    <Typography variant="value1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.status}
                     </Typography>
                 </Tooltip>
@@ -332,29 +339,31 @@ const SuppliersComponent = ({ user }) => {
                 </Select>
             ),
         },
-        // 反馈列
+        // Feedback Column
         {
             field: 'feedback',
             headerName: 'Feedback',
             sortable: true,
             width: 200,
+            valueGetter: (params) => params.row?.feedback || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.feedback || ''} arrow>
-                    <Typography variant="value1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.feedback}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 供应商文档列
+        // Supplier Documents Column
         {
             field: 'supplierDocuments',
             headerName: 'Supplier Documents',
             sortable: true,
             width: 200,
+            valueGetter: (params) => params.row?.supplierDocuments || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.supplierDocuments || ''} arrow>
-                    <Typography variant="value1" noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.row?.supplierDocuments}
                     </Typography>
                 </Tooltip>
@@ -667,21 +676,22 @@ const SuppliersComponent = ({ user }) => {
                             return [item.columnField, item.operatorValue, item.value];
                         });
                         const filterids = suppliers.filter((supplier) => {
-                            return filter.every((filter) => {
-                                if (filter[1] === 'isEmpty') {
-                                    return supplier[filter[0]] === '' || supplier[filter[0]] === undefined;
-                                } else if (filter[1] === 'isNotEmpty') {
-                                    return supplier[filter[0]] !== '' && supplier[filter[0]] !== undefined;
-                                } else if (filter[2] === undefined) {
+                            return filter.every(([field, operator, value]) => {
+                                const cellValue = supplier[field];
+                                if (operator === 'isEmpty') {
+                                    return cellValue === '' || cellValue === undefined;
+                                } else if (operator === 'isNotEmpty') {
+                                    return cellValue !== '' && cellValue !== undefined;
+                                } else if (value === undefined) {
                                     return true;
-                                } else if (filter[1] === 'contains') {
-                                    return supplier[filter[0]]?.toLowerCase().includes(filter[2].toLowerCase());
-                                } else if (filter[1] === 'equals') {
-                                    return supplier[filter[0]]?.toLowerCase() === filter[2].toLowerCase();
-                                } else if (filter[1] === 'startsWith') {
-                                    return supplier[filter[0]]?.toLowerCase().startsWith(filter[2].toLowerCase());
-                                } else if (filter[1] === 'endsWith') {
-                                    return supplier[filter[0]]?.toLowerCase().endsWith(filter[2].toLowerCase());
+                                } else if (operator === 'contains') {
+                                    return cellValue?.toString().toLowerCase().includes(value.toLowerCase());
+                                } else if (operator === 'equals') {
+                                    return cellValue?.toString().toLowerCase() === value.toLowerCase();
+                                } else if (operator === 'startsWith') {
+                                    return cellValue?.toString().toLowerCase().startsWith(value.toLowerCase());
+                                } else if (operator === 'endsWith') {
+                                    return cellValue?.toString().toLowerCase().endsWith(value.toLowerCase());
                                 } else {
                                     return false;
                                 }

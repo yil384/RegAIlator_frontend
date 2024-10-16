@@ -66,6 +66,7 @@ const BillOfMaterials = () => {
     };
 
     const columns = [
+        // 选择框列
         {
             field: 'select',
             headerName: (
@@ -102,10 +103,12 @@ const BillOfMaterials = () => {
                 );
             },
         },
+        // 产品名称列
         {
             field: 'productName',
             headerName: 'Product Name',
             width: 200,
+            valueGetter: (params) => params.row?.productName || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.productName || ''} arrow>
                     <Typography variant="body1" noWrap>
@@ -114,10 +117,12 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
+        // 产品部件编号列
         {
             field: 'productPartNumber',
             headerName: 'Product Part Number',
             width: 200,
+            valueGetter: (params) => params.row?.productPartNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.productPartNumber || ''} arrow>
                     <Typography variant="body1" noWrap>
@@ -126,10 +131,12 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
+        // 原材料部件编号列
         {
             field: 'rawMaterialPartNumber',
             headerName: 'Raw Material Part Number',
             width: 200,
+            valueGetter: (params) => params.row?.rawMaterialPartNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialPartNumber || ''} arrow>
                     <Typography variant="body1" noWrap>
@@ -138,10 +145,12 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
+        // 原材料部件描述列
         {
             field: 'rawMaterialPartDescription',
             headerName: 'Raw Material Part Description',
             width: 300,
+            valueGetter: (params) => params.row?.rawMaterialPartDescription || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialPartDescription || ''} arrow>
                     <Typography variant="body1" noWrap>
@@ -150,10 +159,12 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
+        // 原材料合规信息列
         {
             field: 'rawMaterialComplianceInfo',
             headerName: 'Raw Material Compliance Information',
             width: 300,
+            valueGetter: (params) => params.row?.rawMaterialComplianceInfo || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialComplianceInfo || ''} arrow>
                     <Typography variant="body1" noWrap>
@@ -228,16 +239,41 @@ const BillOfMaterials = () => {
                         });
                         const filterids = materials
                             .filter((material) => {
-                                return filter.every((filter) => {
-                                    if (filter[1] === 'contains') {
+                                return filter.every(([field, operator, value]) => {
+                                    const cellValue = material[field];
+                                    if (operator === 'isEmpty') {
+                                        return cellValue === '' || cellValue === undefined;
+                                    } else if (operator === 'isNotEmpty') {
+                                        return cellValue !== '' && cellValue !== undefined;
+                                    } else if (value === undefined) {
+                                        return true;
+                                    } else if (operator === 'contains') {
                                         return (
-                                            material[filter[0]]
-                                                .toString()
+                                            cellValue
+                                                ?.toString()
                                                 .toLowerCase()
-                                                .includes(filter[2].toLowerCase())
+                                                .includes(value.toLowerCase())
+                                        );
+                                    } else if (operator === 'equals') {
+                                        return (
+                                            cellValue?.toString().toLowerCase() === value.toLowerCase()
+                                        );
+                                    } else if (operator === 'startsWith') {
+                                        return (
+                                            cellValue
+                                                ?.toString()
+                                                .toLowerCase()
+                                                .startsWith(value.toLowerCase())
+                                        );
+                                    } else if (operator === 'endsWith') {
+                                        return (
+                                            cellValue
+                                                ?.toString()
+                                                .toLowerCase()
+                                                .endsWith(value.toLowerCase())
                                         );
                                     } else {
-                                        return true;
+                                        return false;
                                     }
                                 });
                             })

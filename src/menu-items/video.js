@@ -24,7 +24,7 @@ export const filesMenu = {
             id: 'file_groups_menu',
             title: 'File Groups',
             type: 'item',
-            url: '/video-groups',
+            url: '/file-groups',
             icon: icons['IconFolders'],
             breadcrumbs: false
         },
@@ -32,7 +32,7 @@ export const filesMenu = {
             id: 'files_list_menu',
             title: 'Files',
             type: 'collapse',
-            url: '/videos',
+            url: '/files',
             icon: icons['IconFile'],
             breadcrumbs: false,
             children: [
@@ -40,7 +40,7 @@ export const filesMenu = {
                     id: 'files_all',
                     title: 'All Files',
                     type: 'item',
-                    url: '/videos',
+                    url: '/files',
                     icon: icons['IconFiles'],
                     breadcrumbs: false
                 },
@@ -48,7 +48,7 @@ export const filesMenu = {
                     id: 'add_files_all',
                     title: 'Add Files',
                     type: 'item',
-                    url: '/videos/add',
+                    url: '/files/add',
                     icon: icons['IconFilePlus'],
                     breadcrumbs: false
                 }

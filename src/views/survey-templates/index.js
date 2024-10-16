@@ -63,6 +63,7 @@ const SurveysComponent = ({ user }) => {
         } catch (e) {
             setIsLoading(false);
             console.error('Failed to load surveys:', e);
+            toast.error('Failed to load surveys');
         }
     }, []);
 
@@ -150,6 +151,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Title',
             sortable: true,
             width: 200,
+            valueGetter: (params) => params.row?.title || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.title || ''} arrow>
                     <Typography variant="body2" noWrap>
@@ -164,6 +166,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Name',
             sortable: true,
             width: 160,
+            valueGetter: (params) => params.row?.name || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.name || ''} arrow>
                     <Typography variant="body2" noWrap>
@@ -178,6 +181,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Content',
             sortable: false,
             width: 300,
+            valueGetter: (params) => params.row?.content || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.content || ''} arrow>
                     <Typography variant="body2" noWrap>
@@ -192,6 +196,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Description',
             sortable: false,
             width: 200,
+            valueGetter: (params) => params.row?.description || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.description || ''} arrow>
                     <Typography variant="body2" noWrap>
@@ -206,6 +211,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Attachment',
             sortable: false,
             width: 200,
+            valueGetter: (params) => params.row?.attachment || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.attachment || ''} arrow>
                     <Typography variant="body2" noWrap>
@@ -220,6 +226,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Revision',
             sortable: true,
             width: 120,
+            valueGetter: (params) => params.row?.revision || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.revision?.toString() || ''} arrow>
                     <Typography variant="body2" noWrap>
@@ -235,6 +242,7 @@ const SurveysComponent = ({ user }) => {
             sortable: true,
             width: 180,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
+            valueGetter: (params) => params.row?.createdAt || '',
             renderCell: (params) => (
                 <Tooltip title={new Date(params.row?.createdAt).toLocaleString()} arrow>
                     <Typography variant="body2" noWrap>
@@ -250,6 +258,7 @@ const SurveysComponent = ({ user }) => {
             sortable: true,
             width: 180,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
+            valueGetter: (params) => params.row?.updatedAt || '',
             renderCell: (params) => (
                 <Tooltip title={new Date(params.row?.updatedAt).toLocaleString()} arrow>
                     <Typography variant="body2" noWrap>
@@ -529,11 +538,23 @@ const SurveysComponent = ({ user }) => {
                             .filter((survey) => {
                                 return filter.every(([field, operator, value]) => {
                                     const cellValue = survey[field];
-                                    if (operator === 'contains') {
+                                    if (operator === 'isEmpty') {
+                                        return cellValue === '' || cellValue === undefined;
+                                    } else if (operator === 'isNotEmpty') {
+                                        return cellValue !== '' && cellValue !== undefined;
+                                    } else if (value === undefined) {
+                                        return true;
+                                    } else if (operator === 'contains') {
                                         return cellValue?.toString().toLowerCase().includes(value.toLowerCase());
+                                    } else if (operator === 'equals') {
+                                        return cellValue?.toString().toLowerCase() === value.toLowerCase();
+                                    } else if (operator === 'startsWith') {
+                                        return cellValue?.toString().toLowerCase().startsWith(value.toLowerCase());
+                                    } else if (operator === 'endsWith') {
+                                        return cellValue?.toString().toLowerCase().endsWith(value.toLowerCase());
+                                    } else {
+                                        return false;
                                     }
-                                    // 处理其他操作符，如 'equals'，'startsWith'，'endsWith' 等
-                                    return true;
                                 });
                             })
                             .map((survey) => survey.id);

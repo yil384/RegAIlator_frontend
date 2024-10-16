@@ -132,7 +132,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
         setUploadPercentage(null);
     }, []);
 
-    // 定义用于生成带有 Tooltip 的列
+    // 定义用于生成带有 Tooltip 和 valueGetter 的列
     const generateColumnsWithTooltip = () => {
         if (tableData.length === 0) return [];
 
@@ -140,8 +140,9 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
             field: key,
             headerName: key.charAt(0).toUpperCase() + key.slice(1), // 将字段名称首字母大写
             width: 200, // 根据需要设置列宽
-            sortable: false,
+            sortable: true, // 根据需要设置是否可排序
             resizable: false,
+            valueGetter: (params) => params.value?.toString() || '', // 将值转换为字符串
             renderCell: (params) => (
                 <Tooltip title={params.value?.toString() || ''} arrow>
                     <Typography variant='body2' noWrap>
@@ -311,7 +312,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                             ...row,
                             id: index + 1, // 为每一行动态添加唯一的 id
                         }))}
-                        columns={generateColumnsWithTooltip()} // 使用带有 Tooltip 的列
+                        columns={generateColumnsWithTooltip()} // 使用带有 Tooltip 和 valueGetter 的列
                         pageSize={10}
                         checkboxSelection={false}
                         autoHeight
