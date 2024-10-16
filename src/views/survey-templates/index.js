@@ -145,10 +145,25 @@ const SurveysComponent = ({ user }) => {
                 );
             },
         },
+        // 调查名称列
+        {
+            field: 'name',
+            headerName: 'Survey Name',
+            sortable: true,
+            width: 190,
+            valueGetter: (params) => params.row?.name || '',
+            renderCell: (params) => (
+                <Tooltip title={params.row?.name || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.name}
+                    </Typography>
+                </Tooltip>
+            ),
+        },
         // 标题列
         {
             field: 'title',
-            headerName: 'Title',
+            headerName: 'Survey Subject',
             sortable: true,
             width: 200,
             valueGetter: (params) => params.row?.title || '',
@@ -160,25 +175,10 @@ const SurveysComponent = ({ user }) => {
                 </Tooltip>
             ),
         },
-        // 名称列
-        {
-            field: 'name',
-            headerName: 'Name',
-            sortable: true,
-            width: 160,
-            valueGetter: (params) => params.row?.name || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.name || ''} arrow>
-                    <Typography variant="body2" noWrap>
-                        {params.row?.name}
-                    </Typography>
-                </Tooltip>
-            ),
-        },
         // 内容列
         {
             field: 'content',
-            headerName: 'Content',
+            headerName: 'Survey Content',
             sortable: false,
             width: 300,
             valueGetter: (params) => params.row?.content || '',
@@ -225,7 +225,7 @@ const SurveysComponent = ({ user }) => {
             field: 'revision',
             headerName: 'Revision',
             sortable: true,
-            width: 120,
+            width: 150,
             valueGetter: (params) => params.row?.revision || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.revision?.toString() || ''} arrow>
@@ -325,7 +325,7 @@ const SurveysComponent = ({ user }) => {
                             revision: 1
                         }}
                         validationSchema={Yup.object().shape({
-                            title: Yup.string().required('Title is required'),
+                            title: Yup.string().required('Subject is required'),
                             name: Yup.string().required('Name is required'),
                             content: Yup.string().required('Content is required'),
                             description: Yup.string(),
@@ -358,23 +358,6 @@ const SurveysComponent = ({ user }) => {
                                 <MuiGrid container spacing={2}>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
-                                            <InputLabel htmlFor="title">Title</InputLabel>
-                                            <OutlinedInput
-                                                id="title"
-                                                type="text"
-                                                value={values.title}
-                                                name="title"
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                                label="Title"
-                                            />
-                                            {errors.title && (
-                                                <FormHelperText error>{errors.title}</FormHelperText>
-                                            )}
-                                        </FormControl>
-                                    </MuiGrid>
-                                    <MuiGrid item xs={12}>
-                                        <FormControl fullWidth className={classes.input}>
                                             <InputLabel htmlFor="name">Name</InputLabel>
                                             <OutlinedInput
                                                 id="name"
@@ -392,15 +375,37 @@ const SurveysComponent = ({ user }) => {
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="title">Subject</InputLabel>
+                                            <OutlinedInput
+                                                id="title"
+                                                type="text"
+                                                value={values.title}
+                                                name="title"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Title"
+                                            />
+                                            {errors.title && (
+                                                <FormHelperText error>{errors.title}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
                                             <TextField
                                                 id="content"
                                                 label="Content"
                                                 multiline
-                                                rows={4}
+                                                rows={5}
                                                 value={values.content}
                                                 name="content"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
+                                                InputLabelProps={{
+                                                    classes: {
+                                                        shrink: classes.shrinkLabel // 应用自定义的 shrink 样式
+                                                    }
+                                                }}
                                             />
                                             {errors.content && (
                                                 <FormHelperText error>{errors.content}</FormHelperText>
@@ -418,6 +423,11 @@ const SurveysComponent = ({ user }) => {
                                                 name="description"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
+                                                InputLabelProps={{
+                                                    classes: {
+                                                        shrink: classes.shrinkLabel // 应用自定义的 shrink 样式
+                                                    }
+                                                }}
                                             />
                                             {errors.description && (
                                                 <FormHelperText error>{errors.description}</FormHelperText>

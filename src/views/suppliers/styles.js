@@ -1,6 +1,10 @@
 import { makeStyles } from '@material-ui/styles';
 
 export const useStyles = makeStyles((theme) => ({
+    shrinkLabel: {
+        transform: 'translate(14px, 2px) scale(0.75)', // 调整为左上角位置
+        transformOrigin: 'top left', // 设置缩放的参考点为左上角
+    },
     formContainer: {
         width: '60%'
     },

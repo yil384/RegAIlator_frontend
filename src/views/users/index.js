@@ -294,22 +294,22 @@ const StudentsComponent = ({ user }) => {
                 );
             }
         },
-        {
-            field: 'reply', // 回信字段
-            headerName: 'Reply Status',
-            width: 200,
-            sortable: false,
-            resizable: false,
-            description: 'This column shows the reply status of the user.',
-            valueGetter: (params) => params.row.reply,
-            renderCell: (params) => (
-                <Tooltip title={params.row?.reply || ''} arrow>
-                    <Typography variant='body1' noWrap>
-                        {params.row?.reply}
-                    </Typography>
-                </Tooltip>
-            )
-        }
+        // {
+        //     field: 'reply', // 回信字段
+        //     headerName: 'Reply Status',
+        //     width: 200,
+        //     sortable: false,
+        //     resizable: false,
+        //     description: 'This column shows the reply status of the user.',
+        //     valueGetter: (params) => params.row.reply,
+        //     renderCell: (params) => (
+        //         <Tooltip title={params.row?.reply || ''} arrow>
+        //             <Typography variant='body1' noWrap>
+        //                 {params.row?.reply}
+        //             </Typography>
+        //         </Tooltip>
+        //     )
+        // }
     ];
 
     return (

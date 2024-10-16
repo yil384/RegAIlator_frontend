@@ -148,6 +148,12 @@ const SuppliersComponent = ({ user }) => {
         loadData();
     };
 
+    // 电子邮件格式验证函数
+    const isValidEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const handleSendEmails = async () => {
         if (selectedIds.length === 0) {
             toast.error('No suppliers selected');
@@ -179,6 +185,11 @@ const SuppliersComponent = ({ user }) => {
                     throw new Error(`Supplier "${supplier.supplierName}" is missing an email address`);
                 }
 
+                // 检查email的格式
+                if (!isValidEmail(email)) {
+                    throw new Error(`Invalid email format for supplier "${supplier.supplierName}"`);
+                }
+
                 // Get the corresponding survey
                 const survey = surveys.find(s => s._id === supplier.chooseSurvey);
                 if (!survey) {
@@ -187,7 +198,7 @@ const SuppliersComponent = ({ user }) => {
 
                 return {
                     email,
-                    subject: survey.name || 'Survey',
+                    subject: survey.title || 'This is a survey',
                     content: survey.content || 'Please complete the survey.'
                 };
             });
@@ -543,15 +554,15 @@ const SuppliersComponent = ({ user }) => {
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
-                                            <TextField
+                                            <InputLabel htmlFor="contact">Contact</InputLabel>
+                                            <OutlinedInput
                                                 id="contact"
-                                                label="Contact"
-                                                multiline
-                                                rows={2}
+                                                type="text"
                                                 value={values.contact}
                                                 name="contact"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
+                                                label="Contact"
                                             />
                                             {errors.contact && (
                                                 <FormHelperText error>{errors.contact}</FormHelperText>
@@ -602,6 +613,7 @@ const SuppliersComponent = ({ user }) => {
                                                 name="chooseSurvey"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
+                                                style={{ paddingTop: '10px' }}
                                             >
                                                 {surveys.map((survey) => (
                                                     <MenuItem key={survey._id} value={survey._id}>
@@ -624,6 +636,7 @@ const SuppliersComponent = ({ user }) => {
                                                 name="status"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
+                                                style={{ paddingTop: '10px' }}
                                             >
                                                 {statusOptions.map((status) => (
                                                     <MenuItem key={status} value={status}>
@@ -647,6 +660,11 @@ const SuppliersComponent = ({ user }) => {
                                                 name="feedback"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
+                                                InputLabelProps={{
+                                                    classes: {
+                                                        shrink: classes.shrinkLabel // 应用自定义的 shrink 样式
+                                                    }
+                                                }}
                                             />
                                             {errors.feedback && (
                                                 <FormHelperText error>{errors.feedback}</FormHelperText>
