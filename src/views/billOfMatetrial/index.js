@@ -8,10 +8,11 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { Typography } from '@material-ui/core';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
-import { fetchBillOfMaterials } from './helper'; // Assumed API to fetch data
+import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
+import { fetchBillOfMaterials } from './helper'; // 假设的 API 用于获取数据
 
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
-import * as XLSX from 'xlsx';  // Import xlsx library
+import * as XLSX from 'xlsx';  // 导入 xlsx 库
 import toast from 'react-hot-toast';
 import { NotificationsActive } from '@material-ui/icons';
 
@@ -39,6 +40,7 @@ const BillOfMaterials = () => {
         } catch (e) {
             setIsLoading(false);
             console.error('Failed to load Bill of Materials:', e);
+            toast.error('Failed to load Bill of Materials');
         }
     }, []);
 
@@ -105,7 +107,11 @@ const BillOfMaterials = () => {
             headerName: 'Product Name',
             width: 200,
             renderCell: (params) => (
-                <Typography variant="body1">{params.row?.productName}</Typography>
+                <Tooltip title={params.row?.productName || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.productName}
+                    </Typography>
+                </Tooltip>
             ),
         },
         {
@@ -113,7 +119,11 @@ const BillOfMaterials = () => {
             headerName: 'Product Part Number',
             width: 200,
             renderCell: (params) => (
-                <Typography variant="body1">{params.row?.productPartNumber}</Typography>
+                <Tooltip title={params.row?.productPartNumber || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.productPartNumber}
+                    </Typography>
+                </Tooltip>
             ),
         },
         {
@@ -121,7 +131,11 @@ const BillOfMaterials = () => {
             headerName: 'Raw Material Part Number',
             width: 200,
             renderCell: (params) => (
-                <Typography variant="body1">{params.row?.rawMaterialPartNumber}</Typography>
+                <Tooltip title={params.row?.rawMaterialPartNumber || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.rawMaterialPartNumber}
+                    </Typography>
+                </Tooltip>
             ),
         },
         {
@@ -129,7 +143,11 @@ const BillOfMaterials = () => {
             headerName: 'Raw Material Part Description',
             width: 300,
             renderCell: (params) => (
-                <Typography variant="body1">{params.row?.rawMaterialPartDescription}</Typography>
+                <Tooltip title={params.row?.rawMaterialPartDescription || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.rawMaterialPartDescription}
+                    </Typography>
+                </Tooltip>
             ),
         },
         {
@@ -137,12 +155,16 @@ const BillOfMaterials = () => {
             headerName: 'Raw Material Compliance Information',
             width: 300,
             renderCell: (params) => (
-                <Typography variant="body1">{params.row?.rawMaterialComplianceInfo}</Typography>
+                <Tooltip title={params.row?.rawMaterialComplianceInfo || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.rawMaterialComplianceInfo}
+                    </Typography>
+                </Tooltip>
             ),
         },
     ];
 
-    // Handle Excel file upload
+    // 处理 Excel 文件的上传
     const handleExcelUpload = (event) => {
         const file = event.target.files[0];
         const reader = new FileReader();
@@ -150,12 +172,12 @@ const BillOfMaterials = () => {
         reader.onload = (e) => {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0]; // Get the first sheet
+            const sheetName = workbook.SheetNames[0]; // 获取第一个工作表
             const worksheet = workbook.Sheets[sheetName];
 
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             jsonData.forEach(row => {
-                const email = row.email; // Read email
+                const email = row.email; // 读取邮箱
                 if (email) {
                     mentionUsers({ email, mention: 'Hello' });
                 }
@@ -174,7 +196,7 @@ const BillOfMaterials = () => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70 }} // Adjust button position to align with table, 70-31=39
+                    style={{ top: -70 }} // 调整按钮位置以与表格对齐
                     startIcon={<NotificationsActive />}
                     component="label"
                 >

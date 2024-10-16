@@ -10,6 +10,7 @@ import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
+import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
 
 import { fetchSurveys, addSurvey } from './helper'; // 根据路径进行调整
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -69,8 +70,8 @@ const SurveysComponent = ({ user }) => {
         loadData();
     }, [loadData]);
 
-     // 处理打开和关闭弹出窗口
-     const handleOpenDialog = () => {
+    // 处理打开和关闭弹出窗口
+    const handleOpenDialog = () => {
         setOpenDialog(true);
     };
 
@@ -143,7 +144,6 @@ const SurveysComponent = ({ user }) => {
                 );
             },
         },
-        // 其他列（如上所述）
         // 标题列
         {
             field: 'title',
@@ -151,9 +151,11 @@ const SurveysComponent = ({ user }) => {
             sortable: true,
             width: 200,
             renderCell: (params) => (
-                <Typography variant="link1">
-                    {params.row?.title}
-                </Typography>
+                <Tooltip title={params.row?.title || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.title}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 名称列
@@ -163,9 +165,11 @@ const SurveysComponent = ({ user }) => {
             sortable: true,
             width: 160,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.name}
-                </Typography>
+                <Tooltip title={params.row?.name || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.name}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 内容列
@@ -175,9 +179,11 @@ const SurveysComponent = ({ user }) => {
             sortable: false,
             width: 300,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.content}
-                </Typography>
+                <Tooltip title={params.row?.content || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.content}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 描述列
@@ -187,9 +193,11 @@ const SurveysComponent = ({ user }) => {
             sortable: false,
             width: 200,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.description}
-                </Typography>
+                <Tooltip title={params.row?.description || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.description}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 附件列
@@ -199,9 +207,11 @@ const SurveysComponent = ({ user }) => {
             sortable: false,
             width: 200,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.attachment}
-                </Typography>
+                <Tooltip title={params.row?.attachment || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.attachment}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 版本号列
@@ -211,9 +221,11 @@ const SurveysComponent = ({ user }) => {
             sortable: true,
             width: 120,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.revision}
-                </Typography>
+                <Tooltip title={params.row?.revision?.toString() || ''} arrow>
+                    <Typography variant="body2" noWrap>
+                        {params.row?.revision}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 创建时间列
@@ -224,9 +236,11 @@ const SurveysComponent = ({ user }) => {
             width: 180,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {new Date(params.row?.createdAt).toLocaleString()}
-                </Typography>
+                <Tooltip title={new Date(params.row?.createdAt).toLocaleString()} arrow>
+                    <Typography variant="body2" noWrap>
+                        {new Date(params.row?.createdAt).toLocaleString()}
+                    </Typography>
+                </Tooltip>
             ),
         },
         // 更新时间列
@@ -237,9 +251,11 @@ const SurveysComponent = ({ user }) => {
             width: 180,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {new Date(params.row?.updatedAt).toLocaleString()}
-                </Typography>
+                <Tooltip title={new Date(params.row?.updatedAt).toLocaleString()} arrow>
+                    <Typography variant="body2" noWrap>
+                        {new Date(params.row?.updatedAt).toLocaleString()}
+                    </Typography>
+                </Tooltip>
             ),
         },
     ];

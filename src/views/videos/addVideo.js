@@ -42,6 +42,8 @@ import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
+import Typography from '@material-ui/core/Typography';
 
 const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     const history = useHistory();
@@ -54,30 +56,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     const [selectedFiles, setSelectedFiles] = React.useState([]);
     const [uploadPercentage, setUploadPercentage] = React.useState(null);
     const [processingVideo, setProcessingVideo] = React.useState(false);
-    const [tableData, setTableData] = React.useState([
-        {
-            id: 1,
-            name: 'John Doe',
-            age: 25,
-            email: 'hh',
-            phone: '1234567890',
-            address: '1234 Main St',
-            city: 'New York',
-            state: 'NY',
-            country: 'USA'
-        },
-        {
-            id: 2,
-            name: 'Jane Doe',
-            age: 32,
-            email: 'hh',
-            phone: '1234567890',
-            address: '1234 Main St',
-            city: 'New York',
-            state: 'NY',
-            country: 'USA'
-        }
-    ]); // 更新为存储表格数据的数组
+    const [tableData, setTableData] = React.useState([]); // 更新为存储表格数据的数组
 
     const onDrop = React.useCallback(acceptedFiles => {
         setSelectedFiles([...selectedFiles, ...acceptedFiles]);
@@ -152,6 +131,26 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     React.useEffect(() => {
         setUploadPercentage(null);
     }, []);
+
+    // 定义用于生成带有 Tooltip 的列
+    const generateColumnsWithTooltip = () => {
+        if (tableData.length === 0) return [];
+
+        return Object.keys(tableData[0]).map((key) => ({
+            field: key,
+            headerName: key.charAt(0).toUpperCase() + key.slice(1), // 将字段名称首字母大写
+            width: 200, // 根据需要设置列宽
+            sortable: false,
+            resizable: false,
+            renderCell: (params) => (
+                <Tooltip title={params.value?.toString() || ''} arrow>
+                    <Typography variant='body2' noWrap>
+                        {params.value}
+                    </Typography>
+                </Tooltip>
+            )
+        }));
+    };
 
     return (
         <MainCard title='Add File' boxShadow shadow={theme.shadows[2]}>
@@ -261,7 +260,8 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                 <Grid item xs={12} sm={12} md={12} lg={6}>
                                     {(!!processingVideo && (Math.abs(uploadPercentage || 0) === 100)) &&
                                     <div>
-                                        Processing Video file: <LoaderInnerCircular />
+                                        Processing Uploaded file: <LoaderInnerCircular />
+                                        This may take a few minutes...
                                     </div>}
                                     {((Math.abs(uploadPercentage || 0) !== 100) && !processingVideo) && (
                                         <AnimateButton>
@@ -294,7 +294,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                                     setTableData([]); // 在新上传时清除表格数据
                                                 }}
                                             >
-                                                Upload more videos
+                                                Upload more files
                                             </Button>
                                         </AnimateButton>
                                     )}
@@ -311,16 +311,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                             ...row,
                             id: index + 1, // 为每一行动态添加唯一的 id
                         }))}
-                        columns={[
-                            // 根据 tableData 中的数据动态生成列，同时加上一列id
-                            ...Object.keys(tableData[0]).map((key) => ({
-                                field: key,
-                                headerName: key.charAt(0).toUpperCase() + key.slice(1), // 将字段名称首字母大写
-                                width: 150, // 根据需要设置列宽
-                                sortable: false,
-                                resizable: false,
-                            }))
-                        ]}
+                        columns={generateColumnsWithTooltip()} // 使用带有 Tooltip 的列
                         pageSize={10}
                         checkboxSelection={false}
                         autoHeight

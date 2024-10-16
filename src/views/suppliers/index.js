@@ -1,11 +1,10 @@
-// 在 SuppliersComponent 中修改 chooseSurvey 列
 import React from 'react';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
-
+import Tooltip from '@material-ui/core/Tooltip';
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
@@ -13,19 +12,16 @@ import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-
-import { fetchSuppliers, addSupplier, updateSupplier } from './helper'; // 导入 updateSupplier
-import { fetchSurveys } from '../survey-templates/helper'; // 导入 fetchSurveys
+import { fetchSuppliers, addSupplier, updateSupplier } from './helper';
+import { fetchSurveys } from '../survey-templates/helper';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import { DownloadOutlined, NotificationsActive } from '@material-ui/icons';
 import EmailListener from '../../utils/emailListener';
-
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 import Checkbox from '@material-ui/core/Checkbox';
-
 import { Dialog, DialogContent, DialogTitle, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { Formik } from 'formik';
@@ -33,9 +29,9 @@ import * as Yup from 'yup';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
-import { useStyles } from './styles'; // 调整路径或创建样式文件
+import { useStyles } from './styles';
 
-const statusOptions = ['inactive', 'replied', 'read', 'unread']; // 定义状态选项
+const statusOptions = ['inactive', 'replied', 'read', 'unread'];
 
 const SuppliersComponent = ({ user }) => {
     const theme = useTheme();
@@ -46,8 +42,8 @@ const SuppliersComponent = ({ user }) => {
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
     const [openDialog, setOpenDialog] = React.useState(false);
-    const [surveys, setSurveys] = React.useState([]); // 新增调查状态
-    const [loadingUpdate, setLoadingUpdate] = React.useState(false); // 更新加载状态
+    const [surveys, setSurveys] = React.useState([]);
+    const [loadingUpdate, setLoadingUpdate] = React.useState(false);
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -72,13 +68,12 @@ const SuppliersComponent = ({ user }) => {
         }
     }, []);
 
-    // 获取调查数据
     React.useEffect(() => {
         const loadSurveys = async () => {
             try {
                 const response = await fetchSurveys();
                 console.log(response)
-                setSurveys(response); // 假设 response 是一个数组，包含每个调查的 _id 和 name
+                setSurveys(response);
             } catch (error) {
                 console.error("Failed to fetch surveys:", error);
                 toast.error("Failed to load surveys");
@@ -91,7 +86,6 @@ const SuppliersComponent = ({ user }) => {
         loadData();
     }, [loadData]);
 
-    // 处理 Excel 文件上传
     const handleExcelUpload = (event) => {
         const file = event.target.files[0];
         const reader = new FileReader();
@@ -123,7 +117,6 @@ const SuppliersComponent = ({ user }) => {
         setSuppliers(updatedSuppliers);
     };
 
-    // 切换选择行
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
@@ -132,7 +125,6 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // 全选/取消全选
     const handleSelectAll = () => {
         const allRowIds = filterIds.map((id) => id);
         if (filterIds.every((id) => selectedIds.includes(id))) {
@@ -142,7 +134,6 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // 处理对话框打开和关闭
     const handleOpenDialog = () => {
         setOpenDialog(true);
     };
@@ -152,10 +143,11 @@ const SuppliersComponent = ({ user }) => {
     };
 
     const handleAddSuccess = () => {
-        loadData(); // 添加供应商后重新加载数据
+        loadData();
     };
 
     const columns = [
+        // 选择列（保持不变）
         {
             field: 'select',
             headerName: (
@@ -196,83 +188,95 @@ const SuppliersComponent = ({ user }) => {
                 );
             },
         },
+        // 供应商名称列
         {
             field: 'supplierName',
             headerName: 'Supplier Name',
             sortable: true,
             width: 160,
             renderCell: (params) => (
-                <Typography variant="link1">
-                    {params.row?.supplierName}
-                </Typography>
+                <Tooltip title={params.row?.supplierName || ''} arrow>
+                    <Typography variant="link1" noWrap>
+                        {params.row?.supplierName}
+                    </Typography>
+                </Tooltip>
             ),
         },
+        // 联系人列
         {
             field: 'contact',
             headerName: 'Contact',
             sortable: true,
             width: 270,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.contact}
-                </Typography>
+                <Tooltip title={params.row?.contact || ''} arrow>
+                    <Typography variant="value1" noWrap>
+                        {params.row?.contact}
+                    </Typography>
+                </Tooltip>
             ),
         },
+        // 材料名称列
         {
             field: 'materialName',
             headerName: 'Material Name',
             sortable: true,
             width: 200,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.materialName}
-                </Typography>
+                <Tooltip title={params.row?.materialName || ''} arrow>
+                    <Typography variant="value1" noWrap>
+                        {params.row?.materialName}
+                    </Typography>
+                </Tooltip>
             ),
         },
+        // 零件编号列
         {
             field: 'partNumber',
             headerName: 'Part Number',
             sortable: true,
             width: 150,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.partNumber}
-                </Typography>
+                <Tooltip title={params.row?.partNumber || ''} arrow>
+                    <Typography variant="value1" noWrap>
+                        {params.row?.partNumber}
+                    </Typography>
+                </Tooltip>
             ),
         },
+        // 选择调查列
         {
             field: 'chooseSurvey',
             headerName: 'Choose Survey',
             sortable: true,
             width: 200,
-            editable: true, // 使列可编辑
+            editable: true,
             renderCell: (params) => {
                 const selectedSurveyId = params.row?.chooseSurvey || '';
                 const selectedSurvey = surveys.find(survey => survey._id === selectedSurveyId);
                 return (
-                    <Typography variant="value1">
-                        {selectedSurvey ? selectedSurvey.title : ''}
-                    </Typography>
+                    <Tooltip title={selectedSurvey ? selectedSurvey.title : ''} arrow>
+                        <Typography variant="value1" noWrap>
+                            {selectedSurvey ? selectedSurvey.title : ''}
+                        </Typography>
+                    </Tooltip>
                 );
             },
             renderEditCell: (params) => {
-                const { id, value, api } = params; // id 是行的 id，value 是当前字段的值
-    
+                const { id, value, api } = params;
+
                 const handleChange = async (event) => {
                     const selectedSurveyId = event.target.value;
-    
+
                     try {
                         setLoadingUpdate(true);
-                        // 发送更新请求到后端
                         await updateSupplier(id, { chooseSurvey: selectedSurveyId });
-                        // 更新本地状态
                         setSuppliers((prevSuppliers) =>
                             prevSuppliers.map((supplier) =>
                                 supplier.id === id ? { ...supplier, chooseSurvey: selectedSurveyId } : supplier
                             )
                         );
                         toast.success('Survey updated successfully');
-                        // 退出编辑模式
                         api.setCellMode(id, 'chooseSurvey', 'view');
                     } catch (error) {
                         console.error('Failed to update survey:', error);
@@ -281,14 +285,13 @@ const SuppliersComponent = ({ user }) => {
                         setLoadingUpdate(false);
                     }
                 };
-    
+
                 return (
                     <FormControl fullWidth>
                         <Select
                             value={value}
                             onChange={handleChange}
                             autoFocus
-                            // 确保选择后关闭下拉菜单
                             onClose={() => api.setCellMode(id, 'chooseSurvey', 'view')}
                         >
                             {surveys.map((survey) => (
@@ -302,6 +305,7 @@ const SuppliersComponent = ({ user }) => {
                 );
             },
         },
+        // 状态列
         {
             field: 'status',
             headerName: 'Status',
@@ -309,9 +313,11 @@ const SuppliersComponent = ({ user }) => {
             width: 150,
             editable: true,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.status}
-                </Typography>
+                <Tooltip title={params.row?.status || ''} arrow>
+                    <Typography variant="value1" noWrap>
+                        {params.row?.status}
+                    </Typography>
+                </Tooltip>
             ),
             renderEditCell: (params) => (
                 <Select
@@ -326,31 +332,36 @@ const SuppliersComponent = ({ user }) => {
                 </Select>
             ),
         },
+        // 反馈列
         {
             field: 'feedback',
             headerName: 'Feedback',
             sortable: true,
             width: 200,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.feedback}
-                </Typography>
+                <Tooltip title={params.row?.feedback || ''} arrow>
+                    <Typography variant="value1" noWrap>
+                        {params.row?.feedback}
+                    </Typography>
+                </Tooltip>
             ),
         },
+        // 供应商文档列
         {
             field: 'supplierDocuments',
             headerName: 'Supplier Documents',
             sortable: true,
             width: 200,
             renderCell: (params) => (
-                <Typography variant="value1">
-                    {params.row?.supplierDocuments}
-                </Typography>
+                <Tooltip title={params.row?.supplierDocuments || ''} arrow>
+                    <Typography variant="value1" noWrap>
+                        {params.row?.supplierDocuments}
+                    </Typography>
+                </Tooltip>
             ),
         },
     ];
 
-    // 添加行更新处理
     const processRowUpdate = async (newRow, oldRow) => {
         if (newRow.chooseSurvey !== oldRow.chooseSurvey) {
             try {
@@ -361,15 +372,14 @@ const SuppliersComponent = ({ user }) => {
             } catch (error) {
                 console.error('Failed to update survey:', error);
                 toast.error('Failed to update survey');
-                return oldRow; // 回滚到旧行数据
+                return oldRow;
             } finally {
                 setLoadingUpdate(false);
             }
         }
         return newRow;
-    };    
+    };
 
-    // 添加 Supplier Dialog 组件（保持不变）
     const AddSupplierDialog = ({ open, handleClose }) => {
         return (
             <Dialog
@@ -396,7 +406,7 @@ const SuppliersComponent = ({ user }) => {
                             contact: '',
                             materialName: '',
                             partNumber: '',
-                            chooseSurvey: '', // 单选，初始化为空字符串
+                            chooseSurvey: '',
                             status: 'inactive',
                             feedback: '',
                             supplierDocuments: ''
@@ -406,7 +416,7 @@ const SuppliersComponent = ({ user }) => {
                             contact: Yup.string().required('Contact is required'),
                             materialName: Yup.string().required('Material Name is required'),
                             partNumber: Yup.string().required('Part Number is required'),
-                            chooseSurvey: Yup.string(), // 单选，存储单个 ObjectId
+                            chooseSurvey: Yup.string(),
                             status: Yup.string().oneOf(statusOptions).required('Status is required'),
                             feedback: Yup.string(),
                             supplierDocuments: Yup.string()
@@ -414,7 +424,7 @@ const SuppliersComponent = ({ user }) => {
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             try {
                                 if (scriptedRef.current) {
-                                    await addSupplier(values); // 确保 addSupplier 能处理 ObjectId 数组
+                                    await addSupplier(values);
                                     setStatus({ success: true });
                                     setSubmitting(false);
                                     handleClose();
@@ -619,7 +629,6 @@ const SuppliersComponent = ({ user }) => {
                 >
                     Add Supplier
                 </Button>
-                {/* Excel Upload Button (if needed) */}
                 <Button
                     variant='contained'
                     color='primary'
@@ -647,14 +656,12 @@ const SuppliersComponent = ({ user }) => {
                     autoPageSize
                     density={'standard'}
                     disableSelectionOnClick
-                    loading={isLoading || loadingUpdate} // 添加更新加载状态
+                    loading={isLoading || loadingUpdate}
                     components={{
                         Toolbar: GridToolbar,
-                        // LoadingOverlay: CustomLoadingOverlay,
-                        // NoRowsOverlay: CustomNoRowsOverlay
                     }}
-                    processRowUpdate={processRowUpdate} // 添加行更新处理
-                    experimentalFeatures={{ newEditingApi: true }} // 启用新编辑 API
+                    processRowUpdate={processRowUpdate}
+                    experimentalFeatures={{ newEditingApi: true }}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];
@@ -684,7 +691,6 @@ const SuppliersComponent = ({ user }) => {
                     }}
                 />
             </div>
-            {/* <EmailListener /> */}
             <AddSupplierDialog open={openDialog} handleClose={handleCloseDialog} />
         </MainCard>
     );

@@ -11,8 +11,9 @@ import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/DeleteForever';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
-import Select from '@material-ui/core/Select'; // Import Select component
-import MenuItem from '@material-ui/core/MenuItem'; // Import MenuItem component
+import Select from '@material-ui/core/Select'; // 导入 Select 组件
+import MenuItem from '@material-ui/core/MenuItem'; // 导入 MenuItem 组件
+import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
 
 import { fetchUsers, deleteUser } from './users.helper';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
@@ -41,21 +42,19 @@ const StudentsComponent = ({ user }) => {
         try {
             setIsLoading(true);
             const response = await fetchUsers();
-            const tmepStudents = response?.results || [];
+            const tempStudents = response?.results || [];
             // 将students的每个元素做转换：
-            tmepStudents.forEach((student) => {
+            tempStudents.forEach((student) => {
                 student.fullName = `${student.firstname} ${student.lastname}`; // 生成全名
-                student.email = student.email; // 生成邮箱
-                student.role = student.role; // 生成角色
-                student.remark = student.remark; // 生成备注
-                student.status = student.status; // 生成状态
-                student.reply = student.reply; // 生成回信状态
+                // 其他字段已经在原数据中
             });
-            setStudents(tmepStudents);
-            setFilterIds(tmepStudents.map((student) => student.id)); // 初始化filterIds
+            setStudents(tempStudents);
+            setFilterIds(tempStudents.map((student) => student.id)); // 初始化filterIds
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
+            console.error('Failed to load users:', e);
+            toast.error('Failed to load users');
         }
     }, []);
 
@@ -98,10 +97,8 @@ const StudentsComponent = ({ user }) => {
     // 切换某一行的选中状态
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
-            // 如果已经选中，则取消选中
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
         } else {
-            // 如果未选中，则添加到选中列表中
             setSelectedIds([...selectedIds, id]);
         }
     };
@@ -111,7 +108,6 @@ const StudentsComponent = ({ user }) => {
         const allRowIds = filterIds.map((id) => id); // 获取所有行的id
         if (filterIds.every((id) => selectedIds.includes(id))) {
             // 如果所有行已被选中，则取消全选filterIds
-            console.log('all selected', filterIds);
             setSelectedIds(selectedIds.filter((id) => !filterIds.includes(id)));
         } else {
             // 否则，选中所有行，去重，保证不会重复添加，之前的selectedIds不会被覆盖
@@ -124,58 +120,63 @@ const StudentsComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={filterIds.length > 0 && 
+                    checked={
+                        filterIds.length > 0 &&
                         filterIds.every((id) => selectedIds.includes(id))
-                    } // 全选状态，selectedIds和filterIds内容相同
-                    indeterminate={filterIds.length > 0 && 
+                    }
+                    indeterminate={
+                        filterIds.length > 0 &&
                         filterIds.some((id) => selectedIds.includes(id)) &&
                         !filterIds.every((id) => selectedIds.includes(id))
-                    } // 部分选中状态
-                    onChange={handleSelectAll} // 处理全选逻辑
-                    style={{ padding: 0 }} // 去掉默认的 padding
+                    }
+                    onChange={handleSelectAll}
+                    style={{ padding: 0 }}
                 />
             ),
-            description: 'This column has a value getter and is not sortable.',
             width: 60,
             sortable: false,
             filterable: false,
             resizable: false,
             editable: false,
             disableClickEventBubbling: true,
-            disableColumnMenu: true, // 禁用列头的菜单（三个点的菜单）
+            disableColumnMenu: true,
             headerAlign: 'center',
             renderCell: (params) => {
                 const isSelected = selectedIds.includes(params.row.id);
                 return (
-                    // 居中显示
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <IconButton onClick={() => handleSelect(params.row.id)}>
                             {isSelected ? (
-                                <CheckCircleIcon style={{ color: 'green' }} /> // 已选中
+                                <CheckCircleIcon style={{ color: 'green' }} />
                             ) : (
-                                <RadioButtonUncheckedIcon /> // 未选中
+                                <RadioButtonUncheckedIcon />
                             )}
                         </IconButton>
                     </div>
                 );
             }
         },
-        // { field: 'id', width: 140, headerName: 'ID', hide: false },
         {
             field: 'fullName',
-            headerName: 'Full name',
-            description: 'This column has a value getter and is sortable.',
+            headerName: 'Full Name',
+            description: 'This column displays the full name of the user.',
             sortable: true,
             width: 160,
             resizable: false,
             valueGetter: (params) => `${params.row?.firstname} ${params.row?.lastname}`,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='link1' component={Link} to={`students/${params.row.id}`}>
-                        {params.row?.firstname} {params.row?.lastname}
+            renderCell: (params) => (
+                <Tooltip title={params.row?.fullName || ''} arrow>
+                    <Typography
+                        variant='body1'
+                        component={Link}
+                        to={`users/${params.row.id}`}
+                        noWrap
+                        style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                        {params.row?.fullName}
                     </Typography>
-                );
-            }
+                </Tooltip>
+            )
         },
         {
             field: 'email',
@@ -187,154 +188,80 @@ const StudentsComponent = ({ user }) => {
             editable: true,
             resizable: false,
             valueGetter: (params) => params.row?.email,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
+            renderCell: (params) => (
+                <Tooltip title={params.row?.email || ''} arrow>
+                    <Typography variant='body1' noWrap>
                         {params.row?.email}
                     </Typography>
-                );
-            }
+                </Tooltip>
+            )
         },
         {
             field: 'Role',
             headerName: 'Role',
-            description: 'User privilege',
+            description: 'User privilege level.',
             sortable: true,
             width: 160,
             resizable: false,
             disableClickEventBubbling: true,
             valueGetter: (params) => params.row?.role,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
+            renderCell: (params) => (
+                <Tooltip title={params.row?.role || ''} arrow>
+                    <Typography variant='body1' noWrap>
                         {params.row?.role.toUpperCase()}
                     </Typography>
-                );
-            }
+                </Tooltip>
+            )
         },
-        // {
-        //     field: 'Instructors',
-        //     headerName: 'Instructors',
-        //     width: 220,
-        //     editable: true,
-        //     resizable: false,
-        //     valueFormatter: (params) => params.row?.instructors?.reduce((previousValue, currentValue) => {
-        //         return previousValue + `${currentValue.userId.firstname} ;`;
-        //     }, ''),
-        //     renderCell: (params) => {
-        //         return (
-        //             <Typography>
-        //                 ( {params.row?.instructors.length} )
-        //                 {params.row?.instructors?.map((item) => (
-        //                     <span key={item.id}> {item.userId.firstname}{' ; '} </span>
-        //                 ))}
-        //             </Typography>
-        //         );
-        //     }
-        // },
         {
             field: 'Mention',
             headerName: 'Email Mention',
             headerAlign: 'center',
             description: 'Mention the user to upload the regulation we requested.',
-            sortable: true,
+            sortable: false,
             width: 190,
             resizable: false,
-            hide: false,
             valueGetter: (params) => params.row?.email,
-            renderCell: (params) => {
-                return (
-                    <strong>
-                        <Button
-                            variant='contained'
-                            color='primary'
-                            size='small'
-                            style={{ marginLeft: 16 }}
-                            startIcon={<NotificationsActive />}
-                            // 按下后调用 mentionUsers 函数
-                            onClick={() => mentionUsers({ email: params.row?.email, mention: 'Hello' })}
-                        >
-                            Mention
-                        </Button>
-                    </strong>
-                );
-            }
+            renderCell: (params) => (
+                <Tooltip title={`Mention ${params.row?.email}`} arrow>
+                    <Button
+                        variant='contained'
+                        color='primary'
+                        size='small'
+                        startIcon={<NotificationsActive />}
+                        onClick={() => mentionUsers({ email: params.row?.email, mention: 'Hello' })}
+                    >
+                        Mention
+                    </Button>
+                </Tooltip>
+            )
         },
         {
             field: 'Remark',
             headerName: 'Remark',
             headerAlign: 'center',
-            description: 'Remark the user in case that we need to remember something.',
-            sortable: true,
+            description: 'Remark the user in case we need to remember something.',
+            sortable: false,
             width: 190,
             resizable: false,
             disableExport: true,
             valueGetter: (params) => params.row?.remark,
-            renderCell: (params) => {
-                return (
-                    <strong>
-                        <Button
-                            variant='contained'
-                            color='primary'
-                            size='small'
-                            style={{ marginLeft: 16 }}
-                            startIcon={<EditIcon />}
-                            onClick={() => {
-                                history.push(`students/${params.row.id}`);
-                            }}
-                        >
-                            Details
-                        </Button>
-                        {/*{user.role === 'admin' && (*/}
-                        {/*    <IconButton*/}
-                        {/*        style={{ marginLeft: 16 }}*/}
-                        {/*        onClick={(event) => {*/}
-                        {/*            event.ignore = true;*/}
-                        {/*            Swal.fire({*/}
-                        {/*                text: `Are you sure you wish to delete this ${params.row.email} item?`,*/}
-                        {/*                icon: 'warning',*/}
-                        {/*                showCancelButton: true,*/}
-                        {/*                confirmButtonColor: theme.palette.primary['main'],*/}
-                        {/*                cancelButtonColor: theme.palette.error['dark'],*/}
-                        {/*                confirmButtonText: 'Yes, delete it!'*/}
-                        {/*            }).then(async (result) => {*/}
-                        {/*                if (result.isConfirmed) {*/}
-                        {/*                    await deleteStudent(params.row.id);*/}
-                        {/*                    await fetchStudents();*/}
-                        {/*                    toast.success('Your item has been deleted');*/}
-                        {/*                }*/}
-                        {/*            });*/}
-                        {/*        }}*/}
-                        {/*    >*/}
-                        {/*        <DeleteIcon color={'error'} />*/}
-                        {/*    </IconButton>*/}
-                        {/*)}*/}
-                    </strong>
-                );
-            }
+            renderCell: (params) => (
+                <Tooltip title={params.row?.remark || ''} arrow>
+                    <Button
+                        variant='contained'
+                        color='primary'
+                        size='small'
+                        startIcon={<EditIcon />}
+                        onClick={() => {
+                            history.push(`students/${params.row.id}`);
+                        }}
+                    >
+                        Details
+                    </Button>
+                </Tooltip>
+            )
         },
-        // {
-        //     field: 'VideoGroups',
-        //     headerName: 'Video Groups',
-        //     sortable: false,
-        //     width: 270,
-        //     resizable: false,
-        //     disableClickEventBubbling: true,
-        //     hide: false,
-        //     valueFormatter: (params) => params.row?.videoGroups?.reduce((previousValue, currentValue) => {
-        //         return previousValue + `${currentValue.groupName} ;`;
-        //     }, ''),
-        //     renderCell: (params) => {
-        //         return (
-        //             <Typography variant='value1'>
-        //                 ( {params.row?.videoGroups.length} )
-        //                 {params.row?.videoGroups?.map((item) => (
-        //                     <span key={item.id}> {item.groupName} {' ; '}  </span>
-        //                 ))}
-        //             </Typography>
-        //         );
-        //     }
-        // },
         {
             field: 'Status',
             headerName: 'Status',
@@ -345,13 +272,13 @@ const StudentsComponent = ({ user }) => {
             hide: false,
             editable: true, // 允许编辑
             valueGetter: (params) => params.row?.status,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
+            renderCell: (params) => (
+                <Tooltip title={params.row?.status || ''} arrow>
+                    <Typography variant='body1' noWrap>
                         {params.row?.status}
                     </Typography>
-                );
-            },
+                </Tooltip>
+            ),
             renderEditCell: (params) => {
                 return (
                     <Select
@@ -375,28 +302,28 @@ const StudentsComponent = ({ user }) => {
             resizable: false,
             description: 'This column shows the reply status of the user.',
             valueGetter: (params) => params.row.reply,
-            renderCell: (params) => {
-                return (
-                    <Typography variant='value1'>
-                        {params.row.reply}
+            renderCell: (params) => (
+                <Tooltip title={params.row?.reply || ''} arrow>
+                    <Typography variant='body1' noWrap>
+                        {params.row?.reply}
                     </Typography>
-                );
-            }
+                </Tooltip>
+            )
         }
     ];
 
     return (
-        <MainCard title='Suppliers' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title='Users' boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <Button
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70 }} // 调整按钮位置, 使其与表格对齐, 70-31=39
+                    style={{ top: -70 }}
                     startIcon={<NotificationsActive />}
                     component="label"
                 >
-                    Batch import suppliers' emails from Excel
+                    Batch Import Users' Emails from Excel
                     <input
                         type="file"
                         accept=".xlsx, .xls"
@@ -404,6 +331,7 @@ const StudentsComponent = ({ user }) => {
                         onChange={handleExcelUpload}
                     />
                 </Button>
+                {/* 如果需要添加其他按钮，可以在这里添加 */}
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
                 <DataGrid
@@ -418,29 +346,30 @@ const StudentsComponent = ({ user }) => {
                     loading={isLoading}
                     components={{
                         Toolbar: GridToolbar,
-                        LoadingOverlay: CustomLoadingOverlay,
-                        NoRowsOverlay: CustomNoRowsOverlay
+                        // LoadingOverlay: CustomLoadingOverlay,
+                        // NoRowsOverlay: CustomNoRowsOverlay
                     }}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];
                         });
                         const filterids = students.filter((student) => {
-                            return filter.every((filter) => {
-                                if (filter[1] == 'isEmpty') {
-                                    return student[filter[0]] === '' || student[filter[0]] === undefined;
-                                } else if (filter[1] == 'isNotEmpty') {
-                                    return student[filter[0]] !== '' && student[filter[0]] !== undefined;
-                                } else if (filter[2] === undefined) {
+                            return filter.every(([field, operator, value]) => {
+                                const cellValue = student[field];
+                                if (operator === 'isEmpty') {
+                                    return cellValue === '' || cellValue === undefined;
+                                } else if (operator === 'isNotEmpty') {
+                                    return cellValue !== '' && cellValue !== undefined;
+                                } else if (value === undefined) {
                                     return true;
-                                } else if (filter[1] === 'contains') {
-                                    return student[filter[0]].toLowerCase().includes(filter[2].toLowerCase())
-                                } else if (filter[1] === 'equals') {
-                                    return student[filter[0]].toLowerCase() === filter[2].toLowerCase();
-                                } else if (filter[1] === 'startsWith') {
-                                    return student[filter[0]].toLowerCase().startsWith(filter[2].toLowerCase());
-                                } else if (filter[1] === 'endsWith') {
-                                    return student[filter[0]].toLowerCase().endsWith(filter[2].toLowerCase());
+                                } else if (operator === 'contains') {
+                                    return cellValue?.toString().toLowerCase().includes(value.toLowerCase());
+                                } else if (operator === 'equals') {
+                                    return cellValue?.toString().toLowerCase() === value.toLowerCase();
+                                } else if (operator === 'startsWith') {
+                                    return cellValue?.toString().toLowerCase().startsWith(value.toLowerCase());
+                                } else if (operator === 'endsWith') {
+                                    return cellValue?.toString().toLowerCase().endsWith(value.toLowerCase());
                                 } else {
                                     return false;
                                 }
