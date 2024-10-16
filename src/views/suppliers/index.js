@@ -30,7 +30,7 @@ import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import { useStyles } from './styles';
-import Paper from '@material-ui/core/Paper';
+import config from '../../configs';
 
 const statusOptions = ['inactive', 'replied', 'read', 'unread'];
 
@@ -843,14 +843,14 @@ const SuppliersComponent = ({ user }) => {
                                     subject: feedback.subject || 'No Subject',
                                     content: feedback.content || 'No Content',
                                     supplierDocument: Array.isArray(feedback.attachments) && feedback.attachments.length > 0 
-                                                        ? feedback.attachments[0].filename 
-                                                        : 'No Document', // 检查attachments数组是否存在并有内容
+                                                        ? {filename: feedback.attachments[0].filename, url: feedback.attachments[0].content} 
+                                                        : {filename: 'No Document', url: ''}
                                 }))}
                                 columns={[
                                     {
                                         field: 'subject',
                                         headerName: 'Subject',
-                                        width: 300,
+                                        width: 200,
                                         renderCell: (params) => (
                                             <Tooltip title={params.value || 'No Subject'} arrow>
                                                 <Typography noWrap>{params.value}</Typography>
@@ -870,10 +870,20 @@ const SuppliersComponent = ({ user }) => {
                                     {
                                         field: 'supplierDocument',
                                         headerName: 'Document',
-                                        width: 300,
+                                        width: 200,
                                         renderCell: (params) => (
-                                            <Tooltip title={params.value || 'No Document'} arrow>
-                                                <Typography noWrap>{params.value}</Typography>
+                                            <Tooltip title={params.value.filename || 'No Document'} arrow>
+                                                <IconButton
+                                                    size='small'
+                                                    color="primary"
+                                                    onClick={() => {
+                                                        if (params.value.url) {
+                                                            window.open(config[config.env].baseURL + params.value.url, '_blank');
+                                                        }
+                                                    }}
+                                                >
+                                                    {params.value.filename || 'No Document'}
+                                                </IconButton>
                                             </Tooltip>
                                         ),
                                     },
