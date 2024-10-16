@@ -15,7 +15,7 @@ const config = {
         wsURL: 'http://3.137.84.84/socket.io'
     },
     local: {
-        baseURL: 'http://localhost:3000/',
+        baseURL: 'http://localhost:3000',
         httpURL: 'http://localhost:3000/api/v1',
         wsURL: 'http://localhost:3000/socket.io'
     }
