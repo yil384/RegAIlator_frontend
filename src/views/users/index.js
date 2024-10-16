@@ -21,7 +21,6 @@ import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/Cu
 import Typography from '@material-ui/core/Typography';
 import EditIcon from '@material-ui/icons/Edit';
 import { NotificationsActive } from '@material-ui/icons';
-import EmailListener from '../../utils/emailListener';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // 实心圆带对号
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // 空心圆
@@ -379,7 +378,6 @@ const StudentsComponent = ({ user }) => {
                     }}
                 />
             </div>
-            {/* <EmailListener /> */}
         </MainCard>
     );
 };

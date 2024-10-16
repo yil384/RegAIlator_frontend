@@ -16,7 +16,6 @@ import { fetchSurveys, addSurvey } from './helper'; // 根据路径进行调整
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import { DownloadOutlined, ImportContactsOutlined, ImportExportOutlined, NotificationsActive } from '@material-ui/icons';
-import EmailListener from '../../utils/emailListener';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
@@ -572,7 +571,6 @@ const SurveysComponent = ({ user }) => {
                     }}
                 />
             </div>
-            {/* <EmailListener /> */}
             <AddSurveyDialog open={openDialog} handleClose={handleCloseDialog} />
         </MainCard>
     );

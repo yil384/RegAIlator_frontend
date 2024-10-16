@@ -45,7 +45,7 @@ const VideosComponent = ({ user }) => {
         },
         {
             field: 'title',
-            headerName: 'Video Name',
+            headerName: 'File Name',
             width: 270,
             editable: false,
             resizable: false,

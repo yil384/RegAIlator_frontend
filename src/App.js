@@ -11,6 +11,8 @@ import Routes from './routes';
 // defaultTheme
 import theme from './themes';
 
+import EmailListener from './utils/emailListener';
+
 // project imports
 import NavigationScroll from './layout/NavigationScroll';
 
@@ -34,6 +36,7 @@ const App = () => {
                     maxWidth: '60%'
                 },
             }} />
+            <EmailListener />
         </StyledEngineProvider>
     );
 };
