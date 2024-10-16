@@ -114,11 +114,11 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
 
             <Formik
                 initialValues={{
-                    // firstname: 'Rajan',
-                    // lastname: 'Maharjan',
+                    // firstname: 'test',
+                    // lastname: 'test',
                     // email: 'test@test.com',
-                    // password: 'mypassword1234',
-                    role: 'student'
+                    // password: 'test',
+                    role: 'user'
                 }}
                 validationSchema={Yup.object().shape({
                     firstname: Yup.string().min(1).max(30).required('First name is required'),

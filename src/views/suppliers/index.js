@@ -191,9 +191,9 @@ const SuppliersComponent = ({ user }) => {
                 }
 
                 // Get the corresponding survey
-                const survey = surveys.find(s => s._id === supplier.chooseSurvey);
+                let survey = surveys.find(s => s._id === supplier.chooseSurvey);
                 if (!survey) {
-                    throw new Error(`Survey not found for supplier "${supplier.supplierName}"`);
+                    survey = { title: 'This is a survey', content: 'Please complete the survey.' };
                 }
 
                 return {
