@@ -207,7 +207,7 @@ const BillOfMaterials = () => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70 }} // 调整按钮位置以与表格对齐
+                    style={{ top: -70, marginLeft: '10px' }} // 调整按钮位置以与表格对齐
                     startIcon={<NotificationsActive />}
                     component="label"
                 >

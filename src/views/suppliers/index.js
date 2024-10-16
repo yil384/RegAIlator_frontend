@@ -12,7 +12,7 @@ import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import { fetchSuppliers, addSupplier, updateSupplier } from './helper';
+import { fetchSuppliers, addSupplier, updateSupplier, sendEmailsToSuppliers } from './helper';
 import { fetchSurveys } from '../survey-templates/helper';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -44,6 +44,7 @@ const SuppliersComponent = ({ user }) => {
     const [openDialog, setOpenDialog] = React.useState(false);
     const [surveys, setSurveys] = React.useState([]);
     const [loadingUpdate, setLoadingUpdate] = React.useState(false);
+    const [sendingEmails, setSendingEmails] = React.useState(false); // 新增状态以跟踪发送邮件的加载状态
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -147,6 +148,75 @@ const SuppliersComponent = ({ user }) => {
         loadData();
     };
 
+    const handleSendEmails = async () => {
+        if (selectedIds.length === 0) {
+            toast.error('No suppliers selected');
+            return;
+        }
+
+        // Use SweetAlert2 for confirmation
+        const result = await Swal.fire({
+            title: 'Confirm Sending',
+            text: `Are you sure you want to send emails to the selected ${selectedIds.length} suppliers?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, send it!',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        setSendingEmails(true);
+
+        try {
+            const selectedSuppliers = suppliers.filter(supplier => selectedIds.includes(supplier.id));
+            const emailData = selectedSuppliers.map((supplier) => {
+                // Assuming supplier.contact is the email address
+                const email = supplier.contact;
+                if (!email) {
+                    throw new Error(`Supplier "${supplier.supplierName}" is missing an email address`);
+                }
+
+                // Get the corresponding survey
+                const survey = surveys.find(s => s._id === supplier.chooseSurvey);
+                if (!survey) {
+                    throw new Error(`Survey not found for supplier "${supplier.supplierName}"`);
+                }
+
+                return {
+                    email,
+                    subject: survey.name || 'Survey',
+                    content: survey.content || 'Please complete the survey.'
+                };
+            });
+
+            // 调用 helper.js 中的函数发送邮件
+            const results = await sendEmailsToSuppliers(emailData);
+
+            const fulfilled = results.filter(r => r.status === 'fulfilled').length;
+            const rejected = results.filter(r => r.status === 'rejected');
+
+            if (fulfilled > 0) {
+                toast.success(`${fulfilled} email(s) sent successfully`);
+            }
+
+            if (rejected.length > 0) {
+                rejected.forEach(r => {
+                    if (r.reason) {
+                        toast.error(r.reason.message || 'Error occurred while sending email');
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error while sending emails:', error);
+            toast.error(`Failed to send emails: ${error.message}`);
+        } finally {
+            setSendingEmails(false);
+        }
+    };
+
     const columns = [
         // Selection Column (unchanged)
         {
@@ -194,7 +264,7 @@ const SuppliersComponent = ({ user }) => {
             field: 'supplierName',
             headerName: 'Supplier Name',
             sortable: true,
-            width: 160,
+            width: 190,
             valueGetter: (params) => params.row?.supplierName || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.supplierName || ''} arrow>
@@ -204,7 +274,7 @@ const SuppliersComponent = ({ user }) => {
                 </Tooltip>
             ),
         },
-        // Contact Column
+        // Contact Column (假设这里是邮箱)
         {
             field: 'contact',
             headerName: 'Contact',
@@ -239,7 +309,7 @@ const SuppliersComponent = ({ user }) => {
             field: 'partNumber',
             headerName: 'Part Number',
             sortable: true,
-            width: 150,
+            width: 190,
             valueGetter: (params) => params.row?.partNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.partNumber || ''} arrow>
@@ -359,7 +429,7 @@ const SuppliersComponent = ({ user }) => {
             field: 'supplierDocuments',
             headerName: 'Supplier Documents',
             sortable: true,
-            width: 200,
+            width: 230,
             valueGetter: (params) => params.row?.supplierDocuments || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.supplierDocuments || ''} arrow>
@@ -631,7 +701,7 @@ const SuppliersComponent = ({ user }) => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70 }}
+                    style={{ top: -70, right: -124 }}
                     startIcon={<DownloadOutlined />}
                     component="label"
                     onClick={handleOpenDialog}
@@ -642,7 +712,7 @@ const SuppliersComponent = ({ user }) => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70, marginLeft: '10px' }}
+                    style={{ top: -70, marginLeft: '10px', right: -124 }}
                     startIcon={<DownloadOutlined />}
                     component="label"
                 >
@@ -653,6 +723,17 @@ const SuppliersComponent = ({ user }) => {
                         style={{ display: 'none' }}
                         onChange={handleExcelUpload}
                     />
+                </Button>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    size='small'
+                    style={{ zIndex: 1 }}
+                    startIcon={<NotificationsActive />}
+                    onClick={handleSendEmails}
+                    disabled={sendingEmails || selectedIds.length === 0}
+                >
+                    {sendingEmails ? 'Sending...' : 'Send Emails'}
                 </Button>
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
@@ -665,7 +746,7 @@ const SuppliersComponent = ({ user }) => {
                     autoPageSize
                     density={'standard'}
                     disableSelectionOnClick
-                    loading={isLoading || loadingUpdate}
+                    loading={isLoading || loadingUpdate || sendingEmails}
                     components={{
                         Toolbar: GridToolbar,
                     }}

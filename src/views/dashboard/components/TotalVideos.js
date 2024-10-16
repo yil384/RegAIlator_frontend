@@ -99,7 +99,7 @@ const TotalVideos = () => {
     const [isLoading, setIsLoading] = React.useState(false);
 
     const handleViewDetails = () => {
-        history.push('videos');
+        history.push('files');
     };
 
     const loadData = React.useCallback(async () => {

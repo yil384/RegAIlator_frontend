@@ -3,6 +3,9 @@
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from './../../configs/endpoints';
 
+/**
+ * Fetch all suppliers
+ */
 export const fetchSuppliers = () =>
     fetchApi(
         {
@@ -12,6 +15,9 @@ export const fetchSuppliers = () =>
         true // 包含身份验证
     );
 
+/**
+ * Add a new supplier
+ */
 export const addSupplier = (data) =>
     fetchApi(
         {
@@ -21,13 +27,34 @@ export const addSupplier = (data) =>
         },
         true // 包含身份验证
     );
-    
+
+/**
+ * Update an existing supplier
+ */
 export const updateSupplier = (supplierId, data) =>
     fetchApi(
         {
-            method: 'PUT', // 通常更新操作使用 PUT 或 PATCH
+            method: 'PUT',
             url: `${endpoints.suppliers}/${supplierId}`,
             data
         },
         true // 包含身份验证
     );
+
+/**
+ * Send emails to selected suppliers
+ */
+export const sendEmailsToSuppliers = (emailData) => {
+    return Promise.allSettled(
+        emailData.map((data) =>
+            fetchApi(
+                {
+                    method: 'POST',
+                    url: endpoints.mentionUsers,  // 假设在 endpoints 中定义了此端点
+                    data: { email: data.email, subject: data.subject, content: data.content }
+                },
+                true // 包含身份验证
+            )
+        )
+    );
+};

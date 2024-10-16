@@ -319,7 +319,7 @@ const StudentsComponent = ({ user }) => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70 }}
+                    style={{ top: -70, marginLeft: '10px' }}
                     startIcon={<NotificationsActive />}
                     component="label"
                 >
