@@ -14,8 +14,8 @@ const adminMenuItems = {
         adminMenu,
         dashboard,
         productsMenu,
-        usersMenu,
         filesMenu,
+        usersMenu,
         logsMenu,
     ]
 };
@@ -24,8 +24,8 @@ const defaultMenuItems = {
     items: [
         dashboard,
         productsMenu,
-        usersMenu,
         filesMenu,
+        usersMenu,
         logsMenu
     ]
 };

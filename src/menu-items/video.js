@@ -21,14 +21,6 @@ export const filesMenu = {
     type: 'group',
     children: [
         {
-            id: 'file_groups_menu',
-            title: 'File Groups',
-            type: 'item',
-            url: '/file-groups',
-            icon: icons['IconFolders'],
-            breadcrumbs: false
-        },
-        {
             id: 'files_list_menu',
             title: 'Files',
             type: 'collapse',
@@ -36,6 +28,14 @@ export const filesMenu = {
             icon: icons['IconFile'],
             breadcrumbs: false,
             children: [
+                {
+                    id: 'file_groups_menu',
+                    title: 'File Groups',
+                    type: 'item',
+                    url: '/file-groups',
+                    icon: icons['IconFolders'],
+                    breadcrumbs: false
+                },
                 {
                     id: 'files_all',
                     title: 'All Files',
