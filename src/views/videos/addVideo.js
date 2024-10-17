@@ -159,7 +159,7 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                 <Formik
                     initialValues={{}}
                     validationSchema={Yup.object().shape({
-                        videoGroup: Yup.string().required('Please select the video group')
+                        videoGroup: Yup.string().optional('Please select the video group')
                     })}
                     onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                         try {

@@ -823,7 +823,7 @@ const SuppliersComponent = ({ user }) => {
                 />
             </div>
             <AddSupplierDialog open={openDialog} handleClose={handleCloseDialog} />
-            <Dialog open={openDialogFeedback} onClose={handleCloseDialogFeedback} maxWidth="md" fullWidth>
+            <Dialog open={openDialogFeedback} onClose={handleCloseDialogFeedback} maxWidth="lg" fullWidth>
                 <DialogTitle>
                     Feedback & Documents
                     <IconButton
@@ -836,7 +836,7 @@ const SuppliersComponent = ({ user }) => {
                 </DialogTitle>
                 <DialogContent>
                     {selectedFeedback.length > 0 ? (
-                        <div style={{ height: 400, width: '100%' }}>
+                        <div style={{ height: 666, width: '100%' }}>
                             <DataGrid
                                 rows={selectedFeedback.map((feedback, index) => ({
                                     id: index, // 必须为每一行设置唯一的 `id`
@@ -888,7 +888,7 @@ const SuppliersComponent = ({ user }) => {
                                         ),
                                     },
                                 ]}
-                                pageSize={5}
+                                pageSize={10}
                                 autoHeight
                                 disableSelectionOnClick
                                 density={'standard'}

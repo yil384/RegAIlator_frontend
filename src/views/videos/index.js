@@ -28,6 +28,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import { Tooltip } from '@material-ui/core';
 
 import config from '../../configs';
+import { fetchSuppliers } from '../suppliers/helper';
 
 // 设置 PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -39,6 +40,8 @@ const VideosComponent = ({ user }) => {
 
     const [videos, setVideos] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
+
+    const [suppliers, setSuppliers] = React.useState([]);
 
     // 对话框状态
     const [openDialog, setOpenDialog] = React.useState(false);
@@ -54,10 +57,13 @@ const VideosComponent = ({ user }) => {
             setIsLoading(true);
             const response = await fetchVideos({ sortBy: '-updatedAt' });
             setVideos(response?.results || []);
+            const suppliersResponse = await fetchSuppliers();
+            setSuppliers(suppliersResponse || []);
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
             // 可选：添加错误处理
+            console.error('Failed to load:', e);
         }
     }, []);
 
@@ -80,6 +86,28 @@ const VideosComponent = ({ user }) => {
     const columns = [
         // { field: 'id', width: 200, headerName: 'ID', hide: false },
         {
+            field: 'supplier',
+            headerName: 'Supplier Name',
+            width: 200,
+            editable: false,
+            resizable: false,
+            disableClickEventBubbling: true,
+            renderCell: (params) => {
+                const supplierEmail = params.row?.supplier;
+        
+                // 如果有供应商邮箱，查找对应的供应商数据
+                const matchedSupplier = suppliers.find(supplier => supplier.contact === supplierEmail);
+        
+                return (
+                    <Tooltip title={matchedSupplier ? matchedSupplier.supplierName : 'Supplier not found'} arrow>
+                        <Typography variant='body1' noWrap>
+                            {matchedSupplier ? matchedSupplier.supplierName : ''}
+                        </Typography>
+                    </Tooltip>
+                );
+            }
+        },        
+        {
             field: 'title',
             headerName: 'File Name',
             width: 250,
@@ -95,6 +123,7 @@ const VideosComponent = ({ user }) => {
             resizable: false,
             disableClickEventBubbling: true,
             renderCell: (params) => (
+                params.row?.group && 
                 <Typography variant='body1'>
                     {params.row?.group.groupName}
                 </Typography>
