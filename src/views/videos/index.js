@@ -44,6 +44,11 @@ const VideosComponent = ({ user }) => {
     const [openDialog, setOpenDialog] = React.useState(false);
     const [selectedVideo, setSelectedVideo] = React.useState(null);
 
+    const [numPages, setNumPages] = React.useState(null);
+    const onDocumentLoadSuccess = ({ numPages }) => {
+        setNumPages(numPages);
+    };
+
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
@@ -271,9 +276,16 @@ const VideosComponent = ({ user }) => {
                                         <Document
                                             file={config[config.env].baseURL + selectedVideo.path}
                                             onLoadError={console.error}
+                                            onLoadSuccess={onDocumentLoadSuccess}
                                             loading={<LoaderInnerCircular />}
                                         >
-                                            <Page pageNumber={1} width={500} />
+                                            {/* 获取 PDF 页面总数并渲染所有页面 */}
+                                            {Array.from(
+                                                new Array(numPages),
+                                                (el, index) => (
+                                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} width={500} />
+                                                )
+                                            )}
                                         </Document>
                                     ) : (
                                         <Typography variant='body1'>
