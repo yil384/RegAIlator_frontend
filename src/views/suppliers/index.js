@@ -31,6 +31,11 @@ import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import { useStyles } from './styles';
 import config from '../../configs';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+// 设置 PDF Worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
 
 const statusOptions = ['inactive', 'replied', 'read', 'unread'];
 
@@ -61,6 +66,19 @@ const SuppliersComponent = ({ user }) => {
     const handleCloseDialogFeedback = () => {
         setOpenDialogFeedback(false);
         setSelectedFeedback([]);
+    };
+
+    const [selectedDocument, setSelectedDocument] = React.useState(null); // State to manage selected document for preview
+    const [previewingFileType, setPreviewingFileType] = React.useState(''); // Store file type for rendering logic
+    const [numPages, setNumPages] = React.useState(null); // State for the number of PDF pages
+
+    const handleDocumentClick = (document) => {
+        setSelectedDocument(document);
+        console.log('document',document);
+        // Determine the file type based on the document
+        const fileExtension = document.filename.split('.').pop();
+        console.log('file extension',fileExtension);
+        setPreviewingFileType(fileExtension);
     };
 
     const loadData = React.useCallback(async () => {
@@ -836,66 +854,119 @@ const SuppliersComponent = ({ user }) => {
                 </DialogTitle>
                 <DialogContent>
                     {selectedFeedback.length > 0 ? (
-                        <div style={{ height: 666, width: '100%' }}>
-                            <DataGrid
-                                rows={selectedFeedback.map((feedback, index) => ({
-                                    id: index, // 必须为每一行设置唯一的 `id`
-                                    subject: feedback.subject || 'No Subject',
-                                    content: feedback.content || 'No Content',
-                                    supplierDocument: Array.isArray(feedback.attachments) && feedback.attachments.length > 0 
-                                                        ? {filename: feedback.attachments[0].filename, url: feedback.attachments[0].content} 
-                                                        : {filename: 'No Document', url: ''}
-                                }))}
-                                columns={[
-                                    {
-                                        field: 'subject',
-                                        headerName: 'Subject',
-                                        width: 200,
-                                        renderCell: (params) => (
-                                            <Tooltip title={params.value || 'No Subject'} arrow>
-                                                <Typography noWrap>{params.value}</Typography>
-                                            </Tooltip>
-                                        ),
-                                    },
-                                    {
-                                        field: 'content',
-                                        headerName: 'Content',
-                                        width: 300,
-                                        renderCell: (params) => (
-                                            <Tooltip title={params.value || 'No Content'} arrow>
-                                                <Typography noWrap>{params.value}</Typography>
-                                            </Tooltip>
-                                        ),
-                                    },
-                                    {
-                                        field: 'supplierDocument',
-                                        headerName: 'Document',
-                                        width: 200,
-                                        renderCell: (params) => (
-                                            <Tooltip title={params.value.filename || 'No Document'} arrow>
-                                                <IconButton
-                                                    size='small'
-                                                    color="primary"
-                                                    onClick={() => {
-                                                        if (params.value.url) {
-                                                            window.open(config[config.env].baseURL + params.value.url, '_blank');
-                                                        }
-                                                    }}
-                                                >
-                                                    {params.value.filename || 'No Document'}
-                                                </IconButton>
-                                            </Tooltip>
-                                        ),
-                                    },
-                                ]}
-                                pageSize={10}
-                                autoHeight
-                                disableSelectionOnClick
-                                density={'standard'}
-                                components={{
-                                    Toolbar: GridToolbar,
-                                }}
-                            />
+                        <div style={{ display: 'flex', height: 666, width: '100%' }}>
+                            {/* Document Preview Area */}
+                            <div style={{
+                                flex: '9',
+                                height: '100%',
+                                border: `1px solid ${theme.palette.divider}`,
+                                boxSizing: 'border-box',
+                                backgroundColor: '#fff',
+                                marginRight: '8px',
+                                position: 'relative',
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    overflow: 'auto',
+                                    padding: '8px'
+                                }}>
+                                    {selectedDocument ? (
+                                        previewingFileType === 'pdf' ? (
+                                            <Document
+                                                file={config[config.env].baseURL + selectedDocument.url}
+                                                onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                                loading={<LoaderInnerCircular />}
+                                            >
+                                                {Array.from(new Array(numPages), (el, index) => (
+                                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} width={500} />
+                                                ))}
+                                            </Document>
+                                        ) : previewingFileType === 'xlsx' ? (
+                                            <Typography variant='body1'>XLSX files cannot be previewed directly. Download to view.</Typography>
+                                        ) : previewingFileType === 'txt' ? (
+                                            <iframe 
+                                                src={config[config.env].baseURL + selectedDocument.url} 
+                                                style={{ width: '100%', height: '100%', border: 'none' }} 
+                                                title="Text Document Preview"
+                                            />
+                                        ) : (
+                                            <Typography variant='body1'>File type not supported for preview.</Typography>
+                                        )
+                                    ) : (
+                                        <Typography variant='body1'>
+                                            No file available.
+                                        </Typography>
+                                    )}
+                                </div>
+                            </div>
+                            {/* DataGrid Area */}
+                            <div style={{
+                                flex: '13',
+                                height: '100%',
+                                border: `1px solid ${theme.palette.divider}`,
+                                boxSizing: 'border-box',
+                                backgroundColor: '#fff',
+                            }}>
+                                <DataGrid
+                                    rows={selectedFeedback.map((feedback, index) => ({
+                                        id: index,
+                                        subject: feedback.subject || 'No Subject',
+                                        content: feedback.content || 'No Content',
+                                        supplierDocument: Array.isArray(feedback.attachments) && feedback.attachments.length > 0 
+                                                            ? { filename: feedback.attachments[0].filename, url: feedback.attachments[0].content } 
+                                                            : { filename: 'No Document', url: '' }
+                                    }))}
+                                    columns={[
+                                        {
+                                            field: 'subject',
+                                            headerName: 'Subject',
+                                            width: 200,
+                                            renderCell: (params) => (
+                                                <Tooltip title={params.value || 'No Subject'} arrow>
+                                                    <Typography noWrap>{params.value}</Typography>
+                                                </Tooltip>
+                                            ),
+                                        },
+                                        {
+                                            field: 'content',
+                                            headerName: 'Content',
+                                            width: 300,
+                                            renderCell: (params) => (
+                                                <Tooltip title={params.value || 'No Content'} arrow>
+                                                    <Typography noWrap>{params.value}</Typography>
+                                                </Tooltip>
+                                            ),
+                                        },
+                                        {
+                                            field: 'supplierDocument',
+                                            headerName: 'Document',
+                                            width: 200,
+                                            renderCell: (params) => (
+                                                <Tooltip title={params.value.filename || 'No Document'} arrow>
+                                                    <IconButton
+                                                        size='small'
+                                                        color="primary"
+                                                        onClick={() => handleDocumentClick(params.value)}
+                                                    >
+                                                        {params.value.filename || 'No Document'}
+                                                    </IconButton>
+                                                </Tooltip>
+                                            ),
+                                        },
+                                    ]}
+                                    pageSize={9}
+                                    autoHeight
+                                    disableSelectionOnClick
+                                    density={'standard'}
+                                    components={{
+                                        Toolbar: GridToolbar,
+                                    }}
+                                />
+                            </div>
                         </div>
                     ) : (
                         <Typography variant="body1">
