@@ -1,6 +1,6 @@
 // assets
 import { IconUsers, IconUserExclamation } from '@tabler/icons';
-import { SupervisorAccountOutlined, PeopleOutline, BallotOutlined, FaceOutlined, ChromeReaderModeOutlined } from '@material-ui/icons';
+import { SupervisorAccountOutlined, PeopleOutline, BallotOutlined, FaceOutlined, ChromeReaderModeOutlined, ProductionQuantityLimitsOutlined } from '@material-ui/icons';
 import SvgIcon from '@mui/material/SvgIcon';
 import React from 'react';
 import {ReactComponent as DeliveryIconSvg} from '../assets/images/delivery.svg';
@@ -70,24 +70,8 @@ export const productsMenu = {
             id: 'users_menu',
             title: 'Product',
             type: 'collapse',
-            icon: BallotOutlined,
+            icon: ProductionQuantityLimitsOutlined,
             children: [
-                {
-                    id: 'menu_suppliers',
-                    title: 'Suppliers',
-                    type: 'item',
-                    url: '/suppliers',
-                    icon: SupervisorAccountOutlined,
-                    breadcrumbs: false
-                },
-                {
-                    id: 'menu_templates',
-                    title: 'Survey Templates',
-                    type: 'item',
-                    url: '/survey-templates',
-                    icon: ChromeReaderModeOutlined,
-                    breadcrumbs: false
-                },
                 {
                     id: 'menu_bill_of_materials',
                     title: 'Bill of Materials',

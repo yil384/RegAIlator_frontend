@@ -1,5 +1,6 @@
 // assets
 import { IconFolders, IconListSearch, IconFolderPlus, IconFile, IconFilePlus, IconFiles } from '@tabler/icons';
+import { SupervisorAccountOutlined, PeopleOutline, BallotOutlined, DocumentScannerOutlined, ChromeReaderModeOutlined } from '@material-ui/icons';
 
 // constant
 const icons = {
@@ -21,36 +22,58 @@ export const filesMenu = {
     type: 'group',
     children: [
         {
-            id: 'files_list_menu',
-            title: 'Files',
+            id: 'users_menu',
+            title: 'Supplier Survey',
             type: 'collapse',
-            url: '/files',
-            icon: icons['IconFile'],
-            breadcrumbs: false,
+            icon: BallotOutlined,
             children: [
                 {
-                    id: 'file_groups_menu',
-                    title: 'File Groups',
+                    id: 'menu_suppliers',
+                    title: 'Suppliers',
                     type: 'item',
-                    url: '/file-groups',
-                    icon: icons['IconFolders'],
+                    url: '/suppliers',
+                    icon: SupervisorAccountOutlined,
                     breadcrumbs: false
                 },
                 {
-                    id: 'files_all',
-                    title: 'All Files',
+                    id: 'menu_templates',
+                    title: 'Survey Templates',
                     type: 'item',
-                    url: '/files',
-                    icon: icons['IconFiles'],
+                    url: '/survey-templates',
+                    icon: ChromeReaderModeOutlined,
                     breadcrumbs: false
                 },
                 {
-                    id: 'add_files_all',
-                    title: 'Add Files',
-                    type: 'item',
-                    url: '/files/add',
-                    icon: icons['IconFilePlus'],
-                    breadcrumbs: false
+                    id: 'menu_documents',
+                    title: 'Supplier Documents',
+                    type: 'collapse',
+                    icon: DocumentScannerOutlined,
+                    children: [
+                        {
+                            id: 'file_groups_menu',
+                            title: 'File Groups',
+                            type: 'item',
+                            url: '/file-groups',
+                            icon: icons['IconFolders'],
+                            breadcrumbs: false
+                        },
+                        {
+                            id: 'files_all',
+                            title: 'All Files',
+                            type: 'item',
+                            url: '/files',
+                            icon: icons['IconFiles'],
+                            breadcrumbs: false
+                        },
+                        {
+                            id: 'add_files_all',
+                            title: 'Add Files',
+                            type: 'item',
+                            url: '/files/add',
+                            icon: icons['IconFilePlus'],
+                            breadcrumbs: false
+                        }
+                    ]
                 }
             ]
         }

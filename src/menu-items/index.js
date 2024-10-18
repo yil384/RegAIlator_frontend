@@ -13,8 +13,8 @@ const adminMenuItems = {
     items: [
         adminMenu,
         dashboard,
-        productsMenu,
         filesMenu,
+        productsMenu,
         usersMenu,
         logsMenu,
     ]
@@ -23,8 +23,8 @@ const adminMenuItems = {
 const defaultMenuItems = {
     items: [
         dashboard,
-        productsMenu,
         filesMenu,
+        productsMenu,
         usersMenu,
         logsMenu
     ]
