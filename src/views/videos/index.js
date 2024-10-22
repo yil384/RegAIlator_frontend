@@ -10,6 +10,8 @@ import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/DeleteForever';
 import EditIcon from '@material-ui/icons/Edit';
+import ZoomInIcon from '@material-ui/icons/ZoomIn';
+import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -46,6 +48,14 @@ const VideosComponent = ({ user }) => {
     // 对话框状态
     const [openDialog, setOpenDialog] = React.useState(false);
     const [selectedVideo, setSelectedVideo] = React.useState(null);
+    const [scale, setScale] = React.useState(1.0); // 初始缩放比例
+    const handleZoomIn = () => {
+        setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // 最大缩放比例3.0
+    };
+    const handleZoomOut = () => {
+        setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩放比例0.4
+    };
+    
 
     const [numPages, setNumPages] = React.useState(null);
     const onDocumentLoadSuccess = ({ numPages }) => {
@@ -284,17 +294,32 @@ const VideosComponent = ({ user }) => {
                         <div style={{ display: 'flex', height: 666, width: '100%' }}>
                             {/* PDF 预览区域 */}
                             <div style={{
-                                flex: '9', // 使其占据可用空间
-                                height: '100%', // 设置高度
+                                flex: '9',
+                                height: '100%',
                                 border: `1px solid ${theme.palette.divider}`,
                                 boxSizing: 'border-box',
                                 backgroundColor: '#fff',
-                                marginRight: '8px', // 添加右边距
+                                marginRight: '8px',
                                 position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
                             }}>
+                                {/* Zoom 控制按钮 */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <IconButton onClick={handleZoomOut} aria-label="zoom out">
+                                        <ZoomOutIcon />
+                                    </IconButton>
+                                    <Typography variant="body2" style={{ margin: '0 8px' }}>
+                                        {`${Math.round(scale * 100)}%`}
+                                    </Typography>
+                                    <IconButton onClick={handleZoomIn} aria-label="zoom in">
+                                        <ZoomInIcon />
+                                    </IconButton>
+                                </div>
+                                {/* PDF 内容区域 */}
                                 <div style={{
                                     position: 'absolute',
-                                    top: 0,
+                                    top: '29px', // 根据按钮的高度调整
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
@@ -308,11 +333,15 @@ const VideosComponent = ({ user }) => {
                                             onLoadSuccess={onDocumentLoadSuccess}
                                             loading={<LoaderInnerCircular />}
                                         >
-                                            {/* 获取 PDF 页面总数并渲染所有页面 */}
                                             {Array.from(
                                                 new Array(numPages),
                                                 (el, index) => (
-                                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} width={500} />
+                                                    <Page
+                                                        key={`page_${index + 1}`}
+                                                        pageNumber={index + 1}
+                                                        scale={scale} // 使用缩放比例
+                                                        // 如果需要，可以使用 width 属性代替 scale
+                                                    />
                                                 )
                                             )}
                                         </Document>
@@ -325,7 +354,7 @@ const VideosComponent = ({ user }) => {
                             </div>
                             {/* DataGrid 区域 */}
                             <div style={{
-                                flex: '13', // 使其占据可用空间
+                                flex: '13',
                                 height: '100%',
                                 border: `1px solid ${theme.palette.divider}`,
                                 boxSizing: 'border-box',
