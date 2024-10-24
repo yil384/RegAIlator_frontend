@@ -16,7 +16,7 @@ import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/DeleteForever';
 import EditIcon from '@material-ui/icons/Edit';
-import { deleteVideoGroup } from './video-groups.helper';
+import CloseIcon from '@material-ui/icons/Close';
 import Swal from 'sweetalert2';
 
 import {
@@ -31,10 +31,10 @@ import {
     MenuItem,
     OutlinedInput,
     Select,
-    IconButton as MuiIconButton
+    IconButton as MuiIconButton,
+    DialogActions,
+    Tooltip
 } from '@material-ui/core';
-
-import CloseIcon from '@material-ui/icons/Close';
 
 import * as Yup from 'yup';
 import { Formik } from 'formik';
@@ -45,7 +45,9 @@ import { useStyles } from './video-groups.styles';
 
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
-import toast from 'react-hot-toast';
+
+import { deleteVideoGroup } from './video-groups.helper';
+import { fetchVideos } from '../videos/videos.helper'; // Adjust the path if necessary
 
 // 主组件
 const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLoading, videoGroups, user }) => {
@@ -58,6 +60,12 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
 
     const [openDialog, setOpenDialog] = React.useState(false);
     const [selectedAccessState, setSelectedAccessState] = React.useState('public');
+
+    // State variables for the files dialog
+    const [openDetailsDialog, setOpenDetailsDialog] = React.useState(false);
+    const [selectedGroup, setSelectedGroup] = React.useState(null);
+    const [groupFiles, setGroupFiles] = React.useState([]);
+    const [isFilesLoading, setIsFilesLoading] = React.useState(false);
 
     const handleOpenDialog = () => {
         setOpenDialog(true);
@@ -75,10 +83,26 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
         fetchVideoGroupsAction(); // 刷新列表
     };
 
+    const fetchGroupFiles = React.useCallback(async (groupId) => {
+        try {
+            setIsFilesLoading(true);
+            const response = await fetchVideos({ group: groupId, sortBy: '-updatedAt' });
+            setGroupFiles(response?.results || []);
+            setIsFilesLoading(false);
+        } catch (e) {
+            setIsFilesLoading(false);
+            // Handle error
+            console.error('Failed to load files:', e);
+        }
+    }, []);
+
     const columns = [
-        {
-            field: 'id', width: 270, headerName: 'ID', hide: false
-        },
+        // {
+        //     field: 'id',
+        //     width: 270,
+        //     headerName: 'ID',
+        //     hide: false
+        // },
         {
             field: 'groupName',
             headerName: 'Group Name',
@@ -98,7 +122,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
             disableClickEventBubbling: true,
             renderCell: (params) => {
                 return (
-                    <Typography variant='value1'>
+                    <Typography variant='body1'>
                         {params.row?.accessState.toUpperCase()}
                     </Typography>
                 );
@@ -123,7 +147,10 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
                             startIcon={<EditIcon />}
                             style={{ marginLeft: 16 }}
                             onClick={() => {
-                                history.push(`video-groups/${params.row.id}`);
+                                // Open the dialog and fetch files
+                                setSelectedGroup(params.row);
+                                setOpenDetailsDialog(true);
+                                fetchGroupFiles(params.row.id);
                             }}
                         >
                             Details
@@ -294,6 +321,83 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
         );
     };
 
+    // 显示组内文件的对话框组件
+    const GroupFilesDialog = ({ open, onClose, group, files, isLoading }) => {
+        const theme = useTheme();
+
+        const columns = [
+            {
+                field: 'title',
+                headerName: 'File Name',
+                width: 250,
+                editable: false,
+                resizable: false,
+                disableClickEventBubbling: true
+            },
+            {
+                field: 'updatedAt',
+                headerName: 'Last Updated',
+                width: 200,
+                editable: false,
+                resizable: false,
+                disableClickEventBubbling: true,
+                renderCell: (params) => (
+                    <Typography variant='body1'>
+                        {new Date(params.row?.updatedAt).toLocaleString()}
+                    </Typography>
+                )
+            },
+            // 你可以根据需要添加更多的列
+        ];
+
+        return (
+            <Dialog
+                open={open}
+                onClose={onClose}
+                fullWidth
+                maxWidth="lg"
+                aria-labelledby="group-files-dialog"
+            >
+                <DialogTitle id="group-files-dialog">
+                    Files in {group?.groupName}
+                    <IconButton
+                        aria-label="close"
+                        onClick={onClose}
+                        style={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    {isLoading ? (
+                        <LoaderInnerCircular />
+                    ) : (
+                        <div style={{ height: 400, width: '100%' }}>
+                            <DataGrid
+                                rows={files}
+                                columns={columns}
+                                pageSize={5}
+                                rowsPerPageOptions={[5]}
+                                disableSelectionOnClick
+                                autoHeight
+                                density='standard'
+                                components={{
+                                    LoadingOverlay: CustomLoadingOverlay,
+                                    NoRowsOverlay: CustomNoRowsOverlay
+                                }}
+                            />
+                        </div>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    };
+
     return (
         <MainCard title='File Groups' boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -327,6 +431,15 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
             </div>
             {/* 添加对话框组件 */}
             <AddVideoGroupDialog open={openDialog} handleClose={handleCloseDialog} />
+
+            {/* 显示组内文件的对话框组件 */}
+            <GroupFilesDialog
+                open={openDetailsDialog}
+                onClose={() => setOpenDetailsDialog(false)}
+                group={selectedGroup}
+                files={groupFiles}
+                isLoading={isFilesLoading}
+            />
         </MainCard>
     );
 };

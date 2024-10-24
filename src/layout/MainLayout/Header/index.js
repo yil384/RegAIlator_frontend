@@ -78,10 +78,10 @@ const Header = ({ handleLeftDrawerToggle }) => {
             <div className={classes.grow} />
             <div className={classes.grow} />
 
-            {/* Pipeline 组件 */}
+            {/* Pipeline 组件
             <Grid item>
                 <Pipeline activeStep={2} />
-            </Grid>
+            </Grid> */}
 
             <div className={classes.grow} />
             <div className={classes.grow} />

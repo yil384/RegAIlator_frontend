@@ -184,8 +184,7 @@ const UserDetails = ({ fetchUserDetailsAction, isLoading, userDetails, user }) =
                                                 <em>None</em>
                                             </MenuItem>
                                             <MenuItem value={'admin'}>Admin</MenuItem>
-                                            <MenuItem value={'instructor'}>Instructor</MenuItem>
-                                            <MenuItem value={'student'}>Student</MenuItem>
+                                            <MenuItem value={'user'}>Student</MenuItem>
                                         </Select>
                                         {errors.role && (
                                             <FormHelperText error

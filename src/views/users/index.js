@@ -38,6 +38,9 @@ const StudentsComponent = ({ user }) => {
     const [filterIds, setFilterIds] = React.useState([]); // 记录筛选的行
 
     const loadData = React.useCallback(async () => {
+        if (user.role === 'user') {
+            return; // 如果 role 为 user，则不显示
+        }
         try {
             setIsLoading(true);
             const response = await fetchUsers();

@@ -5,15 +5,15 @@ import AdminDashboard from './AdminDashboard';
 import StudentDashboard from './StudentDashboard';
 
 const Dashboard = ({ isLoading, user }) => {
-    // const userRole = user.role;
-    // switch (userRole) {
-    //     case 'student':
-    //         return <StudentDashboard />;
-    //     default:
-    //         return <AdminDashboard />;
-    // }
-
-    return <AdminDashboard/ >;
+    if (isLoading) {
+        return null;
+    }
+    switch (user.role) {
+        case 'user':
+            return <StudentDashboard />;
+        default:
+            return <AdminDashboard />;
+    }
 };
 
 const mapStateToProps = (state) => ({

@@ -429,40 +429,40 @@ const SuppliersComponent = ({ user }) => {
             },
         },
         // Status Column
-        {
-            field: 'status',
-            headerName: 'Status',
-            sortable: true,
-            width: 150,
-            editable: true,
-            valueGetter: (params) => params.row?.status || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.status || ''} arrow>
-                    <Typography variant="body1" noWrap>
-                        {params.row?.status}
-                    </Typography>
-                </Tooltip>
-            ),
-            renderEditCell: (params) => (
-                <Select
-                    style={{
-                        display: 'flex',
-                        justifyContent: 'center',   // 水平居中
-                        alignItems: 'center',       // 垂直居中
-                        height: '100%',             // 使容器的高度占满单元格
-                        width: '100%'               // 使容器的宽度占满单元格
-                    }}
-                    value={params.row.status}
-                    onChange={(event) => handleStatusChange(params.row.id, event.target.value)}
-                >
-                    {statusOptions.map((status) => (
-                        <MenuItem key={status} value={status}>
-                            {status}
-                        </MenuItem>
-                    ))}
-                </Select>
-            ),
-        },
+        // {
+        //     field: 'status',
+        //     headerName: 'Status',
+        //     sortable: true,
+        //     width: 150,
+        //     editable: true,
+        //     valueGetter: (params) => params.row?.status || '',
+        //     renderCell: (params) => (
+        //         <Tooltip title={params.row?.status || ''} arrow>
+        //             <Typography variant="body1" noWrap>
+        //                 {params.row?.status}
+        //             </Typography>
+        //         </Tooltip>
+        //     ),
+        //     renderEditCell: (params) => (
+        //         <Select
+        //             style={{
+        //                 display: 'flex',
+        //                 justifyContent: 'center',   // 水平居中
+        //                 alignItems: 'center',       // 垂直居中
+        //                 height: '100%',             // 使容器的高度占满单元格
+        //                 width: '100%'               // 使容器的宽度占满单元格
+        //             }}
+        //             value={params.row.status}
+        //             onChange={(event) => handleStatusChange(params.row.id, event.target.value)}
+        //         >
+        //             {statusOptions.map((status) => (
+        //                 <MenuItem key={status} value={status}>
+        //                     {status}
+        //                 </MenuItem>
+        //             ))}
+        //         </Select>
+        //     ),
+        // },
         // Feedback Column
         {
             field: 'feedback',
