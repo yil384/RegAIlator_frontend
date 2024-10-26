@@ -79,7 +79,64 @@ export const productsMenu = {
                     url: '/bill-of-materials',
                     icon: DeliveryOutlined,
                     breadcrumbs: false
-                }
+                },
+                {
+                    id: 'menu_product_packaging',
+                    title: 'Product Packaging',
+                    type: 'item',
+                    url: '/bill-of-materials',
+                    icon: DeliveryOutlined,
+                    breadcrumbs: false
+                },
+                {
+                    id: 'menu_shipping_packaging',
+                    title: 'Shipping Packaging',
+                    type: 'item',
+                    url: '/bill-of-materials',
+                    icon: DeliveryOutlined,
+                    breadcrumbs: false
+                },
+                {
+                    id: 'menu_equipments',
+                    title: 'Equipments',
+                    type: 'item',
+                    url: '/bill-of-materials',
+                    icon: DeliveryOutlined,
+                    breadcrumbs: false
+                },
+            ]
+        }
+    ]
+};
+
+export const regulatoriesMenu = {
+    id: 'regulatories_menu',
+    title: 'Accounts',
+    caption: 'Praxi Users',
+    type: 'group',
+    children: [
+        {
+            id: 'regulatories_menu',
+            title: 'Regulatory Assessment',
+            type: 'collapse',
+            icon: ProductionQuantityLimitsOutlined,
+            children: [
+                {
+                    id: 'menu_rm_assessment',
+                    title: 'RM Assessment',
+                    type: 'item',
+                    url: '/rm-assessment',
+                    icon: DeliveryOutlined,
+                    breadcrumbs: false
+                },
+                {
+                    id: 'menu_statement_template',
+                    title: 'Statement template',
+                    type: 'item',
+                    url: '/statement-template',
+                    icon: DeliveryOutlined,
+                    breadcrumbs: false
+                },
             ]
         }
     ]

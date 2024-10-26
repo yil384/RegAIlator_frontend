@@ -12,10 +12,10 @@ import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
 
-import { fetchSurveys, addSurvey } from './helper'; // 根据路径进行调整
+import { fetchSurveys, addSurvey, deleteSurveys } from './helper'; // 根据路径进行调整
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
-import { DownloadOutlined, ImportContactsOutlined, ImportExportOutlined, NotificationsActive } from '@material-ui/icons';
+import { DeleteOutlined, DownloadOutlined, ImportContactsOutlined, ImportExportOutlined, NotificationsActive } from '@material-ui/icons';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
@@ -328,7 +328,7 @@ const SurveysComponent = ({ user }) => {
                             name: Yup.string().required('Name is required'),
                             content: Yup.string().required('Content is required'),
                             description: Yup.string(),
-                            attachment: Yup.string(),
+                            // attachment: Yup.string(),
                             revision: Yup.number().integer().min(1).required('Revision is required')
                         })}
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
@@ -435,23 +435,6 @@ const SurveysComponent = ({ user }) => {
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
-                                            <InputLabel htmlFor="attachment">Attachment</InputLabel>
-                                            <OutlinedInput
-                                                id="attachment"
-                                                type="text"
-                                                value={values.attachment}
-                                                name="attachment"
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                                label="Attachment"
-                                            />
-                                            {errors.attachment && (
-                                                <FormHelperText error>{errors.attachment}</FormHelperText>
-                                            )}
-                                        </FormControl>
-                                    </MuiGrid>
-                                    <MuiGrid item xs={12}>
-                                        <FormControl fullWidth className={classes.input}>
                                             <InputLabel htmlFor="revision">Revision</InputLabel>
                                             <OutlinedInput
                                                 id="revision"
@@ -492,6 +475,46 @@ const SurveysComponent = ({ user }) => {
         );
     };
 
+    const [deletingSurveys, setDeletingSurveys] = React.useState(false); // 新增的状态
+
+    // 实现 handleDeleteSurveys 函数
+    const handleDeleteSurveys = async () => {
+        if (selectedIds.length === 0) {
+            toast.error('No surveys selected');
+            return;
+        }
+
+        // 使用 SweetAlert2 进行确认
+        const result = await Swal.fire({
+            title: '确认删除',
+            text: `您确定要删除选中的 ${selectedIds.length} 个调查吗？`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '是的，删除它们！',
+            cancelButtonText: '取消',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        setDeletingSurveys(true);
+
+        try {
+            await deleteSurveys(selectedIds);
+            toast.success('Surveys deleted successfully');
+            // 重新加载调查列表
+            await loadData();
+            // 清空选中的 IDs
+            setSelectedIds([]);
+        } catch (error) {
+            console.error('Error deleting surveys:', error);
+            toast.error('Failed to delete surveys');
+        } finally {
+            setDeletingSurveys(false);
+        }
+    };
+
     return (
         <MainCard title='Surveys' boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -521,6 +544,17 @@ const SurveysComponent = ({ user }) => {
                         style={{ display: 'none' }}
                         onChange={handleExcelUpload}
                     />
+                </Button>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    startIcon={<DeleteOutlined />}
+                    onClick={handleDeleteSurveys}
+                    disabled={deletingSurveys || selectedIds.length === 0}
+                >
+                    {deletingSurveys ? 'Deleting...' : 'Delete Surveys'}
                 </Button>
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>

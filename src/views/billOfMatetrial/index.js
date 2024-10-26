@@ -8,11 +8,11 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { Typography } from '@material-ui/core';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
-import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
+import Tooltip from '@material-ui/core/Tooltip';
 import { fetchBillOfMaterials } from './helper'; // 假设的 API 用于获取数据
 
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
-import * as XLSX from 'xlsx';  // 导入 xlsx 库
+import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
 import { NotificationsActive } from '@material-ui/icons';
 
@@ -66,7 +66,7 @@ const BillOfMaterials = () => {
     };
 
     const columns = [
-        // 选择框列
+        // Selection Column
         {
             field: 'select',
             headerName: (
@@ -103,10 +103,10 @@ const BillOfMaterials = () => {
                 );
             },
         },
-        // 产品名称列
+        // Product Column
         {
             field: 'productName',
-            headerName: 'Product Name',
+            headerName: 'Product',
             width: 200,
             valueGetter: (params) => params.row?.productName || '',
             renderCell: (params) => (
@@ -117,10 +117,10 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // 产品部件编号列
+        // Product PV Column
         {
             field: 'productPartNumber',
-            headerName: 'Product Part Number',
+            headerName: 'Product PV',
             width: 200,
             valueGetter: (params) => params.row?.productPartNumber || '',
             renderCell: (params) => (
@@ -131,24 +131,24 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // 原材料部件编号列
+        // Facility Column
         {
-            field: 'rawMaterialPartNumber',
-            headerName: 'Raw Material Part Number',
+            field: 'facility',
+            headerName: 'Facility',
             width: 200,
-            valueGetter: (params) => params.row?.rawMaterialPartNumber || '',
+            valueGetter: (params) => params.row?.facility || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.rawMaterialPartNumber || ''} arrow>
+                <Tooltip title={params.row?.facility || ''} arrow>
                     <Typography variant="body1" noWrap>
-                        {params.row?.rawMaterialPartNumber}
+                        {params.row?.facility}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 原材料部件描述列
+        // Raw Material Column
         {
             field: 'rawMaterialPartDescription',
-            headerName: 'Raw Material Part Description',
+            headerName: 'Raw Material',
             width: 300,
             valueGetter: (params) => params.row?.rawMaterialPartDescription || '',
             renderCell: (params) => (
@@ -159,16 +159,44 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // 原材料合规信息列
+        // RM PN Column (Raw Material Part Number)
         {
-            field: 'rawMaterialComplianceInfo',
-            headerName: 'Raw Material Compliance Information',
-            width: 300,
-            valueGetter: (params) => params.row?.rawMaterialComplianceInfo || '',
+            field: 'rawMaterialPartNumber',
+            headerName: 'RM PN',
+            width: 200,
+            valueGetter: (params) => params.row?.rawMaterialPartNumber || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.rawMaterialComplianceInfo || ''} arrow>
+                <Tooltip title={params.row?.rawMaterialPartNumber || ''} arrow>
                     <Typography variant="body1" noWrap>
-                        {params.row?.rawMaterialComplianceInfo}
+                        {params.row?.rawMaterialPartNumber}
+                    </Typography>
+                </Tooltip>
+            ),
+        },
+        // Function Column
+        {
+            field: 'function',
+            headerName: 'Function',
+            width: 200,
+            valueGetter: (params) => params.row?.function || '',
+            renderCell: (params) => (
+                <Tooltip title={params.row?.function || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.function}
+                    </Typography>
+                </Tooltip>
+            ),
+        },
+        // Supplier Column
+        {
+            field: 'supplier',
+            headerName: 'Supplier',
+            width: 200,
+            valueGetter: (params) => params.row?.supplier || '',
+            renderCell: (params) => (
+                <Tooltip title={params.row?.supplier || ''} arrow>
+                    <Typography variant="body1" noWrap>
+                        {params.row?.supplier}
                     </Typography>
                 </Tooltip>
             ),

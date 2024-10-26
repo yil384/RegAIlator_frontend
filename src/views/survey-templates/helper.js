@@ -21,3 +21,23 @@ export const addSurvey = (data) =>
         },
         true // 包含身份验证
     );
+
+export const updateSurvey = (surveyId, data) =>
+    fetchApi(
+        {
+            method: 'PUT',
+            url: `${endpoints.surveys}/${surveyId}`,
+            data
+        },
+        true // 包含身份验证
+    );
+
+export const deleteSurveys = (surveyIds) =>
+    fetchApi(
+        {
+            method: 'DELETE',
+            url: `${endpoints.surveys}`,
+            data: { surveyIds }
+        },
+        true // 包含身份验证
+    );

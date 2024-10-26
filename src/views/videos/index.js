@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import toast from 'react-hot-toast'; // Optional: For toast notifications
 
 import MainCard from '../../ui-component/cards/MainCard';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
@@ -18,7 +19,7 @@ import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/Cu
 import { fetchVideos, deleteVideo } from './videos.helper';
 import { useTheme } from '@material-ui/styles';
 
-// 导入 PDF 查看器组件
+// Import PDF Viewer Components
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
@@ -27,12 +28,19 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import CloseIcon from '@material-ui/icons/Close';
-import { Tooltip } from '@material-ui/core';
+import { Tooltip, Checkbox } from '@material-ui/core';
+
+import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // Solid circle with check
+import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // Hollow circle
 
 import config from '../../configs';
 import { fetchSuppliers } from '../suppliers/helper';
+import { get } from 'jquery';
 
-// 设置 PDF Worker
+// **Import DownloadIcon**
+import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
+
+// Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const VideosComponent = ({ user }) => {
@@ -45,17 +53,17 @@ const VideosComponent = ({ user }) => {
 
     const [suppliers, setSuppliers] = React.useState([]);
 
-    // 对话框状态
+    // Dialog state
     const [openDialog, setOpenDialog] = React.useState(false);
     const [selectedVideo, setSelectedVideo] = React.useState(null);
-    const [scale, setScale] = React.useState(1.0); // 初始缩放比例
+    const [scale, setScale] = React.useState(1.0); // Initial zoom scale
+
     const handleZoomIn = () => {
-        setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // 最大缩放比例3.0
+        setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // Max zoom 3.0
     };
     const handleZoomOut = () => {
-        setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩放比例0.4
+        setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // Min zoom 0.4
     };
-    
 
     const [numPages, setNumPages] = React.useState(null);
     const onDocumentLoadSuccess = ({ numPages }) => {
@@ -72,8 +80,9 @@ const VideosComponent = ({ user }) => {
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
-            // 可选：添加错误处理
+            // Optional: Add error handling
             console.error('Failed to load:', e);
+            toast.error('Failed to load videos');
         }
     }, []);
 
@@ -81,20 +90,109 @@ const VideosComponent = ({ user }) => {
         loadData();
     }, [loadData]);
 
-    // 打开对话框并设置选中的视频
+    // Open dialog and set selected video
     const handleOpenDialog = (video) => {
         setSelectedVideo(video);
         setOpenDialog(true);
     };
 
-    // 关闭对话框
+    // Close dialog
     const handleCloseDialog = () => {
         setOpenDialog(false);
         setSelectedVideo(null);
     };
 
+    // **Selection State and Handlers**
+    const [selectedIds, setSelectedIds] = React.useState([]); // Selected video IDs
+
+    // Handle individual row selection
+    const handleSelect = (id) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    // Handle select all
+    const handleSelectAll = () => {
+        const allVideoIds = videos.map(video => video.id);
+        if (allVideoIds.every(id => selectedIds.includes(id))) {
+            // If all are selected, deselect all
+            setSelectedIds([]);
+        } else {
+            // Otherwise, select all
+            setSelectedIds(allVideoIds);
+        }
+    };
+
+    // 在 handleDownload 函数中实现多个文件下载
+    const handleDownload = () => {
+        if (selectedIds.length === 0) {
+            toast.warning('No videos selected for download.');
+            return;
+        }
+    
+        const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
+    
+        selectedVideos.forEach(async (video, index) => {
+            try {
+                const response = await fetch(config[config.env].baseURL + video.path);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.href = url;
+                link.setAttribute('download', video.title || 'download'); // 设置下载文件名
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url); // 清理 URL 对象
+            } catch (error) {
+                console.error('File download error:', error);
+                toast.error(`Failed to download ${video.title}`);
+            }
+        });
+    
+        toast.success('Download initiated for selected videos.');
+    };    
+
     const columns = [
-        // { field: 'id', width: 200, headerName: 'ID', hide: false },
+        // **Selection Column**
+        {
+            field: 'select',
+            headerName: (
+                <Checkbox
+                    checked={videos.length > 0 && selectedIds.length === videos.length}
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < videos.length}
+                    onChange={handleSelectAll}
+                    style={{ padding: 0 }}
+                    color="primary"
+                />
+            ),
+            width: 60,
+            sortable: false,
+            filterable: false,
+            resizable: false,
+            editable: false,
+            disableClickEventBubbling: true,
+            disableColumnMenu: true,
+            headerAlign: 'center',
+            renderCell: (params) => {
+                const isSelected = selectedIds.includes(params.row.id);
+                return (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <IconButton onClick={() => handleSelect(params.row.id)}>
+                            {isSelected ? (
+                                <CheckCircleIcon style={{ color: 'green' }} />
+                            ) : (
+                                <RadioButtonUncheckedIcon />
+                            )}
+                        </IconButton>
+                    </div>
+                );
+            }
+        },
+        // **Existing Columns**
         {
             field: 'supplier',
             headerName: 'Supplier Name',
@@ -105,7 +203,7 @@ const VideosComponent = ({ user }) => {
             renderCell: (params) => {
                 const supplierEmail = params.row?.supplier;
         
-                // 如果有供应商邮箱，查找对应的供应商数据
+                // If supplier email exists, find the corresponding supplier data
                 const matchedSupplier = suppliers.find(supplier => supplier.contact === supplierEmail);
         
                 return (
@@ -132,6 +230,7 @@ const VideosComponent = ({ user }) => {
             editable: false,
             resizable: false,
             disableClickEventBubbling: true,
+            getCellValue: (params) => params.row?.group?.groupName,
             renderCell: (params) => (
                 params.row?.group && 
                 <Typography variant='body1'>
@@ -155,7 +254,7 @@ const VideosComponent = ({ user }) => {
         {
             field: 'accessState',
             headerName: 'Access Status',
-            description: 'group privilege',
+            description: 'Group privilege',
             sortable: false,
             width: 160,
             editable: false,
@@ -171,7 +270,7 @@ const VideosComponent = ({ user }) => {
             field: 'Actions',
             headerName: 'Actions',
             headerAlign: 'center',
-            description: 'tools',
+            description: 'Tools',
             sortable: false,
             width: 190,
             resizable: false,
@@ -186,12 +285,12 @@ const VideosComponent = ({ user }) => {
                         style={{ marginLeft: 16 }}
                         onClick={() => handleOpenDialog(params.row)}
                     >
-                            Details
+                        Details
                     </Button>
                     <IconButton
                         style={{ marginLeft: 16 }}
                         onClick={(event) => {
-                            event.stopPropagation(); // 防止事件冒泡
+                            event.stopPropagation(); // Prevent event bubbling
                             Swal.fire({
                                     text: 'Are you sure you wish to delete this item?',
                                 icon: 'warning',
@@ -219,7 +318,7 @@ const VideosComponent = ({ user }) => {
         }
     ];
 
-    // 对话框中 DataGrid 的列
+    // **Dialog DataGrid Columns**
     const dialogColumns = React.useMemo(() => {
         if (!selectedVideo?.json?.data?.length) return [];
         return Object.keys(selectedVideo.json.data[0]).map((key) => ({
@@ -246,7 +345,23 @@ const VideosComponent = ({ user }) => {
 
     return (
         <MainCard title='All Files' boxShadow shadow={theme.shadows[2]}>
-            <div style={{ width: '100%' }}>
+            {/* **Action Buttons** */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    onClick={handleDownload}
+                    disabled={selectedIds.length === 0}
+                    startIcon={<DownloadIcon />} // Ensure DownloadIcon is imported
+                >
+                    Download Selected
+                </Button>
+                {/* You can add more buttons here if needed */}
+            </div>
+
+            <div style={{ width: '100%', marginTop: -31 }}>
                 {
                     isLoading ? <LoaderInnerCircular /> :
                         (
@@ -255,7 +370,7 @@ const VideosComponent = ({ user }) => {
                             columns={columns}
                             pageSize={10}
                             rowsPerPageOptions={[100]}
-                            checkboxSelection={false}
+                            checkboxSelection={false} // Disabled since we're using custom selection
                             autoHeight
                             autoPageSize
                             density='standard'
@@ -271,7 +386,7 @@ const VideosComponent = ({ user }) => {
                 }
             </div>
 
-            {/* Dialog 组件 */}
+            {/* **Dialog Component** */}
             <Dialog
                 open={openDialog}
                 onClose={handleCloseDialog}
@@ -292,7 +407,7 @@ const VideosComponent = ({ user }) => {
                 <DialogContent>
                     {selectedVideo ? (
                         <div style={{ display: 'flex', height: 666, width: '100%' }}>
-                            {/* PDF 预览区域 */}
+                            {/* **PDF Preview Area** */}
                             <div style={{
                                 flex: '9',
                                 height: '100%',
@@ -304,7 +419,7 @@ const VideosComponent = ({ user }) => {
                                 display: 'flex',
                                 flexDirection: 'column',
                             }}>
-                                {/* Zoom 控制按钮 */}
+                                {/* **Zoom Control Buttons** */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                                     <IconButton onClick={handleZoomOut} aria-label="zoom out">
                                         <ZoomOutIcon />
@@ -316,10 +431,10 @@ const VideosComponent = ({ user }) => {
                                         <ZoomInIcon />
                                     </IconButton>
                                 </div>
-                                {/* PDF 内容区域 */}
+                                {/* **PDF Content Area** */}
                                 <div style={{
                                     position: 'absolute',
-                                    top: '29px', // 根据按钮的高度调整
+                                    top: '29px', // Adjust based on button height
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
@@ -339,8 +454,8 @@ const VideosComponent = ({ user }) => {
                                                     <Page
                                                         key={`page_${index + 1}`}
                                                         pageNumber={index + 1}
-                                                        scale={scale} // 使用缩放比例
-                                                        // 如果需要，可以使用 width 属性代替 scale
+                                                        scale={scale} // Use zoom scale
+                                                        // If needed, you can use the width property instead of scale
                                                     />
                                                 )
                                             )}
@@ -352,7 +467,7 @@ const VideosComponent = ({ user }) => {
                                     )}
                                 </div>
                             </div>
-                            {/* DataGrid 区域 */}
+                            {/* **DataGrid Area** */}
                             <div style={{
                                 flex: '13',
                                 height: '100%',

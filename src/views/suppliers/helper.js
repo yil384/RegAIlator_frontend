@@ -41,6 +41,16 @@ export const updateSupplier = (supplierId, data) =>
         true // 包含身份验证
     );
 
+export const deleteSuppliers = (supplierIds) =>
+    fetchApi(
+        {
+            method: 'DELETE',
+            url: `${endpoints.suppliers}`,
+            data: { supplierIds }
+        },
+        true // 包含身份验证
+    );
+
 /**
  * Send emails to selected suppliers
  */

@@ -35,6 +35,8 @@ const AddVideoComponent = Loadable(lazy(() => import('../views/videos/addVideo')
 const WatchLogsComponent = Loadable(lazy(() => import('../views/watch-logs')));
 const ErrorLogsComponent = Loadable(lazy(() => import('../views/error-logs')));
 const BillOfMaterialsComponent = Loadable(lazy(() => import('../views/billOfMatetrial')));
+const RMAssessmentComponent = Loadable(lazy(() => import('../views/RMAssessment')));
+const StatementTemplateComponent = Loadable(lazy(() => import('../views/StatementTemplate')));
 
 //-----------------------|| MAIN ROUTING ||-----------------------//
 
@@ -54,7 +56,9 @@ const routePaths = {
     addVideo: '/files/add',
     watchLogs: '/logs/watch-logs',
     errorLogs: '/logs/error-logs',
-    BillOfMaterials: '/bill-of-materials'
+    BillOfMaterials: '/bill-of-materials',
+    RMAssessment: '/rm-assessment',
+    Statementtemplate: '/statement-template',
 };
 
 const MainRoutes = () => {
@@ -93,6 +97,8 @@ const MainRoutes = () => {
                 routePaths.watchLogs,
                 routePaths.errorLogs,
                 routePaths.BillOfMaterials,
+                routePaths.RMAssessment,
+                routePaths.Statementtemplate,
 
                 '/utils/util-typography',
                 '/utils/util-color',
@@ -125,6 +131,8 @@ const MainRoutes = () => {
                     <PrivateRoute path={routePaths.errorLogs} component={ErrorLogsComponent} />
 
                     <PrivateRoute path={routePaths.BillOfMaterials} component={BillOfMaterialsComponent} />
+                    <PrivateRoute path={routePaths.RMAssessment} component={RMAssessmentComponent} />
+                    <PrivateRoute path={routePaths.Statementtemplate} component={StatementTemplateComponent} />
 
                     <PrivateRoute path='/utils/util-typography' component={UtilsTypography} />
                     <PrivateRoute path='/utils/util-color' component={UtilsColor} />
