@@ -195,7 +195,7 @@ const SuppliersComponent = ({ user }) => {
                     let validSurveyId = '';
                     if (chooseSurvey) {
                         const survey = surveys.find(
-                            (s) => s.name.toLowerCase() === chooseSurvey.toLowerCase() || s._id === chooseSurvey
+                            (s) => s.name.toLowerCase() === chooseSurvey.toString().toLowerCase() || s._id === chooseSurvey
                         );
                         if (survey) {
                             validSurveyId = survey._id;
