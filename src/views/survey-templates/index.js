@@ -13,7 +13,7 @@ import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import { fetchSurveys, addSurvey, deleteSurveys, updateSurvey } from './helper'; // Adjust the path as needed
+import { fetchSurveys, addSurvey, deleteSurveys, updateSurvey, addSurveyAttachment } from './helper'; // Adjust the path as needed
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import { DeleteOutlined, DownloadOutlined, ImportContactsOutlined, FileUpload as FileUploadIcon } from '@material-ui/icons';
@@ -60,6 +60,11 @@ const SurveysComponent = ({ user }) => {
     // Delete surveys
     const [deletingSurveys, setDeletingSurveys] = React.useState(false);
 
+    // State for Attachments Dialog
+    const [openAttachmentsDialog, setOpenAttachmentsDialog] = React.useState(false);
+    const [currentAttachments, setCurrentAttachments] = React.useState([]);
+    const [currentSurveyId, setCurrentSurveyId] = React.useState(null); // Added state for current survey ID
+
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
@@ -80,6 +85,16 @@ const SurveysComponent = ({ user }) => {
     React.useEffect(() => {
         loadData();
     }, [loadData]);
+
+    // 新增 useEffect，监听 surveys 的变化，并更新 currentAttachments
+    React.useEffect(() => {
+        if (openAttachmentsDialog && currentSurveyId) {
+            const updatedSurvey = surveys.find(survey => survey.id === currentSurveyId);
+            if (updatedSurvey) {
+                setCurrentAttachments(updatedSurvey.attachments || []);
+            }
+        }
+    }, [surveys, openAttachmentsDialog, currentSurveyId]);
 
     // Open and close dialog
     const handleOpenDialog = () => setOpenDialog(true);
@@ -134,28 +149,26 @@ const SurveysComponent = ({ user }) => {
 
     // Handle select all
     const handleSelectAll = () => {
-        const allRowIds = filterIds.map((id) => id);
-        if (filterIds.every((id) => selectedIds.includes(id))) {
-            setSelectedIds(selectedIds.filter((id) => !filterIds.includes(id)));
+        const allRowIds = filterIds.length > 0 ? filterIds : surveys.map((survey) => survey.id);
+        if (allRowIds.every((id) => selectedIds.includes(id))) {
+            setSelectedIds(selectedIds.filter((id) => !allRowIds.includes(id)));
         } else {
             setSelectedIds([...new Set([...selectedIds, ...allRowIds])]);
         }
     };
 
-    // 状态管理 for Attachments Dialog
-    const [openAttachmentsDialog, setOpenAttachmentsDialog] = React.useState(false);
-    const [currentAttachments, setCurrentAttachments] = React.useState([]);
-
-    // 打开附件对话框并设置当前附件
-    const handleOpenAttachmentsDialog = (attachments) => {
+    // Open Attachments Dialog and set current survey ID and attachments
+    const handleOpenAttachmentsDialog = (id, attachments) => {
+        setCurrentSurveyId(id);
         setCurrentAttachments(attachments);
         setOpenAttachmentsDialog(true);
     };
 
-    // 关闭附件对话框并清空当前附件
+    // Close Attachments Dialog and clear current attachments and survey ID
     const handleCloseAttachmentsDialog = () => {
         setOpenAttachmentsDialog(false);
         setCurrentAttachments([]);
+        setCurrentSurveyId(null);
     };
 
     // Define columns including attachments column
@@ -265,7 +278,9 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Attachments',
             width: 200,
             sortable: false,
-            valueGetter: (params) => params.row?.attachment || '',
+            valueGetter: (params) => params.row?.attachments && params.row.attachments.length > 0 
+                    ? 'Attachments ('+params.row.attachments.length + ')'
+                    : 'No Attachments',
             renderCell: (params) => {
                 const attachments = params.row.attachments || [];
                 const count = attachments.length;
@@ -273,12 +288,18 @@ const SurveysComponent = ({ user }) => {
                     <Button
                         variant="outlined"
                         color="primary"
-                        onClick={() => handleOpenAttachmentsDialog(attachments)}
+                        onClick={() => handleOpenAttachmentsDialog(params.row.id, attachments)}
                     >
                         Attachments ({count})
                     </Button>
                 ) : (
-                    <Typography variant="body2">No Attachments</Typography>
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => handleOpenAttachmentsDialog(params.row.id, attachments)}
+                    >
+                        No Attachments
+                    </Button>
                 );
             },
         },
@@ -321,6 +342,13 @@ const SurveysComponent = ({ user }) => {
             sortable: true,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
             valueGetter: (params) => params.row?.updatedAt || '',
+            renderCell: (params) => (
+                <Tooltip title={new Date(params.row?.updatedAt).toLocaleString()} arrow>
+                    <Typography variant="body2" noWrap>
+                        {new Date(params.row?.updatedAt).toLocaleString()}
+                    </Typography>
+                </Tooltip>
+            ),
         },
         // Actions Column
         {
@@ -353,7 +381,7 @@ const SurveysComponent = ({ user }) => {
         },
     ];
 
-    // 修改 handleDownloadAttachments 函数为 handleDownloadAttachment
+    // Modify handleDownloadAttachments to handle individual attachment download
     const handleDownloadAttachment = async (attachment) => {
         try {
             console.log('Downloading attachment:', attachment);
@@ -662,22 +690,92 @@ const SurveysComponent = ({ user }) => {
 
     };
 
-    const AttachmentsDialog = ({ open, handleClose, attachments, handleDownloadAttachment }) => {
+    // Updated Attachments Dialog Component with Add/Delete Functionality
+    const AttachmentsDialog = ({ open, handleClose, surveyId, attachments, handleDownloadAttachment, loadData }) => {
+        const theme = useTheme();
+        const classes = useStyles();
+
         const [selectedDocument, setSelectedDocument] = React.useState(null);
         const [numPages, setNumPages] = React.useState(null);
         const [previewingFileType, setPreviewingFileType] = React.useState('');
-    
+        const [selectedFiles, setSelectedFiles] = React.useState([]);
+        const [isUploading, setIsUploading] = React.useState(false);
+        const [isDeleting, setIsDeleting] = React.useState(false);
+
+        const { getRootProps, getInputProps } = useDropzone({
+            onDrop: (acceptedFiles) => {
+                setSelectedFiles(prevFiles => [...prevFiles, ...acceptedFiles]);
+            },
+            maxFiles: 10,
+            minSize: 1,
+            multiple: true,
+        });
+
+        const removeFile = (file) => () => {
+            setSelectedFiles(prevFiles => prevFiles.filter(f => f !== file));
+        };
+
+        const removeAllFiles = () => {
+            setSelectedFiles([]);
+        };
+
         const handleDocumentClick = (attachment) => {
             setSelectedDocument(attachment);
             const fileExtension = attachment.filename.split('.').pop().toLowerCase();
             setPreviewingFileType(fileExtension);
         };
-    
+
         const handleDocumentClose = () => {
             setSelectedDocument(null);
             setPreviewingFileType('');
         };
-    
+
+        // Handle deleting an attachment
+        const handleDeleteAttachment = async (attachmentId) => {
+            setIsDeleting(true);
+            
+            try {
+                // Assuming updateSurvey can handle removing an attachment by its ID
+                const updatedAttachments = attachments.filter(att => att._id !== attachmentId);
+                await updateSurvey(surveyId, { attachments: updatedAttachments });
+                toast.success('Attachment deleted successfully');
+                loadData();
+            } catch (error) {
+                console.error('Failed to delete attachment:', error);
+                toast.error('Failed to delete attachment');
+            } finally {
+                setIsDeleting(false);
+            }
+        };
+
+        // Handle adding new attachments
+        const handleAddAttachments = async () => {
+            if (selectedFiles.length === 0) {
+                toast.error('No files selected for upload');
+                return;
+            }
+
+            setIsUploading(true);
+
+            try {
+                const formData = new FormData();
+                selectedFiles.forEach((file) => {
+                    formData.append('file', file);
+                });
+
+                // Assuming updateSurvey can handle adding attachments via FormData
+                await addSurveyAttachment(surveyId, formData);
+                toast.success('Attachments added successfully');
+                setSelectedFiles([]);
+                loadData();
+            } catch (error) {
+                console.error('Failed to upload attachments:', error);
+                toast.error('Failed to upload attachments');
+            } finally {
+                setIsUploading(false);
+            }
+        };
+
         return (
             <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
                 <DialogTitle>
@@ -691,7 +789,7 @@ const SurveysComponent = ({ user }) => {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent dividers style={{ display: 'flex', height: '600px' }}>
-                    {/* 附件列表 */}
+                    {/* Attachments List */}
                     <div style={{ flex: 1, overflowY: 'auto', borderRight: `1px solid #ddd`, paddingRight: '10px' }}>
                         <Typography variant="h6">Attachments List</Typography>
                         <ul style={{ listStyle: 'none', padding: 0 }}>
@@ -712,12 +810,20 @@ const SurveysComponent = ({ user }) => {
                                     >
                                         <DownloadOutlined />
                                     </IconButton>
+                                    <IconButton
+                                        color="secondary"
+                                        onClick={() => handleDeleteAttachment(attachment._id)}
+                                        title="Delete Attachment"
+                                        disabled={isDeleting}
+                                    >
+                                        <DeleteOutlined />
+                                    </IconButton>
                                 </li>
                             ))}
                         </ul>
                     </div>
-    
-                    {/* 文件预览区域 */}
+
+                    {/* File Preview Area */}
                     <div style={{ flex: 2, paddingLeft: '10px', position: 'relative' }}>
                         {selectedDocument ? (
                             <>
@@ -761,6 +867,54 @@ const SurveysComponent = ({ user }) => {
                         )}
                     </div>
                 </DialogContent>
+                <DialogContent dividers>
+                    {/* Attachment Upload Section */}
+                    <section className="container">
+                        <div {...getRootProps({ className: 'dropzone' })} style={{
+                            border: '2px dashed #cccccc',
+                            padding: '20px',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            marginTop: '20px',
+                            borderRadius: '5px',
+                            backgroundColor: '#fafafa',
+                        }}>
+                            <input {...getInputProps()} />
+                            <FileUploadIcon style={{ fontSize: '48px', color: '#aaaaaa' }} />
+                            <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT)</p>
+                        </div>
+                        {!!selectedFiles.length && (
+                            <aside style={{ marginTop: '20px' }}>
+                                <Typography variant="h6">Selected Files</Typography>
+                                <ul style={{ listStyle: 'none', padding: 0 }}>
+                                    {selectedFiles.map((file) => (
+                                        <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                            <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+                                            <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
+                                                <ClearIcon />
+                                            </IconButton>
+                                        </li>
+                                    ))}
+                                </ul>
+                                {selectedFiles.length > 1 && (
+                                    <Button variant="outlined" color="secondary" onClick={removeAllFiles}>
+                                        Remove All
+                                    </Button>
+                                )}
+                                <div style={{ marginTop: '10px' }}>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={handleAddAttachments}
+                                        disabled={isUploading}
+                                    >
+                                        {isUploading ? 'Uploading...' : 'Upload Attachments'}
+                                    </Button>
+                                </div>
+                            </aside>
+                        )}
+                    </section>
+                </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="primary">
                         Close
@@ -773,7 +927,7 @@ const SurveysComponent = ({ user }) => {
     const handleCellEditCommit = React.useCallback(
         async (params) => {
             const { id, field, value } = params;
-            // 更新Survey
+            // Update Survey
             try {
                 setLoadingUpdate(true);
                 await updateSurvey(id, { [field]: value });
@@ -791,7 +945,6 @@ const SurveysComponent = ({ user }) => {
             } finally {
                 setLoadingUpdate(false);
             }
-            // 你可以在这里添加其他逻辑，比如发送更新到服务器
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
         }, [] 
     );
@@ -803,7 +956,7 @@ const SurveysComponent = ({ user }) => {
                     variant="contained"
                     color="primary"
                     size="small"
-                    style={{ top: -70 }} // 调整按钮位置, 使其与表格对齐, 70-31=39
+                    style={{ top: -70 }} // Adjust button position to align with the table
                     onClick={handleOpenDialog}
                     startIcon={<ImportContactsOutlined />}
                 >
@@ -834,6 +987,8 @@ const SurveysComponent = ({ user }) => {
                     loading={isLoading || loadingUpdate}
                     components={{
                         Toolbar: GridToolbar,
+                        LoadingOverlay: CustomLoadingOverlay,
+                        NoRowsOverlay: CustomNoRowsOverlay,
                     }}
                     onCellEditCommit={handleCellEditCommit}
                     onFilterModelChange={(model) => {
@@ -872,8 +1027,10 @@ const SurveysComponent = ({ user }) => {
             <AttachmentsDialog
                 open={openAttachmentsDialog}
                 handleClose={handleCloseAttachmentsDialog}
+                surveyId={currentSurveyId}
                 attachments={currentAttachments}
                 handleDownloadAttachment={handleDownloadAttachment}
+                loadData={loadData}
             />
         </MainCard>
     );

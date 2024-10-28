@@ -32,6 +32,16 @@ export const updateSurvey = (surveyId, data) =>
         true // 包含身份验证
     );
 
+export const addSurveyAttachment = (surveyId, data) =>
+    fetchApi(
+        {
+            method: 'POST',
+            url: `${endpoints.surveys}/${surveyId}/attachments`,
+            data
+        },
+        true // 包含身份验证
+    );
+
 export const deleteSurveys = (surveyIds) =>
     fetchApi(
         {
