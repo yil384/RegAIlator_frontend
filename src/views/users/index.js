@@ -16,7 +16,6 @@ import MenuItem from '@material-ui/core/MenuItem'; // 导入 MenuItem 组件
 import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
 
 import { fetchUsers, deleteUser } from './users.helper';
-import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import EditIcon from '@material-ui/icons/Edit';
@@ -63,31 +62,6 @@ const StudentsComponent = ({ user }) => {
     React.useEffect(() => {
         loadData();
     }, [loadData]);
-
-    // 处理 Excel 文件的上传
-    const handleExcelUpload = (event) => {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0]; // 获取第一个工作表
-            const worksheet = workbook.Sheets[sheetName];
-
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            jsonData.forEach(row => {
-                const email = row.email; // 读取邮箱
-                if (email) {
-                    mentionUsers({ email, mention: 'Hello' });
-                }
-            });
-
-            toast.success('Successfully mentioned users from Excel!');
-        };
-
-        reader.readAsArrayBuffer(file);
-    };
 
     const handleStatusChange = (id, newStatus) => {
         const updatedStudents = students.map((student) =>
@@ -216,29 +190,6 @@ const StudentsComponent = ({ user }) => {
             )
         },
         {
-            field: 'Mention',
-            headerName: 'Email Mention',
-            headerAlign: 'center',
-            description: 'Mention the user to upload the regulation we requested.',
-            sortable: false,
-            width: 190,
-            resizable: false,
-            valueGetter: (params) => params.row?.email,
-            renderCell: (params) => (
-                <Tooltip title={`Mention ${params.row?.email}`} arrow>
-                    <Button
-                        variant='contained'
-                        color='primary'
-                        size='small'
-                        startIcon={<NotificationsActive />}
-                        onClick={() => mentionUsers({ email: params.row?.email, mention: 'Hello' })}
-                    >
-                        Mention
-                    </Button>
-                </Tooltip>
-            )
-        },
-        {
             field: 'Remark',
             headerName: 'Remark',
             headerAlign: 'center',
@@ -316,25 +267,6 @@ const StudentsComponent = ({ user }) => {
 
     return (
         <MainCard title='Users' boxShadow shadow={theme.shadows[2]}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
-                    style={{ top: -70, marginLeft: '10px' }}
-                    startIcon={<NotificationsActive />}
-                    component="label"
-                >
-                    Batch Import Users' Emails from Excel
-                    <input
-                        type="file"
-                        accept=".xlsx, .xls"
-                        style={{ display: 'none' }}
-                        onChange={handleExcelUpload}
-                    />
-                </Button>
-                {/* 如果需要添加其他按钮，可以在这里添加 */}
-            </div>
             <div style={{ width: '100%', marginTop: -31 }}>
                 <DataGrid
                     rows={students}

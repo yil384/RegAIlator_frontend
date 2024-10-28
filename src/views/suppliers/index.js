@@ -298,17 +298,10 @@ const SuppliersComponent = ({ user }) => {
                 let survey = surveys.find(
                     (s) => s._id === supplier.chooseSurvey
                 );
-                if (!survey) {
-                    survey = {
-                        title: 'This is a survey',
-                        content: 'Please complete the survey.'
-                    };
-                }
 
                 return {
                     email,
-                    subject: survey.title || 'This is a survey',
-                    content: survey.content || 'Please complete the survey.'
+                    survey,
                 };
             });
 

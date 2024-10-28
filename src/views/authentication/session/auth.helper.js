@@ -43,10 +43,3 @@ export const resetPassword = (token, newPasswordDetails) =>
         params: { token },
         data: newPasswordDetails
     });
-
-export const mentionUsers = (params) =>
-    fetchApi({
-        method: 'POST',
-        url: endpoints.mentionUsers,
-        data: params
-    });

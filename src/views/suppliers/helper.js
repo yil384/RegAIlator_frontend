@@ -70,7 +70,7 @@ export const sendEmailsToSuppliers = (emailData) => {
                 {
                     method: 'POST',
                     url: endpoints.mentionUsers,  // 假设在 endpoints 中定义了此端点
-                    data: { email: data.email, subject: data.subject, content: data.content }
+                    data
                 },
                 true // 包含身份验证
             )

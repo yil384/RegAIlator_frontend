@@ -203,31 +203,6 @@ const BillOfMaterials = () => {
         },
     ];
 
-    // 处理 Excel 文件的上传
-    const handleExcelUpload = (event) => {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0]; // 获取第一个工作表
-            const worksheet = workbook.Sheets[sheetName];
-
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            jsonData.forEach(row => {
-                const email = row.email; // 读取邮箱
-                if (email) {
-                    mentionUsers({ email, mention: 'Hello' });
-                }
-            });
-
-            toast.success('Successfully mentioned users from Excel!');
-        };
-
-        reader.readAsArrayBuffer(file);
-    };
-
     return (
         <MainCard title="Bill of Materials" boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -239,13 +214,7 @@ const BillOfMaterials = () => {
                     startIcon={<NotificationsActive />}
                     component="label"
                 >
-                    Import Bill of Materials
-                    <input
-                        type="file"
-                        accept=".xlsx, .xls"
-                        style={{ display: 'none' }}
-                        onChange={handleExcelUpload}
-                    />
+                   Add New Material
                 </Button>
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
