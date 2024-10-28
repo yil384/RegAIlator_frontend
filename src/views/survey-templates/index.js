@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import config from '../../configs';
 
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
@@ -10,31 +11,44 @@ import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
+import Tooltip from '@material-ui/core/Tooltip';
 
-import { fetchSurveys, addSurvey, deleteSurveys } from './helper'; // 根据路径进行调整
+import { fetchSurveys, addSurvey, deleteSurveys } from './helper'; // Adjust the path as needed
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
-import { DeleteOutlined, DownloadOutlined, ImportContactsOutlined, ImportExportOutlined, NotificationsActive } from '@material-ui/icons';
+import { DeleteOutlined, DownloadOutlined, ImportContactsOutlined, FileUpload as FileUploadIcon } from '@material-ui/icons';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 import Checkbox from '@material-ui/core/Checkbox';
 
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
-import * as XLSX from 'xlsx';  // 导入 xlsx 库
+import * as XLSX from 'xlsx';  // Import xlsx library
 
-import { useStyles } from './styles'; // 创建一个 styles 文件，或者根据需要调整样式
+import { useStyles } from './styles'; // Create a styles file or adjust styles as needed
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
-import { Dialog, DialogContent, DialogTitle, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
+import { Dialog, DialogContent, DialogTitle, DialogActions, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
+import { useDropzone } from 'react-dropzone';
+import ClearIcon from '@material-ui/icons/Clear';
+import LinearProgressBar from '../../ui-component/LinearProgress'; // Assuming this is a custom progress bar component
+import { data } from 'jquery';
+
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+
+// 设置 PDF Worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
 const SurveysComponent = ({ user }) => {
     const theme = useTheme();
+    const classes = useStyles();
+    const scriptedRef = useScriptRef();
 
     const [surveys, setSurveys] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
@@ -42,26 +56,22 @@ const SurveysComponent = ({ user }) => {
     const [filterIds, setFilterIds] = React.useState([]);
     const [openDialog, setOpenDialog] = React.useState(false);
 
-    const classes = useStyles();
-    const scriptedRef = useScriptRef();
+    // Delete surveys
+    const [deletingSurveys, setDeletingSurveys] = React.useState(false);
 
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
             const response = await fetchSurveys();
-            const surveysData = response || [];
-
-            surveysData.forEach((survey, index) => {
-                if (!survey._id) survey.id = index + 1; // 确保每个调查都有一个 'id' 字段
-                else survey.id = survey._id;
-            });
-
+            const surveysData = response.map((survey, index) => ({
+                ...survey,
+                id: survey._id || index + 1, // Ensure each survey has a unique 'id'
+            }));
             setSurveys(surveysData);
-            setFilterIds(surveysData.map((survey) => survey.id));
             setIsLoading(false);
-        } catch (e) {
+        } catch (error) {
             setIsLoading(false);
-            console.error('Failed to load surveys:', e);
+            console.error('Failed to load surveys:', error);
             toast.error('Failed to load surveys');
         }
     }, []);
@@ -70,20 +80,76 @@ const SurveysComponent = ({ user }) => {
         loadData();
     }, [loadData]);
 
-    // 处理打开和关闭弹出窗口
-    const handleOpenDialog = () => {
-        setOpenDialog(true);
+    // Open and close dialog
+    const handleOpenDialog = () => setOpenDialog(true);
+    const handleCloseDialog = () => setOpenDialog(false);
+
+    // Delete surveys handler
+    const handleDeleteSurveys = async () => {
+        if (selectedIds.length === 0) {
+            toast.error('No surveys selected');
+            return;
+        }
+
+        // Use SweetAlert2 for confirmation
+        const result = await Swal.fire({
+            title: 'Confirm Deletion',
+            text: `Are you sure you want to delete the selected ${selectedIds.length} surveys?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete them!',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        setDeletingSurveys(true);
+
+        try {
+            await deleteSurveys(selectedIds);
+            toast.success('Surveys deleted successfully');
+            // Reload survey list
+            await loadData();
+            // Clear selected IDs
+            setSelectedIds([]);
+        } catch (error) {
+            console.error('Error deleting surveys:', error);
+            toast.error('Failed to delete surveys');
+        } finally {
+            setDeletingSurveys(false);
+        }
     };
 
-    const handleCloseDialog = () => {
-        setOpenDialog(false);
+    // Handle Excel file upload
+    const handleExcelUpload = (event) => {
+        const file = event.target.files[0];
+        if (!file) return; // Handle no file selected
+
+        const reader = new FileReader();
+        
+        reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0]; // Get the first sheet
+            const worksheet = workbook.Sheets[sheetName];
+
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            jsonData.forEach(row => {
+                const email = row.email; // Read email
+                if (email) {
+                    mentionUsers({ email, mention: 'Hello' });
+                }
+            });
+
+            toast.success('Successfully mentioned users from Excel!');
+        };
+
+        reader.readAsArrayBuffer(file);
     };
 
-    const handleAddSuccess = () => {
-        loadData(); // 新增调查后重新加载数据
-    };
-
-    // 切换某一行的选中状态
+    // Toggle selection of a row
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
@@ -92,7 +158,7 @@ const SurveysComponent = ({ user }) => {
         }
     };
 
-    // 全选/取消全选功能
+    // Handle select all
     const handleSelectAll = () => {
         const allRowIds = filterIds.map((id) => id);
         if (filterIds.every((id) => selectedIds.includes(id))) {
@@ -102,23 +168,34 @@ const SurveysComponent = ({ user }) => {
         }
     };
 
+    // 状态管理 for Attachments Dialog
+    const [openAttachmentsDialog, setOpenAttachmentsDialog] = React.useState(false);
+    const [currentAttachments, setCurrentAttachments] = React.useState([]);
+
+    // 打开附件对话框并设置当前附件
+    const handleOpenAttachmentsDialog = (attachments) => {
+        setCurrentAttachments(attachments);
+        setOpenAttachmentsDialog(true);
+    };
+
+    // 关闭附件对话框并清空当前附件
+    const handleCloseAttachmentsDialog = () => {
+        setOpenAttachmentsDialog(false);
+        setCurrentAttachments([]);
+    };
+
+    // Define columns including attachments column
     const columns = [
-        // 选择框列
+        // Selection Checkbox Column
         {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={
-                        filterIds.length > 0 &&
-                        filterIds.every((id) => selectedIds.includes(id))
-                    }
-                    indeterminate={
-                        filterIds.length > 0 &&
-                        filterIds.some((id) => selectedIds.includes(id)) &&
-                        !filterIds.every((id) => selectedIds.includes(id))
-                    }
+                    checked={surveys.length > 0 && selectedIds.length === surveys.length}
+                    indeterminate={selectedIds.length > 0 && selectedIds.length < surveys.length}
                     onChange={handleSelectAll}
                     style={{ padding: 0 }}
+                    color="primary"
                 />
             ),
             width: 60,
@@ -144,102 +221,110 @@ const SurveysComponent = ({ user }) => {
                 );
             },
         },
-        // 调查名称列
+        // Survey Name Column
         {
             field: 'name',
             headerName: 'Survey Name',
-            sortable: true,
             width: 190,
+            sortable: true,
             valueGetter: (params) => params.row?.name || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.name || ''} arrow>
+                <Tooltip title={params.row.name || ''} arrow>
                     <Typography variant="body2" noWrap>
-                        {params.row?.name}
+                        {params.row.name}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 标题列
+        // Survey Subject Column
         {
             field: 'title',
             headerName: 'Survey Subject',
-            sortable: true,
             width: 200,
+            sortable: true,
             valueGetter: (params) => params.row?.title || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.title || ''} arrow>
+                <Tooltip title={params.row.title || ''} arrow>
                     <Typography variant="body2" noWrap>
-                        {params.row?.title}
+                        {params.row.title}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 内容列
+        // Survey Content Column
         {
             field: 'content',
             headerName: 'Survey Content',
-            sortable: false,
             width: 300,
+            sortable: false,
             valueGetter: (params) => params.row?.content || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.content || ''} arrow>
+                <Tooltip title={params.row.content || ''} arrow>
                     <Typography variant="body2" noWrap>
-                        {params.row?.content}
+                        {params.row.content}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 描述列
+        // Description Column
         {
             field: 'description',
             headerName: 'Description',
-            sortable: false,
             width: 200,
+            sortable: false,
             valueGetter: (params) => params.row?.description || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.description || ''} arrow>
+                <Tooltip title={params.row.description || ''} arrow>
                     <Typography variant="body2" noWrap>
-                        {params.row?.description}
+                        {params.row.description}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 附件列
+        // Attachments Column
         {
-            field: 'attachment',
-            headerName: 'Attachment',
-            sortable: false,
+            field: 'attachments',
+            headerName: 'Attachments',
             width: 200,
+            sortable: false,
             valueGetter: (params) => params.row?.attachment || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.attachment || ''} arrow>
-                    <Typography variant="body2" noWrap>
-                        {params.row?.attachment}
-                    </Typography>
-                </Tooltip>
-            ),
+            renderCell: (params) => {
+                const attachments = params.row.attachments || [];
+                const count = attachments.length;
+                return count > 0 ? (
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleOpenAttachmentsDialog(attachments)}
+                    >
+                        Attachments ({count})
+                    </Button>
+                ) : (
+                    <Typography variant="body2">No Attachments</Typography>
+                );
+            },
         },
-        // 版本号列
+        // Revision Column
         {
             field: 'revision',
             headerName: 'Revision',
-            sortable: true,
             width: 150,
+            sortable: true,
             valueGetter: (params) => params.row?.revision || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.revision?.toString() || ''} arrow>
+                <Tooltip title={params.row.revision?.toString() || ''} arrow>
                     <Typography variant="body2" noWrap>
-                        {params.row?.revision}
+                        {params.row.revision}
                     </Typography>
                 </Tooltip>
             ),
         },
-        // 创建时间列
+        // Created At Column
         {
             field: 'createdAt',
             headerName: 'Created At',
-            sortable: true,
             width: 180,
+            sortable: true,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
             valueGetter: (params) => params.row?.createdAt || '',
             renderCell: (params) => (
@@ -250,51 +335,132 @@ const SurveysComponent = ({ user }) => {
                 </Tooltip>
             ),
         },
-        // 更新时间列
+        // Updated At Column
         {
             field: 'updatedAt',
             headerName: 'Updated At',
-            sortable: true,
             width: 180,
+            sortable: true,
             valueFormatter: (params) => new Date(params.value).toLocaleString(),
             valueGetter: (params) => params.row?.updatedAt || '',
+        },
+        // Actions Column
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 200,
+            sortable: false,
             renderCell: (params) => (
-                <Tooltip title={new Date(params.row?.updatedAt).toLocaleString()} arrow>
-                    <Typography variant="body2" noWrap>
-                        {new Date(params.row?.updatedAt).toLocaleString()}
-                    </Typography>
-                </Tooltip>
+                <strong>
+                    <Button
+                        variant='contained'
+                        color='primary'
+                        size='small'
+                        startIcon={<ImportContactsOutlined />}
+                        style={{ marginRight: 16 }}
+                        onClick={() => handleOpenDetailsDialog(params.row)}
+                    >
+                        Details
+                    </Button>
+                    <IconButton
+                        onClick={(event) => {
+                            event.stopPropagation(); // Prevent event bubbling
+                            handleDeleteSingleSurvey(params.row.id);
+                        }}
+                    >
+                        <DeleteOutlined color="secondary" />
+                    </IconButton>
+                </strong>
             ),
         },
     ];
 
-    // 处理 Excel 文件的上传
-    const handleExcelUpload = (event) => {
-        const file = event.target.files[0];
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0]; // 获取第一个工作表
-            const worksheet = workbook.Sheets[sheetName];
-
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            jsonData.forEach(row => {
-                const email = row.email; // 读取邮箱
-                if (email) {
-                    mentionUsers({ email, mention: 'Hello' });
-                }
+    // 修改 handleDownloadAttachments 函数为 handleDownloadAttachment
+    const handleDownloadAttachment = async (attachment) => {
+        try {
+            console.log('Downloading attachment:', attachment);
+            const response = await fetch(config[config.env].baseURL + attachment.content, {
+                method: 'GET',
             });
-
-            toast.success('Successfully mentioned users from Excel!');
-        };
-
-        reader.readAsArrayBuffer(file);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(new Blob([blob]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', attachment.filename || `attachment`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to download attachment:', error);
+            toast.error(`Failed to download attachment: ${attachment.filename}`);
+        }
     };
 
-    // 添加调查弹出窗口组件
-    const AddSurveyDialog = ({ open, handleClose }) => {
+    // Handle single survey deletion
+    const handleDeleteSingleSurvey = async (id) => {
+        const result = await Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to delete this survey?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        setDeletingSurveys(true);
+
+        try {
+            await deleteSurveys([id]);
+            toast.success('Survey deleted successfully');
+            await loadData();
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        } catch (error) {
+            console.error('Error deleting survey:', error);
+            toast.error('Failed to delete survey');
+        } finally {
+            setDeletingSurveys(false);
+        }
+    };
+
+    // Details Dialog (Optional, implement as needed)
+    const handleOpenDetailsDialog = (survey) => {
+        // Implement survey details dialog logic here
+        // For example, set a state with survey details and open a new Dialog component
+    };
+
+    // Add Survey Dialog Component with Attachment Upload Capability
+    const AddSurveyDialog = ({ open, handleClose, loadData }) => {
+        // Move file upload states into the dialog
+        const [selectedFiles, setSelectedFiles] = React.useState([]);
+        const [uploadPercentage, setUploadPercentage] = React.useState(null);
+        const [processingSurvey, setProcessingSurvey] = React.useState(false);
+
+        // Using react-dropzone for file drag-and-drop upload
+        const { getRootProps, getInputProps } = useDropzone({
+            onDrop: (acceptedFiles) => {
+                setSelectedFiles(prevFiles => [...prevFiles, ...acceptedFiles]);
+            },
+            maxFiles: 10,
+            minSize: 1,
+            multiple: true,
+        });
+
+        const removeFile = (file) => () => {
+            setSelectedFiles(prevFiles => prevFiles.filter(f => f !== file));
+        };
+
+        const removeAllFiles = () => {
+            setSelectedFiles([]);
+        };
+
         return (
             <Dialog
                 open={open}
@@ -320,37 +486,41 @@ const SurveysComponent = ({ user }) => {
                             name: '',
                             content: '',
                             description: '',
-                            attachment: '',
-                            revision: 1
+                            revision: 1,
                         }}
                         validationSchema={Yup.object().shape({
                             title: Yup.string().required('Subject is required'),
                             name: Yup.string().required('Name is required'),
                             content: Yup.string().required('Content is required'),
-                            description: Yup.string(),
-                            // attachment: Yup.string(),
-                            revision: Yup.number().integer().min(1).required('Revision is required')
+                            revision: Yup.number().integer().min(1).required('Revision is required'),
                         })}
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             try {
-                                if (scriptedRef.current) {
-                                    await addSurvey(values);
-                                    setStatus({ success: true });
-                                    setSubmitting(false);
-                                    handleClose(); // 成功后关闭对话框
-                                    handleAddSuccess(); // 重新加载数据
-                                    toast.success('Survey added successfully');
-                                }
-                            } catch (err) {
-                                console.error(err);
-                                if (scriptedRef.current) {
-                                    setStatus({ success: false });
-                                    setErrors({ submit: err.message });
-                                    setSubmitting(false);
-                                    toast.error('Failed to add survey');
-                                }
+                                const formData = new FormData();
+                                formData.append('title', values.title);
+                                formData.append('name', values.name);
+                                formData.append('content', values.content);
+                                formData.append('description', values.description);
+                                formData.append('revision', values.revision);
+                        
+                                selectedFiles.forEach((file) => {
+                                    formData.append('file', file);
+                                });
+                        
+                                await addSurvey(formData);
+                                setStatus({ success: true });
+                                setSubmitting(false);
+                                handleClose();
+                                loadData();
+                                toast.success('Survey added successfully!');
+                            } catch (error) {
+                                console.error(error);
+                                setStatus({ success: false });
+                                setErrors({ submit: error.message });
+                                setSubmitting(false);
+                                toast.error('Failed to add survey');
                             }
-                        }}
+                        }}                        
                     >
                         {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                             <form onSubmit={handleSubmit}>
@@ -382,7 +552,7 @@ const SurveysComponent = ({ user }) => {
                                                 name="title"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
-                                                label="Title"
+                                                label="Subject"
                                             />
                                             {errors.title && (
                                                 <FormHelperText error>{errors.title}</FormHelperText>
@@ -402,7 +572,7 @@ const SurveysComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 InputLabelProps={{
                                                     classes: {
-                                                        shrink: classes.shrinkLabel // 应用自定义的 shrink 样式
+                                                        shrink: classes.shrinkLabel
                                                     }
                                                 }}
                                             />
@@ -424,7 +594,7 @@ const SurveysComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 InputLabelProps={{
                                                     classes: {
-                                                        shrink: classes.shrinkLabel // 应用自定义的 shrink 样式
+                                                        shrink: classes.shrinkLabel
                                                     }
                                                 }}
                                             />
@@ -453,6 +623,44 @@ const SurveysComponent = ({ user }) => {
                                     </MuiGrid>
                                 </MuiGrid>
 
+                                {/* Attachment Upload Section */}
+                                <section className="container">
+                                    <div {...getRootProps({ className: 'dropzone' })} style={{
+                                        border: '2px dashed #cccccc',
+                                        padding: '20px',
+                                        textAlign: 'center',
+                                        cursor: 'pointer',
+                                        marginTop: '20px',
+                                        borderRadius: '5px',
+                                        backgroundColor: '#fafafa',
+                                    }}>
+                                        <input {...getInputProps()} />
+                                        <FileUploadIcon style={{ fontSize: '48px', color: '#aaaaaa' }} />
+                                        <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT)</p>
+                                    </div>
+                                    {!!selectedFiles.length && (
+                                        <aside style={{ marginTop: '20px' }}>
+                                            <Typography variant="h6">Selected Files</Typography>
+                                            <ul style={{ listStyle: 'none', padding: 0 }}>
+                                                {selectedFiles.map((file) => (
+                                                    <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                                                        <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+                                                        <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
+                                                            <ClearIcon />
+                                                        </IconButton>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                            {selectedFiles.length > 1 && (
+                                                <Button variant="outlined" color="secondary" onClick={removeAllFiles}>
+                                                    Remove All
+                                                </Button>
+                                            )}
+                                        </aside>
+                                    )}
+                                </section>
+
+                                {/* Submit Button */}
                                 <AnimateButton>
                                     <Button
                                         disableElevation
@@ -473,68 +681,136 @@ const SurveysComponent = ({ user }) => {
                 </DialogContent>
             </Dialog>
         );
+
     };
 
-    const [deletingSurveys, setDeletingSurveys] = React.useState(false); // 新增的状态
-
-    // 实现 handleDeleteSurveys 函数
-    const handleDeleteSurveys = async () => {
-        if (selectedIds.length === 0) {
-            toast.error('No surveys selected');
-            return;
-        }
-
-        // 使用 SweetAlert2 进行确认
-        const result = await Swal.fire({
-            title: '确认删除',
-            text: `您确定要删除选中的 ${selectedIds.length} 个调查吗？`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: '是的，删除它们！',
-            cancelButtonText: '取消',
-        });
-
-        if (!result.isConfirmed) {
-            return;
-        }
-
-        setDeletingSurveys(true);
-
-        try {
-            await deleteSurveys(selectedIds);
-            toast.success('Surveys deleted successfully');
-            // 重新加载调查列表
-            await loadData();
-            // 清空选中的 IDs
-            setSelectedIds([]);
-        } catch (error) {
-            console.error('Error deleting surveys:', error);
-            toast.error('Failed to delete surveys');
-        } finally {
-            setDeletingSurveys(false);
-        }
+    const AttachmentsDialog = ({ open, handleClose, attachments, handleDownloadAttachment }) => {
+        const [selectedDocument, setSelectedDocument] = React.useState(null);
+        const [numPages, setNumPages] = React.useState(null);
+        const [previewingFileType, setPreviewingFileType] = React.useState('');
+    
+        const handleDocumentClick = (attachment) => {
+            setSelectedDocument(attachment);
+            const fileExtension = attachment.filename.split('.').pop().toLowerCase();
+            setPreviewingFileType(fileExtension);
+        };
+    
+        const handleDocumentClose = () => {
+            setSelectedDocument(null);
+            setPreviewingFileType('');
+        };
+    
+        return (
+            <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+                <DialogTitle>
+                    Attachments
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleClose}
+                        style={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers style={{ display: 'flex', height: '600px' }}>
+                    {/* 附件列表 */}
+                    <div style={{ flex: 1, overflowY: 'auto', borderRight: `1px solid #ddd`, paddingRight: '10px' }}>
+                        <Typography variant="h6">Attachments List</Typography>
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            {attachments.map((attachment, index) => (
+                                <li key={index} style={{ marginBottom: '10px', display: 'flex', alignItems: 'center' }}>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        onClick={() => handleDocumentClick(attachment)}
+                                        style={{ flexGrow: 1, textTransform: 'none' }}
+                                    >
+                                        {attachment.filename}
+                                    </Button>
+                                    <IconButton
+                                        color="primary"
+                                        onClick={() => handleDownloadAttachment(attachment)}
+                                        title="Download Attachment"
+                                    >
+                                        <DownloadOutlined />
+                                    </IconButton>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+    
+                    {/* 文件预览区域 */}
+                    <div style={{ flex: 2, paddingLeft: '10px', position: 'relative' }}>
+                        {selectedDocument ? (
+                            <>
+                                <IconButton
+                                    aria-label="close"
+                                    onClick={handleDocumentClose}
+                                    style={{ position: 'absolute', right: 8, top: 8, zIndex: 1 }}
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                                <div style={{ height: '100%', overflowY: 'auto' }}>
+                                    {previewingFileType === 'pdf' ? (
+                                        <Document
+                                            file={config[config.env].baseURL + selectedDocument.content}
+                                            onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+                                            loading={<LoaderInnerCircular />}
+                                        >
+                                            {Array.from(new Array(numPages), (el, index) => (
+                                                <Page key={`page_${index + 1}`} pageNumber={index + 1} width={600} />
+                                            ))}
+                                        </Document>
+                                    ) : previewingFileType === 'txt' ? (
+                                        <iframe
+                                            src={config[config.env].baseURL + selectedDocument.content}
+                                            style={{ width: '100%', height: '100%', border: 'none' }}
+                                            title="Text Document Preview"
+                                        />
+                                    ) : previewingFileType === 'xlsx' || previewingFileType === 'docx' ? (
+                                        <Typography variant="body1">
+                                            {`Cannot preview ${previewingFileType.toUpperCase()} files. Please download to view.`}
+                                        </Typography>
+                                    ) : (
+                                        <Typography variant="body1">Unsupported file type for preview.</Typography>
+                                    )}
+                                </div>
+                            </>
+                        ) : (
+                            <Typography variant="h6" color="textSecondary">
+                                Select an attachment to preview
+                            </Typography>
+                        )}
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
     };
 
     return (
-        <MainCard title='Surveys' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title="Surveys" boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     style={{ top: -70 }} // 调整按钮位置, 使其与表格对齐, 70-31=39
-                    startIcon={<DownloadOutlined />}
-                    component="label"
                     onClick={handleOpenDialog}
+                    startIcon={<ImportContactsOutlined />}
                 >
                     Add Survey
                 </Button>
                 <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
-                    startIcon={<DownloadOutlined />}
+                    startIcon={<FileUploadIcon />}
                     component="label"
                 >
                     Batch Import Surveys from Excel
@@ -605,11 +881,18 @@ const SurveysComponent = ({ user }) => {
                     }}
                 />
             </div>
-            <AddSurveyDialog open={openDialog} handleClose={handleCloseDialog} />
+            <AddSurveyDialog open={openDialog} handleClose={handleCloseDialog} loadData={loadData} />
+            <AttachmentsDialog
+                open={openAttachmentsDialog}
+                handleClose={handleCloseAttachmentsDialog}
+                attachments={currentAttachments}
+                handleDownloadAttachment={handleDownloadAttachment}
+            />
         </MainCard>
     );
 };
 
+// Function to map Redux state to component props
 const mapStateToProps = (state) => ({
     user: state.authReducer.user,
 });
