@@ -19,7 +19,8 @@ import {
     addSupplier,
     updateSupplier,
     sendEmailsToSuppliers,
-    deleteSuppliers
+    deleteSuppliers,
+    batchAddSuppliers
 } from './helper';
 import { fetchSurveys } from '../survey-templates/helper';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
@@ -73,6 +74,7 @@ const SuppliersComponent = ({ user }) => {
     const [loadingUpdate, setLoadingUpdate] = React.useState(false);
     const [sendingEmails, setSendingEmails] = React.useState(false);
     const [deletingSuppliers, setDeletingSuppliers] = React.useState(false);
+    const [importingSuppliers, setImportingSuppliers] = React.useState(false);
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -141,25 +143,106 @@ const SuppliersComponent = ({ user }) => {
     }, [loadData]);
 
     // 处理 Excel 文件上传
-    const handleExcelUpload = (event) => {
+    const handleExcelUpload = async (event) => {
         const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
         const reader = new FileReader();
 
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+        reader.onload = async (e) => {
+            try {
+                setImportingSuppliers(true);
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
 
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            jsonData.forEach((row) => {
-                const email = row.email;
-                if (email) {
-                    mentionUsers({ email, mention: 'Hello' });
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                if (jsonData.length === 0) {
+                    toast.error('Excel file is empty');
+                    setImportingSuppliers(false);
+                    return;
                 }
-            });
 
-            toast.success('Successfully mentioned users from Excel!');
+                // Validate and prepare supplier data
+                const suppliersToAdd = [];
+                const errors = [];
+
+                jsonData.forEach((row, index) => {
+                    const supplierName = row.supplierName || row['Supplier Name'];
+                    const contact = row.contact || row['Contact'];
+                    const materialName = row.materialName || row['Material Name'];
+                    const partNumber = row.partNumber || row['Part Number'];
+                    const chooseSurvey = row.chooseSurvey || row['Choose Survey'];
+                    const status = row.status || row['Status'] || 'inactive'; // Default to 'inactive'
+
+                    // Basic validation
+                    if (!supplierName || !contact || !materialName || !partNumber) {
+                        errors.push(`Row ${index + 2}: Missing required fields.`);
+                        return;
+                    }
+
+                    // Validate email format
+                    if (!isValidEmail(contact)) {
+                        errors.push(`Row ${index + 2}: Invalid email format.`);
+                        return;
+                    }
+
+                    // Optionally, validate chooseSurvey exists in surveys
+                    let validSurveyId = '';
+                    if (chooseSurvey) {
+                        const survey = surveys.find(
+                            (s) => s.name.toLowerCase() === chooseSurvey.toLowerCase() || s._id === chooseSurvey
+                        );
+                        if (survey) {
+                            validSurveyId = survey._id;
+                        } else {
+                            errors.push(`Row ${index + 2}: Survey "${chooseSurvey}" not found.`);
+                            return;
+                        }
+                    }
+
+                    suppliersToAdd.push({
+                        supplierName,
+                        contact,
+                        materialName,
+                        partNumber,
+                        chooseSurvey: validSurveyId,
+                        status
+                    });
+                });
+
+                if (errors.length > 0) {
+                    errors.forEach((error) => toast.error(error));
+                    toast.error('Some rows have errors. Please fix them and try again.');
+                    setImportingSuppliers(false);
+                    return;
+                }
+
+                // Batch add suppliers
+                try {
+                    const result = await batchAddSuppliers(suppliersToAdd);
+                    if (result.length > 0) {
+                        toast.success(`${result.length} supplier(s) imported successfully.`);
+                    }
+                    // Reload suppliers data
+                    await loadData();
+                } catch (batchError) {
+                    console.error('Batch import failed:', batchError);
+                    toast.error('Batch import failed. Please try again.');
+                }
+
+            } catch (error) {
+                console.error('Error reading Excel file:', error);
+                toast.error('Failed to read Excel file.');
+            } finally {
+                setImportingSuppliers(false);
+                // Reset the file input
+                event.target.value = null;
+            }
         };
 
         reader.readAsArrayBuffer(file);
@@ -967,7 +1050,7 @@ const SuppliersComponent = ({ user }) => {
                         startIcon={<DownloadOutlined />}
                         component="label"
                     >
-                        Batch Import Suppliers from Excel
+                        {importingSuppliers ? 'Importing...' : 'Batch Import Suppliers from Excel'}
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -1008,7 +1091,7 @@ const SuppliersComponent = ({ user }) => {
                     autoPageSize
                     density={'standard'}
                     disableSelectionOnClick
-                    loading={isLoading || loadingUpdate || sendingEmails}
+                    loading={isLoading || loadingUpdate || sendingEmails || importingSuppliers || deletingSuppliers}
                     components={{
                         Toolbar: GridToolbar
                     }}

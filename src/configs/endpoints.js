@@ -11,6 +11,7 @@ const endpoints = {
     users: `/users`,
     userById: (id) => `/users/${id}`,
     suppliers: '/auth/my-suppliers',
+    suppliersBatch: '/auth/my-suppliers-batch',
     surveys: `/auth/my-surveys`,
     surveyTemplateById: (id) => `/survey-templates/${id}`,
     videoGroups: `/video-groups`,

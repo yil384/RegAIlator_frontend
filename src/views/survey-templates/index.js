@@ -123,33 +123,6 @@ const SurveysComponent = ({ user }) => {
         }
     };
 
-    // Handle Excel file upload
-    const handleExcelUpload = (event) => {
-        const file = event.target.files[0];
-        if (!file) return; // Handle no file selected
-
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0]; // Get the first sheet
-            const worksheet = workbook.Sheets[sheetName];
-
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
-            jsonData.forEach(row => {
-                const email = row.email; // Read email
-                if (email) {
-                    mentionUsers({ email, mention: 'Hello' });
-                }
-            });
-
-            toast.success('Successfully mentioned users from Excel!');
-        };
-
-        reader.readAsArrayBuffer(file);
-    };
-
     // Toggle selection of a row
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
@@ -835,22 +808,6 @@ const SurveysComponent = ({ user }) => {
                     startIcon={<ImportContactsOutlined />}
                 >
                     Add Survey
-                </Button>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    style={{ top: -70, marginLeft: '10px' }}
-                    startIcon={<FileUploadIcon />}
-                    component="label"
-                >
-                    Batch Import Surveys from Excel
-                    <input
-                        type="file"
-                        accept=".xlsx, .xls"
-                        style={{ display: 'none' }}
-                        onChange={handleExcelUpload}
-                    />
                 </Button>
                 <Button
                     variant='contained'

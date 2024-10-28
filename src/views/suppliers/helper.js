@@ -28,6 +28,15 @@ export const addSupplier = (data) =>
         true // 包含身份验证
     );
 
+export const batchAddSuppliers = (data) =>
+    fetchApi(
+        {
+            method: 'POST',
+            url: endpoints.suppliersBatch,
+            data
+        },
+        true // 包含身份验证
+    );
 /**
  * Update an existing supplier
  */
