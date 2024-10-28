@@ -7,10 +7,7 @@ import { fetchSuppliers } from '../../../views/suppliers/helper';
 import CompliancePieChart from '../components/CompliancePieChart'; // Import the pie chart component
 
 const StudentDashboard = ({ isLoading }) => {
-    const [suppliersData, setSuppliersData] = React.useState([
-        { name: 'With Feedback', value: 45 },
-        { name: 'Without Feedback', value: 55 },
-    ]);
+    const [suppliersData, setSuppliersData] = React.useState([]);
     const [productsData, setProductsData] = React.useState([
         { name: 'Compliant', value: 11 },
         { name: 'Not Compliant', value: 89 },

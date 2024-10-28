@@ -13,7 +13,7 @@ import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import { fetchSurveys, addSurvey, deleteSurveys } from './helper'; // Adjust the path as needed
+import { fetchSurveys, addSurvey, deleteSurveys, updateSurvey } from './helper'; // Adjust the path as needed
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import { DeleteOutlined, DownloadOutlined, ImportContactsOutlined, FileUpload as FileUploadIcon } from '@material-ui/icons';
@@ -52,6 +52,7 @@ const SurveysComponent = ({ user }) => {
 
     const [surveys, setSurveys] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [loadingUpdate, setLoadingUpdate] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
     const [openDialog, setOpenDialog] = React.useState(false);
@@ -227,6 +228,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Survey Name',
             width: 190,
             sortable: true,
+            editable: true, // 可编辑
             valueGetter: (params) => params.row?.name || '',
             renderCell: (params) => (
                 <Tooltip title={params.row.name || ''} arrow>
@@ -242,6 +244,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Survey Subject',
             width: 200,
             sortable: true,
+            editable: true, // 可编辑
             valueGetter: (params) => params.row?.title || '',
             renderCell: (params) => (
                 <Tooltip title={params.row.title || ''} arrow>
@@ -257,6 +260,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Survey Content',
             width: 300,
             sortable: false,
+            editable: true, // 可编辑
             valueGetter: (params) => params.row?.content || '',
             renderCell: (params) => (
                 <Tooltip title={params.row.content || ''} arrow>
@@ -272,6 +276,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Description',
             width: 200,
             sortable: false,
+            editable: true, // 可编辑
             valueGetter: (params) => params.row?.description || '',
             renderCell: (params) => (
                 <Tooltip title={params.row.description || ''} arrow>
@@ -792,6 +797,32 @@ const SurveysComponent = ({ user }) => {
         );
     };
 
+    const handleCellEditCommit = React.useCallback(
+        async (params) => {
+            const { id, field, value } = params;
+            // 更新Survey
+            try {
+                setLoadingUpdate(true);
+                await updateSurvey(id, { [field]: value });
+                setSurveys((prevSurveys) =>
+                    prevSurveys.map((survey) =>
+                        survey.id === id 
+                            ? { ...survey, [field]: value } 
+                            : survey
+                    )
+                );
+                toast.success('Survey updated successfully');
+            } catch (error) {
+                console.error('Failed to update survey:', error);
+                toast.error('Failed to update survey');
+            } finally {
+                setLoadingUpdate(false);
+            }
+            // 你可以在这里添加其他逻辑，比如发送更新到服务器
+            console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
+        }, [] 
+    );
+
     return (
         <MainCard title="Surveys" boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -843,12 +874,11 @@ const SurveysComponent = ({ user }) => {
                     autoPageSize
                     density={'standard'}
                     disableSelectionOnClick
-                    loading={isLoading}
+                    loading={isLoading || loadingUpdate}
                     components={{
                         Toolbar: GridToolbar,
-                        // LoadingOverlay: CustomLoadingOverlay,
-                        // NoRowsOverlay: CustomNoRowsOverlay,
                     }}
+                    onCellEditCommit={handleCellEditCommit}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];

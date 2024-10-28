@@ -27,6 +27,7 @@ import Typography from '@material-ui/core/Typography';
 import {
     DeleteOutlined,
     DownloadOutlined,
+    ImportContactsOutlined,
     NotificationsActive
 } from '@material-ui/icons';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
@@ -323,6 +324,35 @@ const SuppliersComponent = ({ user }) => {
         loadData();
     };
 
+    // Details Dialog (Optional, implement as needed)
+    const handleOpenDetailsDialog = (survey) => {
+        // Implement survey details dialog logic here
+        // For example, set a state with survey details and open a new Dialog component
+    };
+
+    // 删除单个供应商
+    const handleDeleteSingleSupplier = async (id) => {
+        const result = await Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to delete this supplier?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await deleteSuppliers([id]);
+                toast.success('Supplier deleted successfully');
+                await loadData();
+            } catch (error) {
+                console.error('Error deleting supplier:', error);
+                toast.error('Failed to delete supplier');
+            }
+        }
+    };
+
     // DataGrid 列定义
     const columns = [
         // 选择列
@@ -578,59 +608,63 @@ const SuppliersComponent = ({ user }) => {
                 );
             },
         },
+        // Actions Column
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 200,
+            sortable: false,
+            renderCell: (params) => (
+                <strong>
+                    <Button
+                        variant='contained'
+                        color='primary'
+                        size='small'
+                        startIcon={<ImportContactsOutlined />}
+                        style={{ marginRight: 16 }}
+                        onClick={() => handleOpenDetailsDialog(params.row)}
+                    >
+                        Details
+                    </Button>
+                    <IconButton
+                        onClick={(event) => {
+                            event.stopPropagation(); // Prevent event bubbling
+                            handleDeleteSingleSupplier(params.row.id);
+                        }}
+                    >
+                        <DeleteOutlined color="secondary" />
+                    </IconButton>
+                </strong>
+            ),
+        },
     ];
 
-    // 处理行更新
-    const processRowUpdate = async (newRow, oldRow) => {
-        console.log('Processing row update...');
-        console.log('Old Row:', oldRow);
-        console.log('New Row:', newRow);
-    
-        const updatedFields = {};
-        for (const key in newRow) {
-            if (newRow[key] !== oldRow[key]) {
-                updatedFields[key] = newRow[key];
-            }
-        }
-    
-        if (Object.keys(updatedFields).length > 0) {
-            // 对特定字段进行验证
-            if ('contact' in updatedFields) {
-                if (!isValidEmail(updatedFields.contact)) {
-                    toast.error('Invalid email format');
-                    return oldRow;
-                }
-            }
-    
+    const handleCellEditCommit = React.useCallback(
+        async (params) => {
+            const { id, field, value } = params;
+            // 更新供应商数据
             try {
                 setLoadingUpdate(true);
-                console.log('Updating supplier with ID:', newRow.id);
-                console.log('Updated fields:', updatedFields);
-    
-                await updateSupplier(newRow.id, updatedFields);
-    
+                await updateSupplier(id, { [field]: value });
                 setSuppliers((prevSuppliers) =>
                     prevSuppliers.map((supplier) =>
-                        supplier.id === newRow.id
-                            ? { ...supplier, ...updatedFields }
+                        supplier.id === id
+                            ? { ...supplier, [field]: value }
                             : supplier
                     )
                 );
-    
-                toast.success('Supplier updated successfully');
-                return { ...newRow, ...updatedFields };
+                toast.success('Survey updated successfully');
             } catch (error) {
-                console.error('Failed to update supplier:', error);
-                toast.error('Failed to update supplier');
-                return oldRow;
+                console.error('Failed to update survey:', error);
+                toast.error('Failed to update survey');
             } finally {
                 setLoadingUpdate(false);
             }
-        }
-        return newRow;
-    };
+            // 你可以在这里添加其他逻辑，比如发送更新到服务器
+            console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
+        }, [] 
+    );
     
-
     // 添加供应商对话框
     const AddSupplierDialog = ({ open, handleClose }) => {
         return (
@@ -978,7 +1012,7 @@ const SuppliersComponent = ({ user }) => {
                     components={{
                         Toolbar: GridToolbar
                     }}
-                    processRowUpdate={processRowUpdate}
+                    onCellEditCommit={handleCellEditCommit}
                     experimentalFeatures={{ newEditingApi: true }}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
