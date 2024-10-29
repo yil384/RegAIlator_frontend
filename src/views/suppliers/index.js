@@ -18,6 +18,7 @@ import {
     fetchSuppliers,
     addSupplier,
     updateSupplier,
+    updateSuppliers,
     sendEmailsToSuppliers,
     deleteSuppliers,
     batchAddSuppliers
@@ -433,6 +434,51 @@ const SuppliersComponent = ({ user }) => {
             }
         }
     };
+
+    const [selectedSurveyId, setSelectedSurveyId] = React.useState('');
+    const handleAssignSurvey = async (event) => {
+        const surveyId = event.target.value;
+        setSelectedSurveyId(surveyId);
+    
+        // Confirmation dialog
+        const result = await Swal.fire({
+            title: 'Confirm Assign Survey',
+            text: `Are you sure you want to assign this survey to the selected ${selectedIds.length} suppliers?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, assign it!',
+            cancelButtonText: 'Cancel'
+        });
+    
+        if (!result.isConfirmed) {
+            return;
+        }
+    
+        // Make API call to update suppliers
+        try {
+            setLoadingUpdate(true);
+            console.log('selectedIds',selectedIds);
+            console.log('surveyId',surveyId);
+            await updateSuppliers(selectedIds, { chooseSurvey: surveyId });
+    
+            // Update the suppliers in local state
+            setSuppliers((prevSuppliers) =>
+                prevSuppliers.map((supplier) =>
+                    selectedIds.includes(supplier.id)
+                        ? { ...supplier, chooseSurvey: surveyId }
+                        : supplier
+                )
+            );
+    
+            toast.success('Survey assigned successfully');
+        } catch (error) {
+            console.error('Failed to assign survey:', error);
+            toast.error('Failed to assign survey');
+        } finally {
+            setLoadingUpdate(false);
+            setSelectedSurveyId('');
+        }
+    };    
 
     // DataGrid 列定义
     const columns = [
@@ -1029,34 +1075,52 @@ const SuppliersComponent = ({ user }) => {
     return (
         <MainCard title='Suppliers' boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                <Button
-                    variant='contained'
+                <Select
+                    value={selectedSurveyId}
+                    onChange={handleAssignSurvey}
+                    disabled={selectedIds.length === 0}
+                    displayEmpty
                     color='primary'
                     size='small'
-                    style={{ top: -70, right: -124 }}
-                        startIcon={<DownloadOutlined />}
-                    component="label"
-                        onClick={handleOpenDialog}
-                    >
-                        Add Supplier
-                    </Button>
-                    <Button
+                    style={{ marginLeft: '10px', top: -63, right: -124, marginTop: -10 }}
+                >
+                    <MenuItem value="" disabled>
+                        {selectedIds.length === 0 ? 'Select suppliers first' : 'Assign Survey'}
+                    </MenuItem>
+                    {surveys.map((survey) => (
+                        <MenuItem key={survey._id} value={survey._id}>
+                            {survey.name}
+                        </MenuItem>
+                    ))}
+                </Select>
+                <Button
                     variant='contained'
                     color='primary'
                     size='small'
                     style={{ top: -70, marginLeft: '10px', right: -124 }}
                         startIcon={<DownloadOutlined />}
-                        component="label"
-                    >
-                        {importingSuppliers ? 'Importing...' : 'Batch Import Suppliers from Excel'}
-                        <input
-                            type="file"
-                            accept=".xlsx, .xls"
-                            style={{ display: 'none' }}
-                            onChange={handleExcelUpload}
-                        />
-                    </Button>
-                    <Button
+                    component="label"
+                        onClick={handleOpenDialog}
+                >
+                    Add Supplier
+                </Button>
+                <Button
+                variant='contained'
+                color='primary'
+                size='small'
+                style={{ top: -70, marginLeft: '10px', right: -124 }}
+                    startIcon={<DownloadOutlined />}
+                    component="label"
+                >
+                    {importingSuppliers ? 'Importing...' : 'Batch Import Suppliers from Excel'}
+                    <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        style={{ display: 'none' }}
+                        onChange={handleExcelUpload}
+                    />
+                </Button>
+                <Button
                     variant='contained'
                     color='secondary'
                     size='small'

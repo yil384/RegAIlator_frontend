@@ -1,5 +1,6 @@
 // suppliers.helper.js
 
+import suppliers from '.';
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from './../../configs/endpoints';
 
@@ -48,6 +49,15 @@ export const updateSupplier = (supplierId, data) =>
             data
         },
         true // 包含身份验证
+    );
+export const updateSuppliers = (supplierIds, data) =>
+    fetchApi(
+        {
+            method: 'PUT',
+            url: `${endpoints.suppliers}`,
+            data: { supplierIds, supplierBody: data }
+        },
+        true // Include authentication
     );
 
 export const deleteSuppliers = (supplierIds) =>
