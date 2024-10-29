@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import MainCard from '../../ui-component/cards/MainCard';
 import { useTheme } from '@material-ui/styles';
+import IconButton from '@material-ui/core/IconButton';
 
 import * as Yup from 'yup';
 import { Formik } from 'formik';
@@ -28,7 +29,6 @@ import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
-import { fetchVideoGroupsAction } from '../video-group/video-groups.actions';
 import FileUploadIcon from '@material-ui/icons/FileUpload';
 import ClearIcon from '@material-ui/icons/Clear';
 
@@ -79,14 +79,20 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     };
 
     const files = selectedFiles?.map(file => (
-        <div className={classes.selectedFileTitle} key={file.path}>
-            <li>
-                {file.path} - {file.size} bytes
-                <Box sx={{ ml: 10 }}>
-                    <ClearIcon onClick={removeFile(file)} />
-                </Box>
-            </li>
-        </div>
+        // <div className={classes.selectedFileTitle} key={file.path}>
+        //     <li>
+        //         {file.path} - {file.size} bytes
+        //         <Box sx={{ ml: 10 }}>
+        //             <ClearIcon onClick={removeFile(file)} />
+        //         </Box>
+        //     </li>
+        // </div>
+        <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+            <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
+                <ClearIcon />
+            </IconButton>
+        </li>
     ));
 
     const handleVideoGroupChange = (value) => {
@@ -119,14 +125,6 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
             setTableData(newTableData); // 保存表格数据
         }
     };
-
-    React.useEffect(() => {
-        fetchVideoGroups();
-    }, [fetchVideoGroups]);
-
-    React.useEffect(() => {
-        setVideoGroupOpts(videoGroups?.results);
-    }, [videoGroups]);
 
     React.useEffect(() => {
         setUploadPercentage(null);
@@ -191,41 +189,6 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                 >
                     {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                         <form onSubmit={handleSubmit}>
-                            <Grid container>
-                                <Grid item xs={12} sm={12} md={12} lg={6}>
-                                    <FormControl fullWidth className={classes.selectInput}>
-                                        <InputLabel htmlFor='video-group'>File Group</InputLabel>
-                                        <Select
-                                            id='video-group'
-                                            labelId='video-group'
-                                            value={selectedVideoGroup}
-                                            name='videoGroup'
-                                            onChange={(e) => {
-                                                handleChange(e);
-                                                handleVideoGroupChange(e.target.value);
-                                            }}
-                                            label='Video Group'
-                                            inputProps={{
-                                                classes: {
-                                                    notchedOutline: classes.notchedOutline
-                                                }
-                                            }}
-                                        >
-                                            <MenuItem value=''>
-                                                <em>None</em>
-                                            </MenuItem>
-                                            {videoGroupOpts?.map(({ id, groupName }) => (
-                                                <MenuItem key={id} value={id}>{groupName}</MenuItem>
-                                            ))}
-                                        </Select>
-                                        {errors.videoGroup && (
-                                            <FormHelperText error id='standard-weight-helper-text-video-group'>
-                                                {errors.videoGroup}
-                                            </FormHelperText>
-                                        )}
-                                    </FormControl>
-                                </Grid>
-                            </Grid>
                             <Box sx={{ mt: 2, mb: 2 }}>
                                 <Grid item xs={12} sm={12} md={12} lg={6}>
                                     <section className='container'>
@@ -243,7 +206,10 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
                                                 </div>
                                                 <ul>{files}</ul>
                                                 <Grid item xs={4} sm={4} md={4} lg={4}>
-                                                    {files.length > 1 && <button onClick={removeAll}>Remove All</button>}
+                                                    {files.length > 1 && 
+                                                    <Button variant="outlined" color="secondary" onClick={removeAll}>
+                                                        Remove All
+                                                    </Button>}
                                                 </Grid>
                                             </aside>
                                         )}
@@ -332,13 +298,4 @@ const AddVideoComponent = ({ isLoading, fetchVideoGroups, videoGroups }) => {
     );
 };
 
-const mapStateToProps = (state) => ({
-    isLoading: state.videoGroupsReducer.isLoading,
-    videoGroups: state.videoGroupsReducer.videoGroups
-});
-
-const mapDispatchToProps = (dispatch) => ({
-    fetchVideoGroups: (obj) => dispatch(fetchVideoGroupsAction(obj))
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(AddVideoComponent);
+export default AddVideoComponent;

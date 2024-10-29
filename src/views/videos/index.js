@@ -39,6 +39,7 @@ import { get } from 'jquery';
 
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
+import AddVideoComponent from './addVideo';
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -57,6 +58,7 @@ const VideosComponent = ({ user }) => {
     const [openDialog, setOpenDialog] = React.useState(false);
     const [selectedVideo, setSelectedVideo] = React.useState(null);
     const [scale, setScale] = React.useState(1.0); // Initial zoom scale
+    const [openAddVideoDialog, setOpenAddVideoDialog] = React.useState(false); // State for Add Video Dialog
 
     const handleZoomIn = () => {
         setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // Max zoom 3.0
@@ -82,7 +84,7 @@ const VideosComponent = ({ user }) => {
             setIsLoading(false);
             // Optional: Add error handling
             console.error('Failed to load:', e);
-            toast.error('Failed to load videos');
+            toast.error('Failed to load files');
         }
     }, []);
 
@@ -224,21 +226,6 @@ const VideosComponent = ({ user }) => {
             disableClickEventBubbling: true
         },
         {
-            field: 'group',
-            headerName: 'Assigned Group',
-            width: 200,
-            editable: false,
-            resizable: false,
-            disableClickEventBubbling: true,
-            getCellValue: (params) => params.row?.group?.groupName,
-            renderCell: (params) => (
-                params.row?.group && 
-                <Typography variant='body1'>
-                    {params.row?.group.groupName}
-                </Typography>
-            )
-        },
-        {
             field: 'updatedAt',
             headerName: 'Last Updated',
             width: 200,
@@ -347,6 +334,15 @@ const VideosComponent = ({ user }) => {
         <MainCard title='All Files' boxShadow shadow={theme.shadows[2]}>
             {/* **Action Buttons** */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    onClick={() => setOpenAddVideoDialog(true)}
+                >
+                    Add Files
+                </Button>
                 <Button
                     variant='contained'
                     color='primary'
@@ -385,6 +381,39 @@ const VideosComponent = ({ user }) => {
                         )
                 }
             </div>
+
+            {/* Add Video Dialog */}
+            <Dialog
+                open={openAddVideoDialog}
+                onClose={() => setOpenAddVideoDialog(false)}
+                fullWidth
+                maxWidth="lg"
+                aria-labelledby="add-video-dialog"
+            >
+                <DialogTitle id="add-video-dialog">
+                    Add File
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => {setOpenAddVideoDialog(false); loadData();}}
+                        style={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <AddVideoComponent
+                        onUploadSuccess={() => {
+                            setOpenAddVideoDialog(false);
+                            loadData();
+                        }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => {setOpenAddVideoDialog(false); loadData()}} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* **Dialog Component** */}
             <Dialog

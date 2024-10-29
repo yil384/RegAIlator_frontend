@@ -44,36 +44,12 @@ export const filesMenu = {
                     breadcrumbs: false
                 },
                 {
-                    id: 'menu_documents',
-                    title: 'Supplier Documents',
-                    type: 'collapse',
-                    icon: DocumentScannerOutlined,
-                    children: [
-                        {
-                            id: 'file_groups_menu',
-                            title: 'File Groups',
-                            type: 'item',
-                            url: '/file-groups',
-                            icon: icons['IconFolders'],
-                            breadcrumbs: false
-                        },
-                        {
-                            id: 'files_all',
-                            title: 'All Files',
-                            type: 'item',
-                            url: '/files',
-                            icon: icons['IconFiles'],
-                            breadcrumbs: false
-                        },
-                        {
-                            id: 'add_files_all',
-                            title: 'Add Files',
-                            type: 'item',
-                            url: '/files/add',
-                            icon: icons['IconFilePlus'],
-                            breadcrumbs: false
-                        }
-                    ]
+                    id: 'files_all',
+                    title: 'All Files',
+                    type: 'item',
+                    url: '/files',
+                    icon: icons['IconFiles'],
+                    breadcrumbs: false
                 }
             ]
         }

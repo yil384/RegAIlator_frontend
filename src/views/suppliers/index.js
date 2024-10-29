@@ -90,6 +90,7 @@ const SuppliersComponent = ({ user }) => {
     const handleCloseDialogFeedback = () => {
         setOpenDialogFeedback(false);
         setSelectedFeedback([]);
+        setSelectedDocument(null);
     };
     const [selectedDocument, setSelectedDocument] = React.useState(null);
     const [previewingFileType, setPreviewingFileType] = React.useState('');
@@ -226,7 +227,7 @@ const SuppliersComponent = ({ user }) => {
                 try {
                     const result = await batchAddSuppliers(suppliersToAdd);
                     if (result.length > 0) {
-                        toast.success(`${result.length} supplier(s) imported successfully.`);
+                        toast.success(`${suppliersToAdd.length} supplier(s) imported successfully.`);
                     }
                     // Reload suppliers data
                     await loadData();
@@ -1189,7 +1190,7 @@ const SuppliersComponent = ({ user }) => {
                                     {selectedDocument ? (
                                         previewingFileType === 'pdf' ? (
                                             <Document
-                                                file={config[config.env].baseURL + selectedDocument.url}
+                                                file={config[config.env].baseURL + selectedDocument.content}
                                                 onLoadSuccess={({ numPages }) => setNumPages(numPages)}
                                                 loading={<LoaderInnerCircular />}
                                             >
@@ -1201,7 +1202,7 @@ const SuppliersComponent = ({ user }) => {
                                             <Typography variant='body1'>XLSX files cannot be previewed directly. Download to view.</Typography>
                                         ) : previewingFileType === 'txt' ? (
                                             <iframe 
-                                                src={config[config.env].baseURL + selectedDocument.url} 
+                                                src={config[config.env].baseURL + selectedDocument.content} 
                                                 style={{ width: '100%', height: '100%', border: 'none' }} 
                                                 title="Text Document Preview"
                                             />
