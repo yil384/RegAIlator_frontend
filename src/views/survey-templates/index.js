@@ -74,6 +74,7 @@ const SurveysComponent = ({ user }) => {
                 id: survey._id || index + 1, // Ensure each survey has a unique 'id'
             }));
             setSurveys(surveysData);
+            setFilterIds(surveysData.map((survey) => survey.id));
             setIsLoading(false);
         } catch (error) {
             setIsLoading(false);
@@ -540,7 +541,7 @@ const SurveysComponent = ({ user }) => {
                                 <MuiGrid container spacing={2}>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
-                                            <InputLabel htmlFor="name">Name</InputLabel>
+                                            <InputLabel htmlFor="name">Survey Name</InputLabel>
                                             <OutlinedInput
                                                 id="name"
                                                 type="text"
@@ -557,7 +558,7 @@ const SurveysComponent = ({ user }) => {
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
-                                            <InputLabel htmlFor="title">Subject</InputLabel>
+                                            <InputLabel htmlFor="title">Survey Subject</InputLabel>
                                             <OutlinedInput
                                                 id="title"
                                                 type="text"
@@ -576,7 +577,7 @@ const SurveysComponent = ({ user }) => {
                                         <FormControl fullWidth className={classes.input}>
                                             <TextField
                                                 id="content"
-                                                label="Content"
+                                                label="Survey Content"
                                                 multiline
                                                 rows={5}
                                                 value={values.content}

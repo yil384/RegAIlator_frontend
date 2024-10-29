@@ -40,6 +40,7 @@ import { get } from 'jquery';
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
 import AddVideoComponent from './addVideo';
+import JSZip from 'jszip';
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -80,6 +81,7 @@ const VideosComponent = ({ user }) => {
             const suppliersResponse = await fetchSuppliers();
             setSuppliers(suppliersResponse || []);
             setIsLoading(false);
+            setFilterIds(response?.results.map((video) => video.id) || []);
         } catch (e) {
             setIsLoading(false);
             // Optional: Add error handling
@@ -128,33 +130,108 @@ const VideosComponent = ({ user }) => {
     };
 
     // 在 handleDownload 函数中实现多个文件下载
-    const handleDownload = () => {
+    // const handleDownload = () => {
+    //     if (selectedIds.length === 0) {
+    //         toast.warning('No videos selected for download.');
+    //         return;
+    //     }
+    
+    //     const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
+    
+    //     selectedVideos.forEach(async (video, index) => {
+    //         try {
+    //             const response = await fetch(config[config.env].baseURL + video.path);
+    //             const blob = await response.blob();
+    //             const link = document.createElement('a');
+    //             const url = URL.createObjectURL(blob);
+    //             link.href = url;
+    //             link.setAttribute('download', video.title || 'download'); // 设置下载文件名
+    //             document.body.appendChild(link);
+    //             link.click();
+    //             document.body.removeChild(link);
+    //             URL.revokeObjectURL(url); // 清理 URL 对象
+    //         } catch (error) {
+    //             console.error('File download error:', error);
+    //             toast.error(`Failed to download ${video.title}`);
+    //         }
+    //     });
+    
+    //     toast.success('Download initiated for selected videos.');
+    // };    
+
+    // [Updated] Implement multiple file download as a zip using JSZip
+    const handleDownload = async () => {
         if (selectedIds.length === 0) {
-            toast.warning('No videos selected for download.');
+            toast.warning('No files selected for download.');
             return;
         }
     
         const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
     
-        selectedVideos.forEach(async (video, index) => {
+        if (selectedIds.length === 1) {
+            // 单个文件正常下载
+            const video = selectedVideos[0];
             try {
                 const response = await fetch(config[config.env].baseURL + video.path);
+                if (!response.ok) throw new Error('Network response was not ok');
                 const blob = await response.blob();
                 const link = document.createElement('a');
                 const url = URL.createObjectURL(blob);
                 link.href = url;
-                link.setAttribute('download', video.title || 'download'); // 设置下载文件名
+                link.setAttribute('download', video.title || 'download');
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                URL.revokeObjectURL(url); // 清理 URL 对象
+                URL.revokeObjectURL(url);
+                toast.success('Download initiated for selected file.');
             } catch (error) {
                 console.error('File download error:', error);
                 toast.error(`Failed to download ${video.title}`);
             }
-        });
+        } else {
+            // 多个文件打包成 ZIP 下载
+            const zip = new JSZip();
+            const errors = [];
     
-        toast.success('Download initiated for selected videos.');
+            await Promise.all(selectedVideos.map(async (video) => {
+                try {
+                    const response = await fetch(config[config.env].baseURL + video.path);
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const blob = await response.blob();
+                    zip.file(video.title || `file_${video.id}`, blob);
+                } catch (error) {
+                    console.error(`File download error for ${video.title}:`, error);
+                    errors.push(video.title);
+                }
+            }));
+    
+            if (Object.keys(zip.files).length === 0) {
+                toast.error('No files were downloaded successfully.');
+                return;
+            }
+    
+            try {
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(zipBlob);
+                link.href = url;
+                link.setAttribute('download', 'files.zip');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+    
+                if (errors.length > 0) {
+                    toast.error(`Failed to download: ${errors.join(', ')}`);
+                    toast.success('Downloaded other files successfully.');
+                } else {
+                    toast.success('Download initiated for selected files.');
+                }
+            } catch (error) {
+                console.error('Zip generation error:', error);
+                toast.error('Failed to generate zip file.');
+            }
+        }
     };    
 
     const columns = [
