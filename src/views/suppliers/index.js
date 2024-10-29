@@ -181,8 +181,12 @@ const SuppliersComponent = ({ user }) => {
                     const status = row.status || row['Status'] || 'inactive'; // Default to 'inactive'
 
                     // Basic validation
-                    if (!supplierName || !contact || !materialName || !partNumber) {
-                        errors.push(`Row ${index + 2}: Missing required fields.`);
+                    if (!supplierName) {
+                        errors.push(`Row ${index + 2}: Missing supplier name.`);
+                        return;
+                    }
+                    if (!contact) {
+                        errors.push(`Row ${index + 2}: Missing contact.`);
                         return;
                     }
 
