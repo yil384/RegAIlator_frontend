@@ -105,7 +105,8 @@ const VideosComponent = ({ user }) => {
     };
 
     // **Selection State and Handlers**
-    const [selectedIds, setSelectedIds] = React.useState([]); // Selected video IDs
+    const [selectedIds, setSelectedIds] = React.useState([]); // Selected file IDs
+    const [filterIds, setFilterIds] = React.useState([]); // Filtered file IDs
 
     // Handle individual row selection
     const handleSelect = (id) => {
@@ -118,13 +119,11 @@ const VideosComponent = ({ user }) => {
 
     // Handle select all
     const handleSelectAll = () => {
-        const allVideoIds = videos.map(video => video.id);
-        if (allVideoIds.every(id => selectedIds.includes(id))) {
-            // If all are selected, deselect all
-            setSelectedIds([]);
+        const allRowIds = filterIds.map((id) => id);
+        if (filterIds.every((id) => selectedIds.includes(id))) {
+            setSelectedIds(selectedIds.filter((id) => !filterIds.includes(id)));
         } else {
-            // Otherwise, select all
-            setSelectedIds(allVideoIds);
+            setSelectedIds([...new Set([...selectedIds, ...allRowIds])]);
         }
     };
 
@@ -164,8 +163,15 @@ const VideosComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={videos.length > 0 && selectedIds.length === videos.length}
-                    indeterminate={selectedIds.length > 0 && selectedIds.length < videos.length}
+                    checked={
+                        filterIds.length > 0 &&
+                        filterIds.every((id) => selectedIds.includes(id))
+                    }
+                    indeterminate={
+                        filterIds.length > 0 &&
+                        filterIds.some((id) => selectedIds.includes(id)) &&
+                        !filterIds.every((id) => selectedIds.includes(id))
+                    }    
                     onChange={handleSelectAll}
                     style={{ padding: 0 }}
                     color="primary"
@@ -376,6 +382,66 @@ const VideosComponent = ({ user }) => {
                                 Toolbar: GridToolbar,
                                 LoadingOverlay: CustomLoadingOverlay,
                                 NoRowsOverlay: CustomNoRowsOverlay
+                            }}
+                            onFilterModelChange={(model) => {
+                                const filter = model.items.map((item) => {
+                                    return [
+                                        item.columnField,
+                                        item.operatorValue,
+                                        item.value
+                                    ];
+                                });
+                                const filterids = videos
+                                    .filter((video) => {
+                                        return filter.every(
+                                            ([field, operator, value]) => {
+                                                const cellValue = video[field];
+                                                if (operator === 'isEmpty') {
+                                                    return (
+                                                        cellValue === '' ||
+                                                        cellValue === undefined
+                                                    );
+                                                } else if (operator === 'isNotEmpty') {
+                                                    return (
+                                                        cellValue !== '' &&
+                                                        cellValue !== undefined
+                                                    );
+                                                } else if (value === undefined) {
+                                                    return true;
+                                                } else if (operator === 'contains') {
+                                                    return cellValue
+                                                        ?.toString()
+                                                        .toLowerCase()
+                                                        .includes(
+                                                            value.toLowerCase()
+                                                        );
+                                                } else if (operator === 'equals') {
+                                                    return (
+                                                        cellValue
+                                                            ?.toString()
+                                                            .toLowerCase() ===
+                                                        value.toLowerCase()
+                                                    );
+                                                } else if (operator === 'startsWith') {
+                                                    return cellValue
+                                                        ?.toString()
+                                                        .toLowerCase()
+                                                        .startsWith(
+                                                            value.toLowerCase()
+                                                        );
+                                                } else if (operator === 'endsWith') {
+                                                    return cellValue
+                                                        ?.toString()
+                                                        .toLowerCase()
+                                                        .endsWith(value.toLowerCase());
+                                                } else {
+                                                    return false;
+                                                }
+                                            }
+                                        );
+                                    })
+                                    .map((video) => video.id);
+                                setFilterIds(filterids);
                             }}
                         />
                         )

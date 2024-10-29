@@ -178,8 +178,15 @@ const SurveysComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={surveys.length > 0 && selectedIds.length === surveys.length}
-                    indeterminate={selectedIds.length > 0 && selectedIds.length < surveys.length}
+                    checked={
+                        filterIds.length > 0 &&
+                        filterIds.every((id) => selectedIds.includes(id))
+                    }
+                    indeterminate={
+                        filterIds.length > 0 &&
+                        filterIds.some((id) => selectedIds.includes(id)) &&
+                        !filterIds.every((id) => selectedIds.includes(id))
+                    }
                     onChange={handleSelectAll}
                     style={{ padding: 0 }}
                     color="primary"
