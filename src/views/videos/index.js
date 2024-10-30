@@ -40,6 +40,7 @@ import { get } from 'jquery';
 
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
+import VisibilityIcon from '@material-ui/icons/Visibility'; // Import the visibility icon
 import JSZip from 'jszip';
 
 import * as Yup from 'yup';
@@ -274,11 +275,11 @@ const VideosComponent = ({ user }) => {
             toast.warning('No files selected for download.');
             return;
         }
-    
+
         const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
-    
+
         if (selectedIds.length === 1) {
-            // 单个文件正常下载
+            // Single file download
             const video = selectedVideos[0];
             try {
                 const response = await fetch(config[config.env].baseURL + video.path);
@@ -298,10 +299,10 @@ const VideosComponent = ({ user }) => {
                 toast.error(`Failed to download ${video.title}`);
             }
         } else {
-            // 多个文件打包成 ZIP 下载
+            // Multiple files zipped
             const zip = new JSZip();
             const errors = [];
-    
+
             await Promise.all(selectedVideos.map(async (video) => {
                 try {
                     const response = await fetch(config[config.env].baseURL + video.path);
@@ -313,12 +314,12 @@ const VideosComponent = ({ user }) => {
                     errors.push(video.title);
                 }
             }));
-    
+
             if (Object.keys(zip.files).length === 0) {
                 toast.error('No files were downloaded successfully.');
                 return;
             }
-    
+
             try {
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
                 const link = document.createElement('a');
@@ -329,7 +330,7 @@ const VideosComponent = ({ user }) => {
                 link.click();
                 document.body.removeChild(link);
                 URL.revokeObjectURL(url);
-    
+
                 if (errors.length > 0) {
                     toast.error(`Failed to download: ${errors.join(', ')}`);
                     toast.success('Downloaded other files successfully.');
@@ -348,8 +349,8 @@ const VideosComponent = ({ user }) => {
             toast.warning('No files selected for deletion.');
             return;
         }
-    
-        // 显示确认对话框
+
+        // Show confirmation dialog
         const result = await Swal.fire({
             text: 'Are you sure you wish to delete the selected items?',
             icon: 'warning',
@@ -358,14 +359,14 @@ const VideosComponent = ({ user }) => {
             cancelButtonColor: theme.palette.error['dark'],
             confirmButtonText: 'Yes, delete them!'
         });
-    
+
         if (result.isConfirmed) {
             try {
-                // 批量删除选中的文件
+                // Delete selected files
                 await Promise.all(selectedIds.map(id => deleteVideo(id)));
-    
-                await loadData(); // 删除后重新加载数据
-                setSelectedIds([]); // 清空选中的 ID
+
+                await loadData(); // Reload data after deletion
+                setSelectedIds([]); // Clear selected IDs
                 Swal.fire('Deleted!', 'Your items have been deleted.', 'success');
             } catch (error) {
                 console.error('Failed to delete files:', error);
@@ -373,6 +374,23 @@ const VideosComponent = ({ user }) => {
             }
         }
     };    
+
+    // **Add state for viewing selected details**
+    const [openSelectedDetailsDialog, setOpenSelectedDetailsDialog] = React.useState(false);
+    const [selectedVideosData, setSelectedVideosData] = React.useState([]);
+
+    const handleViewSelectedDetails = () => {
+        if (selectedIds.length === 0) {
+            toast.warning('No files selected.');
+            return;
+        }
+
+        const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
+
+        setSelectedVideosData(selectedVideos);
+
+        setOpenSelectedDetailsDialog(true);
+    };
 
     const columns = [
         // **Selection Column**
@@ -427,7 +445,7 @@ const VideosComponent = ({ user }) => {
             disableClickEventBubbling: true,
             renderCell: (params) => (
                 <Typography variant='body1'>
-                    {/* 通过params.row?.supplier作为ID来获取名字 */}
+                    {/* Use params.row?.supplier as ID to get the name */}
                     {suppliers.find(supplier => supplier._id === params.row?.supplier)?.supplierName}
                 </Typography>
             )
@@ -494,19 +512,19 @@ const VideosComponent = ({ user }) => {
                         onClick={(event) => {
                             event.stopPropagation(); // Prevent event bubbling
                             Swal.fire({
-                                    text: 'Are you sure you wish to delete this item?',
+                                text: 'Are you sure you wish to delete this item?',
                                 icon: 'warning',
                                 showCancelButton: true,
                                 confirmButtonColor: theme.palette.primary['main'],
                                 cancelButtonColor: theme.palette.error['dark'],
-                                    confirmButtonText: 'Yes, delete it!'
+                                confirmButtonText: 'Yes, delete it!'
                             }).then(async (result) => {
                                 if (result.isConfirmed) {
                                     await deleteVideo(params.row.id);
                                     await loadData();
                                     Swal.fire(
-                                            'Deleted!',
-                                            'Your item has been deleted.',
+                                        'Deleted!',
+                                        'Your item has been deleted.',
                                         'success'
                                     );
                                 }
@@ -549,7 +567,7 @@ const VideosComponent = ({ user }) => {
         <MainCard title='All Files' boxShadow shadow={theme.shadows[2]}>
             {/* **Action Buttons** */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <Button
+                <Button
                     variant='contained'
                     color='primary'
                     size='small'
@@ -576,11 +594,22 @@ const VideosComponent = ({ user }) => {
                     style={{ top: -70, marginLeft: '10px' }}
                     onClick={handleDeleteMultiple}
                     disabled={selectedIds.length === 0}
-                    startIcon={<DeleteIcon />} // 确保 DeleteIcon 已导入
+                    startIcon={<DeleteIcon />} // Ensure DeleteIcon is imported
                 >
                     Delete Selected
                 </Button>
-                {/* You can add more buttons here if needed */}
+                {/* **New View Selected Details Button** */}
+                <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    onClick={handleViewSelectedDetails}
+                    disabled={selectedIds.length === 0}
+                    startIcon={<VisibilityIcon />} // Ensure VisibilityIcon is imported
+                >
+                    View Selected Details
+                </Button>
             </div>
 
             <div style={{ width: '100%', marginTop: -31 }}>
@@ -988,6 +1017,76 @@ const VideosComponent = ({ user }) => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseDialog} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            {/* **Dialog Component** */}
+            <Dialog
+                open={openSelectedDetailsDialog}
+                onClose={() => setOpenSelectedDetailsDialog(false)}
+                fullWidth
+                maxWidth="lg"
+                aria-labelledby="selected-details-dialog"
+            >
+                <DialogTitle id="selected-details-dialog">
+                    Selected Files Details
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => setOpenSelectedDetailsDialog(false)}
+                        style={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    {selectedVideosData.length > 0 ? (
+                        selectedVideosData.map((video, index) => {
+                            // For each video, render its data
+                            const columns = Object.keys(video.json?.data[0] || {}).map((key) => ({
+                                field: key,
+                                headerName: key.charAt(0).toUpperCase() + key.slice(1),
+                                width: 100 + key.length * 10,
+                                renderCell: (params) => (
+                                    <Tooltip title={params.value}>
+                                        <Typography variant='body1' noWrap>
+                                            {params.value}
+                                        </Typography>
+                                    </Tooltip>
+                                )
+                            }));
+
+                            const rows = (video.json?.data || []).map((item, idx) => ({
+                                id: idx,
+                                ...item
+                            }));
+
+                            return (
+                                <div key={video.id} style={{ marginBottom: '20px' }}>
+                                    <Typography variant='h6' gutterBottom>
+                                        {video.title}
+                                    </Typography>
+                                    <DataGrid
+                                        rows={rows}
+                                        columns={columns}
+                                        pageSize={10}
+                                        rowsPerPageOptions={[5]}
+                                        disableSelectionOnClick
+                                        autoHeight
+                                        density='standard'
+                                        components={{
+                                            Toolbar: GridToolbar,
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })
+                    ) : (
+                        <Typography variant='body1'>No data available.</Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenSelectedDetailsDialog(false)} color="primary">
                         Close
                     </Button>
                 </DialogActions>
