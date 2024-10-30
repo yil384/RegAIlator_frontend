@@ -31,7 +31,6 @@ const SurveyTemplatesComponent = Loadable(lazy(() => import('../views/survey-tem
 const VideoGroupsComponent = Loadable(lazy(() => import('../views/video-group')));
 const VideoGroupDetailsComponent = Loadable(lazy(() => import('../views/video-group/videoGroupDetails')));
 const VideosComponent = Loadable(lazy(() => import('../views/videos')));
-const AddVideoComponent = Loadable(lazy(() => import('../views/videos/addVideo')));
 const WatchLogsComponent = Loadable(lazy(() => import('../views/watch-logs')));
 const ErrorLogsComponent = Loadable(lazy(() => import('../views/error-logs')));
 const BillOfMaterialsComponent = Loadable(lazy(() => import('../views/billOfMatetrial')));
@@ -53,7 +52,6 @@ const routePaths = {
     videoGroups: '/file-groups',
     videos: '/files',
     videosById: '/files/:id',
-    addVideo: '/files/add',
     watchLogs: '/logs/watch-logs',
     errorLogs: '/logs/error-logs',
     BillOfMaterials: '/bill-of-materials',
@@ -122,7 +120,6 @@ const MainRoutes = () => {
 
                     <PrivateRoute path={routePaths.videoGroupById} component={VideoGroupDetailsComponent} />
                     <PrivateRoute path={routePaths.videoGroups} component={VideoGroupsComponent} />
-                    <PrivateRoute path={routePaths.addVideo} component={AddVideoComponent} />
                     <PrivateRoute path={routePaths.videos} component={VideosComponent} />
 
                     <PrivateRoute path={routePaths.videoViewer} component={VideoViewer} />

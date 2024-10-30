@@ -16,7 +16,7 @@ import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
-import { fetchVideos, deleteVideo } from './videos.helper';
+import { fetchVideos, deleteVideo, addVideoWithSupplierId } from './videos.helper';
 import { useTheme } from '@material-ui/styles';
 
 // Import PDF Viewer Components
@@ -35,12 +35,39 @@ import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; 
 
 import config from '../../configs';
 import { fetchSuppliers } from '../suppliers/helper';
+import { fetchSurveys } from '../survey-templates/helper';
 import { get } from 'jquery';
 
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
-import AddVideoComponent from './addVideo';
 import JSZip from 'jszip';
+
+import * as Yup from 'yup';
+import { Formik } from 'formik';
+import { useDropzone } from 'react-dropzone';
+import LinearProgressBar from '../../ui-component/LinearProgress';
+import AnimateButton from '../../ui-component/extended/AnimateButton';
+import useScriptRef from '../../hooks/useScriptRef';
+import { fetchApi } from '../../utils/fetchHelper';
+import endpoints from '../../configs/endpoints';
+import FileUploadIcon from '@material-ui/icons/FileUpload';
+import ClearIcon from '@material-ui/icons/Clear';
+import { useStyles } from './videos.styles'; // Ensure this style file exists
+import {
+    Box,
+    FormControl,
+    FormHelperText,
+    Grid,
+    InputLabel, MenuItem,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper
+} from '@material-ui/core';
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -49,11 +76,10 @@ const VideosComponent = ({ user }) => {
     const theme = useTheme();
     const history = useHistory();
     const userRole = user?.role;
+    const classes = useStyles();
 
     const [videos, setVideos] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
-
-    const [suppliers, setSuppliers] = React.useState([]);
 
     // Dialog state
     const [openDialog, setOpenDialog] = React.useState(false);
@@ -73,13 +99,96 @@ const VideosComponent = ({ user }) => {
         setNumPages(numPages);
     };
 
+    // 添加文件对话框的状态变量
+    const [selectedFiles, setSelectedFiles] = React.useState([]);
+    const [uploadPercentage, setUploadPercentage] = React.useState(null);
+    const [processingFile, setProcessingFile] = React.useState(false);
+    const [tableData, setTableData] = React.useState([]);
+    const [selectedSupplier, setSelectedSupplier] = React.useState(null);
+    const [suppliers, setSuppliers] = React.useState([]);
+
+    const onDrop = React.useCallback(acceptedFiles => {
+        setSelectedFiles([...selectedFiles, ...acceptedFiles]);
+    }, [selectedFiles]);
+
+    const { getRootProps, getInputProps } = useDropzone({
+        maxFiles: 10,
+        minSize: 1,
+        onDrop
+    });
+
+    const removeFile = file => () => {
+        const newFiles = [...selectedFiles];
+        newFiles.splice(newFiles.indexOf(file), 1);
+        setSelectedFiles(newFiles);
+    };
+
+    const removeAll = () => {
+        setSelectedFiles([]);
+    };
+
+    const handleFilePreview = (response) => {
+        if (response?.status && response.files.length > 0) {
+            const newTableData = response.files[0]?.result?.data || [];
+            setTableData(newTableData);
+        }
+    };
+
+    const uploadFile = async (supplierId, data) => {
+        const response = await fetchApi({
+            method: 'POST',
+            url: `${endpoints.upload_file}/${supplierId}`,
+            data: data,
+            onUploadProgress: progressEvent => {
+                const { total, loaded } = progressEvent;
+                const uploadPercentage = (loaded / total) * 100;
+                setUploadPercentage(uploadPercentage.toFixed(2));
+
+                if (uploadPercentage >= 100) {
+                    setProcessingFile(true);
+                }
+            }
+        }, true);
+
+        return response;
+    };
+
+    const generateColumnsWithTooltip = () => {
+        if (tableData.length === 0) return [];
+
+        return Object.keys(tableData[0]).map((key) => ({
+            field: key,
+            headerName: key.charAt(0).toUpperCase() + key.slice(1),
+            width: 200,
+            sortable: true,
+            resizable: false,
+            valueGetter: (params) => params.value?.toString() || '',
+            renderCell: (params) => (
+                <Tooltip title={params.value?.toString() || ''} arrow>
+                    <Typography variant='body2' noWrap>
+                        {params.value}
+                    </Typography>
+                </Tooltip>
+            )
+        }));
+    };
+
+    const files = selectedFiles?.map(file => (
+        <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+            <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+            <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
+                <ClearIcon />
+            </IconButton>
+        </li>
+    ));    
+
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
             const response = await fetchVideos({ sortBy: '-updatedAt' });
             setVideos(response?.results || []);
             const suppliersResponse = await fetchSuppliers();
-            setSuppliers(suppliersResponse || []);
+            setSuppliers(suppliersResponse);
             setIsLoading(false);
             setFilterIds(response?.results.map((video) => video.id) || []);
         } catch (e) {
@@ -234,6 +343,37 @@ const VideosComponent = ({ user }) => {
         }
     };    
 
+    const handleDeleteMultiple = async () => {
+        if (selectedIds.length === 0) {
+            toast.warning('No files selected for deletion.');
+            return;
+        }
+    
+        // 显示确认对话框
+        const result = await Swal.fire({
+            text: 'Are you sure you wish to delete the selected items?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: theme.palette.primary['main'],
+            cancelButtonColor: theme.palette.error['dark'],
+            confirmButtonText: 'Yes, delete them!'
+        });
+    
+        if (result.isConfirmed) {
+            try {
+                // 批量删除选中的文件
+                await Promise.all(selectedIds.map(id => deleteVideo(id)));
+    
+                await loadData(); // 删除后重新加载数据
+                setSelectedIds([]); // 清空选中的 ID
+                Swal.fire('Deleted!', 'Your items have been deleted.', 'success');
+            } catch (error) {
+                console.error('Failed to delete files:', error);
+                toast.error('Failed to delete selected files.');
+            }
+        }
+    };    
+
     const columns = [
         // **Selection Column**
         {
@@ -285,20 +425,12 @@ const VideosComponent = ({ user }) => {
             editable: false,
             resizable: false,
             disableClickEventBubbling: true,
-            renderCell: (params) => {
-                const supplierEmail = params.row?.supplier;
-        
-                // If supplier email exists, find the corresponding supplier data
-                const matchedSupplier = suppliers.find(supplier => supplier.contact === supplierEmail);
-        
-                return (
-                    <Tooltip title={matchedSupplier ? matchedSupplier.supplierName : 'Supplier not found'} arrow>
-                        <Typography variant='body1' noWrap>
-                            {matchedSupplier ? matchedSupplier.supplierName : ''}
-                        </Typography>
-                    </Tooltip>
-                );
-            }
+            renderCell: (params) => (
+                <Typography variant='body1'>
+                    {/* 通过params.row?.supplier作为ID来获取名字 */}
+                    {suppliers.find(supplier => supplier._id === params.row?.supplier)?.supplierName}
+                </Typography>
+            )
         },        
         {
             field: 'title',
@@ -437,6 +569,17 @@ const VideosComponent = ({ user }) => {
                 >
                     Download Selected
                 </Button>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    onClick={handleDeleteMultiple}
+                    disabled={selectedIds.length === 0}
+                    startIcon={<DeleteIcon />} // 确保 DeleteIcon 已导入
+                >
+                    Delete Selected
+                </Button>
                 {/* You can add more buttons here if needed */}
             </div>
 
@@ -525,38 +668,215 @@ const VideosComponent = ({ user }) => {
                 }
             </div>
 
-            {/* Add Video Dialog */}
+            {/* Add File Dialog */}
             <Dialog
                 open={openAddVideoDialog}
                 onClose={() => setOpenAddVideoDialog(false)}
                 fullWidth
-                maxWidth="lg"
-                aria-labelledby="add-video-dialog"
+                maxWidth="sm"
+                aria-labelledby="add-file-dialog"
             >
-                <DialogTitle id="add-video-dialog">
+                <DialogTitle id="add-file-dialog">
                     Add File
                     <IconButton
                         aria-label="close"
-                        onClick={() => {setOpenAddVideoDialog(false); loadData();}}
+                        onClick={() => { setOpenAddVideoDialog(false); loadData(); }}
                         style={{ position: 'absolute', right: 8, top: 8 }}
                     >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                    <AddVideoComponent
-                        onUploadSuccess={() => {
-                            setOpenAddVideoDialog(false);
-                            loadData();
-                        }}
-                    />
+                    <MainCard title='Add File' boxShadow shadow={theme.shadows[2]}>
+                        <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
+                            <Formik
+                                initialValues={{
+                                    survey: null
+                                }}
+                                validationSchema={
+                                    Yup.object().shape({ supplier: Yup.object().nullable().required('Supplier is required') })
+                                }
+                                onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+                                    try {
+                                        const data = new FormData();
+                                        if (selectedFiles?.length) {
+                                            for (const file of selectedFiles) {
+                                                data.append('file', file);
+                                            }
+                                        }
+                                        console.log('selected supplier', selectedSupplier);
+                                        console.log('selected files', selectedFiles);
+                                        const response = await uploadFile(selectedSupplier._id, data);
+                                        if (response?.status) {
+                                            toast.success('Parse successful!');
+                                            handleFilePreview(response);
+                                        }
+                                        setProcessingFile(false);
+                                    } catch (err) {
+                                        if (err.status === 413) {
+                                            setErrors({ submit: 'File size too large. Please upload a smaller file' });
+                                            toast.error('File size too large. Please upload a smaller file');
+                                        }
+                                        console.error('Error uploading file', err);
+                                        setErrors({ submit: err.message });
+                                        setSubmitting(false);
+                                        setProcessingFile(false);
+                                    }
+                                }}
+                            >
+                                {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
+                                    <form onSubmit={handleSubmit}>
+                                        <Box sx={{ mt: 2, mb: 2 }}>
+                                            <Grid container spacing={2}>
+                                                <Grid item xs={12} sm={12} md={12}>
+                                                    <FormControl
+                                                        fullWidth
+                                                        error={Boolean(touched.supplier && errors.supplier)}
+                                                    >
+                                                        <InputLabel id="select-supplier-label"
+                                                                    classes={{
+                                                                        shrink: classes.shrinkLabel
+                                                                    }}
+                                                        >Select Supplier</InputLabel>
+                                                        <Select
+                                                            labelId="select-supplier-label"
+                                                            id="select-supplier"
+                                                            name="supplier"
+                                                            value={selectedSupplier?.supplierName}
+                                                            onChange={(e) => {
+                                                                console.log('selected supplier', e.target.value);
+                                                                setSelectedSupplier(e.target.value);
+                                                                handleChange(e);
+                                                            }}
+                                                            onBlur={handleBlur}
+                                                            style={{ paddingTop: '10px' }}
+                                                        >
+                                                            <MenuItem value={null}>
+                                                                <em>None</em>
+                                                            </MenuItem>
+                                                            {suppliers.map((supplier) => (
+                                                                <MenuItem key={supplier._id} value={supplier}>
+                                                                    {supplier.supplierName}
+                                                                </MenuItem>
+                                                            ))}
+                                                        </Select>
+                                                        {touched.supplier && errors.supplier && (
+                                                            <FormHelperText error>{errors.supplier}</FormHelperText>
+                                                        )}
+                                                    </FormControl>
+                                                </Grid>
+                                                <Grid item xs={12} sm={12} md={12}>
+                                                    <section className='container'>
+                                                        {!uploadPercentage && (
+                                                            <div {...getRootProps({ className: 'dropzone' })}>
+                                                                <input {...getInputProps()} />
+                                                                <FileUploadIcon />
+                                                                <p>Drag 'n' drop some files here, or click to select files</p>
+                                                            </div>
+                                                        )}
+                                                        {!!selectedFiles?.length && (
+                                                            <aside>
+                                                                <div className={classes.selectedFileTitle}>
+                                                                    <h4>Selected Files</h4>
+                                                                </div>
+                                                                <ul>{files}</ul>
+                                                                <Grid item xs={4} sm={4} md={4} lg={4}>
+                                                                    {files.length > 1 && 
+                                                                    <Button variant="outlined" color="secondary" onClick={removeAll}>
+                                                                        Remove All
+                                                                    </Button>}
+                                                                </Grid>
+                                                            </aside>
+                                                        )}
+                                                    </section>
+                                                    <Box sx={{ mt: 4, mb: 2 }}>
+                                                        {(!!uploadPercentage) &&
+                                                        <div>
+                                                            Upload Status: <LinearProgressBar progress={uploadPercentage || 0} />
+                                                        </div>
+                                                        }
+                                                    </Box>
+                                                </Grid>
+                                            </Grid>
+                                        </Box>
+                                        <Box sx={{ mt: 4, mb: 2 }}>
+                                            <Grid item xs={12} sm={12} md={12} lg={12}>
+                                                {(!!processingFile && (Math.abs(uploadPercentage || 0) === 100)) &&
+                                                <div>
+                                                    Processing Uploaded file: <LoaderInnerCircular />
+                                                    This may take a few minutes...
+                                                </div>}
+                                                {((Math.abs(uploadPercentage || 0) !== 100) && !processingFile) && (
+                                                    <AnimateButton>
+                                                        <Button
+                                                            disableElevation
+                                                            fullWidth
+                                                            size='large'
+                                                            type='submit'
+                                                            variant='contained'
+                                                            color='primary'
+                                                            disabled={!selectedFiles?.length || !!uploadPercentage}
+                                                        >
+                                                            Start Upload
+                                                        </Button>
+                                                    </AnimateButton>
+                                                )}
+                                                {((Math.abs(uploadPercentage || 0) === 100) && !processingFile) && (
+                                                    <AnimateButton>
+                                                        <Button
+                                                            disableElevation
+                                                            fullWidth
+                                                            size='large'
+                                                            variant='contained'
+                                                            color='primary'
+                                                            onClick={() => {
+                                                                selectedFiles.length = 0;
+                                                                setSelectedFiles([]);
+                                                                setUploadPercentage(null);
+                                                                setTableData([]);
+                                                            }}
+                                                        >
+                                                            Upload more files
+                                                        </Button>
+                                                    </AnimateButton>
+                                                )}
+                                            </Grid>
+                                        </Box>
+                                    </form>
+                                )}
+                            </Formik>
+                        </Box>
+                        {tableData.length > 0 && (
+                            <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
+                                <DataGrid
+                                    rows={tableData.map((row, index) => ({
+                                        ...row,
+                                        id: index + 1,
+                                    }))}
+                                    columns={generateColumnsWithTooltip()}
+                                    pageSize={10}
+                                    checkboxSelection={false}
+                                    autoHeight
+                                    autoPageSize
+                                    density={'standard'}
+                                    disableSelectionOnClick
+                                    loading={isLoading}
+                                    components={{
+                                        Toolbar: GridToolbar,
+                                        LoadingOverlay: CustomLoadingOverlay,
+                                        NoRowsOverlay: CustomNoRowsOverlay
+                                    }}
+                                />
+                            </Box>
+                        )}
+                    </MainCard>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => {setOpenAddVideoDialog(false); loadData()}} color="primary">
+                    <Button onClick={() => { setOpenAddVideoDialog(false); loadData(); }} color="primary">
                         Close
                     </Button>
                 </DialogActions>
-            </Dialog>
+            </Dialog>        
 
             {/* **Dialog Component** */}
             <Dialog
