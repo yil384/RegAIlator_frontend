@@ -89,7 +89,6 @@ const MainRoutes = () => {
                 routePaths.videoViewer,
                 routePaths.videoGroupById,
                 routePaths.videoGroups,
-                routePaths.addVideo,
                 routePaths.videos,
                 routePaths.videosById,
                 routePaths.watchLogs,
