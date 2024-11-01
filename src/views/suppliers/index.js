@@ -10,7 +10,8 @@ import Tooltip from '@material-ui/core/Tooltip';
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { DataGrid } from '@material-ui/data-grid';
+import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -490,7 +491,7 @@ const SuppliersComponent = ({ user }) => {
         setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩小到0.4
     };
 
-    // DataGrid 列定义
+    // 列定义
     const columns = [
         // 选择列
         {
@@ -1169,7 +1170,7 @@ const SuppliersComponent = ({ user }) => {
                     disableSelectionOnClick
                     loading={isLoading || loadingUpdate || sendingEmails || importingSuppliers || deletingSuppliers}
                     components={{
-                        Toolbar: GridToolbar
+                        Toolbar: () => <CustomToolbar title={"Suppliers"} length={suppliers.length} />
                     }}
                     onCellEditCommit={handleCellEditCommit}
                     experimentalFeatures={{ newEditingApi: true }}
@@ -1312,7 +1313,6 @@ const SuppliersComponent = ({ user }) => {
                                     )}
                                 </div>
                             </div>
-                            {/* DataGrid Area */}
                             <div style={{
                                 flex: '13',
                                 height: '100%',
@@ -1376,7 +1376,7 @@ const SuppliersComponent = ({ user }) => {
                                     disableSelectionOnClick
                                     density={'standard'}
                                     components={{
-                                        Toolbar: GridToolbar,
+                                        Toolbar: () => <CustomToolbar title={"Feedback & Documents"} length={selectedFeedback.length} />
                                     }}
                                 />
                             </div>

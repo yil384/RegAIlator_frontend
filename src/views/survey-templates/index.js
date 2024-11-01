@@ -8,6 +8,7 @@ import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import { useTheme } from '@material-ui/styles';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -998,7 +999,7 @@ const SurveysComponent = ({ user }) => {
                     disableSelectionOnClick
                     loading={isLoading || loadingUpdate}
                     components={{
-                        Toolbar: GridToolbar,
+                        Toolbar: () => <CustomToolbar title={"Surveys"} length={surveys.length} />,
                         LoadingOverlay: CustomLoadingOverlay,
                         NoRowsOverlay: CustomNoRowsOverlay,
                     }}

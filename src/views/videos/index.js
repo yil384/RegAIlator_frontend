@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'; // Optional: For toast notifications
 
 import MainCard from '../../ui-component/cards/MainCard';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
@@ -538,7 +539,6 @@ const VideosComponent = ({ user }) => {
         }
     ];
 
-    // **Dialog DataGrid Columns**
     const dialogColumns = React.useMemo(() => {
         if (!selectedVideo?.json?.data?.length) return [];
         return Object.keys(selectedVideo.json.data[0]).map((key) => ({
@@ -628,7 +628,7 @@ const VideosComponent = ({ user }) => {
                             disableSelectionOnClick
                             loading={isLoading}
                             components={{
-                                Toolbar: GridToolbar,
+                                Toolbar: () => <CustomToolbar title={'All Files'} length={videos.length} />,
                                 LoadingOverlay: CustomLoadingOverlay,
                                 NoRowsOverlay: CustomNoRowsOverlay
                             }}
@@ -891,7 +891,7 @@ const VideosComponent = ({ user }) => {
                                     disableSelectionOnClick
                                     loading={isLoading}
                                     components={{
-                                        Toolbar: GridToolbar,
+                                        Toolbar: () => <CustomToolbar title={'Parsed Data'} length={tableData.length} />,
                                         LoadingOverlay: CustomLoadingOverlay,
                                         NoRowsOverlay: CustomNoRowsOverlay
                                     }}
@@ -988,7 +988,6 @@ const VideosComponent = ({ user }) => {
                                     )}
                                 </div>
                             </div>
-                            {/* **DataGrid Area** */}
                             <div style={{
                                 flex: '13',
                                 height: '100%',
@@ -1006,7 +1005,7 @@ const VideosComponent = ({ user }) => {
                                     autoHeight
                                     density='standard'
                                     components={{
-                                        Toolbar: GridToolbar,
+                                        Toolbar: () => <CustomToolbar title={selectedVideo.title} length={dialogRows.length} />,
                                     }}
                                 />
                             </div>
@@ -1075,7 +1074,7 @@ const VideosComponent = ({ user }) => {
                                         autoHeight
                                         density='standard'
                                         components={{
-                                            Toolbar: GridToolbar,
+                                            Toolbar: () => <CustomToolbar title={video.title} length={rows.length} />,
                                         }}
                                     />
                                 </div>
