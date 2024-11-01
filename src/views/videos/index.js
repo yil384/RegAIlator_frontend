@@ -71,6 +71,9 @@ import {
     Paper
 } from '@material-ui/core';
 
+import Papa from 'papaparse';
+import { saveAs } from 'file-saver';
+
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -563,6 +566,53 @@ const VideosComponent = ({ user }) => {
         }));
     }, [selectedVideo]);
 
+    const handleExportAll = () => {
+        if (selectedVideosData.length === 0) {
+            toast.warning('No data available to export.');
+            return;
+        }
+    
+        // 准备合并后的数据数组
+        const mergedData = [];
+    
+        selectedVideosData.forEach((video) => {
+            // 如果数据不合法，则跳过
+            if (!video.json?.data) return;
+            if (video.json?.data?.length > 0) {
+                // 在每条数据中添加一个字段以标识其来源视频
+                video.json.data.forEach((row) => {
+                    mergedData.push({
+                        ...row,
+                        SourceVideo: video.title || 'Unknown',
+                    });
+                });
+            }
+        });
+    
+        if (mergedData.length === 0) {
+            toast.warning('No data available to export.');
+            return;
+        }
+    
+        // 使用 PapaParse 将 JSON 转换为 CSV
+        const csv = Papa.unparse(mergedData);
+    
+        // 创建一个 Blob 对象并触发下载
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+        // 获取当前日期和时间
+        const currentDate = new Date();
+        // 格式化日期为 YYYY-MM-DD
+        const formattedDate = currentDate.toISOString().split('T')[0]; // 例如: 2024-04-27
+        // 格式化时间为 HH-MM-SS，替换特殊字符以适应文件名
+        const formattedTime = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-'); // 例如: 14-30-45
+        // 构建文件名，确保没有非法字符
+        const fileName = `Exported_data_${selectedVideosData.length}_Created_at_${formattedDate}_${formattedTime}`;
+        saveAs(blob, `${fileName}.csv`);
+        
+        toast.success('All data has been exported successfully.');
+    };
+    
     return (
         <MainCard title='All Files' boxShadow shadow={theme.shadows[2]}>
             {/* **Action Buttons** */}
@@ -1028,15 +1078,32 @@ const VideosComponent = ({ user }) => {
                 maxWidth="lg"
                 aria-labelledby="selected-details-dialog"
             >
-                <DialogTitle id="selected-details-dialog">
-                    Selected Files Details
-                    <IconButton
-                        aria-label="close"
-                        onClick={() => setOpenSelectedDetailsDialog(false)}
-                        style={{ position: 'absolute', right: 8, top: 8 }}
-                    >
-                        <CloseIcon />
-                    </IconButton>
+                <DialogTitle
+                    id="selected-details-dialog"
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Typography variant="h6">Selected Files Details</Typography>
+                    <div>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<DownloadIcon />}
+                            onClick={handleExportAll}
+                            style={{ marginRight: '8px' }}
+                        >
+                            Export All
+                        </Button>
+                        <IconButton
+                            aria-label="close"
+                            onClick={() => setOpenSelectedDetailsDialog(false)}
+                        >
+                            <CloseIcon />
+                        </IconButton>
+                    </div>
                 </DialogTitle>
                 <DialogContent>
                     {selectedVideosData.length > 0 ? (
