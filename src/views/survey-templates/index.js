@@ -935,6 +935,10 @@ const SurveysComponent = ({ user }) => {
     const handleCellEditCommit = React.useCallback(
         async (params) => {
             const { id, field, value } = params;
+            // 如果没有变化，不执行任何操作
+            if (surveys.find((survey) => survey.id === id)[field] === value) {
+                return;
+            }
             // Update Survey
             try {
                 setLoadingUpdate(true);
@@ -954,7 +958,7 @@ const SurveysComponent = ({ user }) => {
                 setLoadingUpdate(false);
             }
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
-        }, [] 
+        }, [surveys] 
     );
 
     return (

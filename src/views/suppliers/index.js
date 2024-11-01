@@ -769,6 +769,10 @@ const SuppliersComponent = ({ user }) => {
     const handleCellEditCommit = React.useCallback(
         async (params) => {
             const { id, field, value } = params;
+            // 如果没有变化，不执行任何操作
+            if (suppliers.find((supplier) => supplier.id === id)[field] === value) {
+                return;
+            }
             // 更新供应商数据
             try {
                 setLoadingUpdate(true);
@@ -789,7 +793,7 @@ const SuppliersComponent = ({ user }) => {
             }
             // 你可以在这里添加其他逻辑，比如发送更新到服务器
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
-        }, [] 
+        }, [suppliers]
     );
     
     // 添加供应商对话框
