@@ -57,6 +57,8 @@ import { useStyles } from './styles';
 import config from '../../configs';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import ZoomInIcon from '@material-ui/icons/ZoomIn';
+import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 // 设置 PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -479,6 +481,14 @@ const SuppliersComponent = ({ user }) => {
             setSelectedSurveyId('');
         }
     };    
+
+    const [scale, setScale] = React.useState(1.0); // 初始缩放比例为1.0
+    const handleZoomIn = () => {
+        setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // 最大缩放到3.0
+    };
+    const handleZoomOut = () => {
+        setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩小到0.4
+    };
 
     // DataGrid 列定义
     const columns = [
@@ -1249,10 +1259,24 @@ const SuppliersComponent = ({ user }) => {
                                 backgroundColor: '#fff',
                                 marginRight: '8px',
                                 position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column',
                             }}>
+                                {/* 缩放控制按钮 */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <IconButton onClick={handleZoomOut} aria-label="zoom out">
+                                        <ZoomOutIcon />
+                                    </IconButton>
+                                    <Typography variant="body2" style={{ margin: '0 8px' }}>
+                                        {`${Math.round(scale * 100)}%`}
+                                    </Typography>
+                                    <IconButton onClick={handleZoomIn} aria-label="zoom in">
+                                        <ZoomInIcon />
+                                    </IconButton>
+                                </div>
                                 <div style={{
                                     position: 'absolute',
-                                    top: 0,
+                                    top: '29px',
                                     left: 0,
                                     right: 0,
                                     bottom: 0,
@@ -1267,7 +1291,7 @@ const SuppliersComponent = ({ user }) => {
                                                 loading={<LoaderInnerCircular />}
                                             >
                                                 {Array.from(new Array(numPages), (el, index) => (
-                                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} width={500} />
+                                                    <Page key={`page_${index + 1}`} pageNumber={index + 1} scale={scale} />
                                                 ))}
                                             </Document>
                                         ) : previewingFileType === 'xlsx' ? (
