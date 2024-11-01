@@ -725,7 +725,14 @@ const SuppliersComponent = ({ user }) => {
             headerName: 'Feedback & Documents',
             sortable: true,
             width: 400,
-            valueGetter: (params) => params.row?.feedback ? `Feedbacks (${params.row?.feedback.length})` : 'No Feedback Available',
+            valueGetter: (params) => {
+                const feedbackArray = params.row?.feedback;
+                if (feedbackArray.length > 0) {
+                    return `Feedbacks (${feedbackArray.length})`;
+                } else {
+                    return 'No Feedback Available';
+                }
+            },
             renderCell: (params) => {
                 const feedbackArray = params.row?.feedback;
                 return (
