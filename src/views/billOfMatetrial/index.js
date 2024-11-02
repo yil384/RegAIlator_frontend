@@ -66,7 +66,7 @@ const BillOfMaterials = () => {
     };
 
     const columns = [
-        // Selection Column
+        // Selection Column (unchanged)
         {
             field: 'select',
             headerName: (
@@ -103,10 +103,10 @@ const BillOfMaterials = () => {
                 );
             },
         },
-        // Product Column
+        // Updated Product Column
         {
             field: 'productName',
-            headerName: 'Product',
+            headerName: 'Product name', // Updated header
             width: 200,
             valueGetter: (params) => params.row?.productName || '',
             renderCell: (params) => (
@@ -117,11 +117,11 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Product PV Column
+        // Updated Product Part Number Column
         {
             field: 'productPartNumber',
-            headerName: 'Product PV',
-            width: 200,
+            headerName: 'Product part number', // Updated header
+            width: 250,
             valueGetter: (params) => params.row?.productPartNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.productPartNumber || ''} arrow>
@@ -131,11 +131,11 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Facility Column
+        // Facility Column (unchanged)
         {
             field: 'facility',
             headerName: 'Facility',
-            width: 200,
+            width: 150,
             valueGetter: (params) => params.row?.facility || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.facility || ''} arrow>
@@ -145,11 +145,11 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Raw Material Column
+        // Updated Raw Material Name Column
         {
             field: 'rawMaterialPartDescription',
-            headerName: 'Raw Material',
-            width: 300,
+            headerName: 'Raw material name', // Updated header
+            width: 250,
             valueGetter: (params) => params.row?.rawMaterialPartDescription || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialPartDescription || ''} arrow>
@@ -159,11 +159,11 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // RM PN Column (Raw Material Part Number)
+        // Updated Raw Material Part Number Column
         {
             field: 'rawMaterialPartNumber',
-            headerName: 'RM PN',
-            width: 200,
+            headerName: 'Raw material part number', // Updated header
+            width: 300,
             valueGetter: (params) => params.row?.rawMaterialPartNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialPartNumber || ''} arrow>
@@ -173,7 +173,7 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Function Column
+        // Function Column (unchanged)
         {
             field: 'function',
             headerName: 'Function',
@@ -187,10 +187,10 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Supplier Column
+        // Updated Supplier Column
         {
             field: 'supplier',
-            headerName: 'Supplier',
+            headerName: 'Supplier name', // Updated header
             width: 200,
             valueGetter: (params) => params.row?.supplier || '',
             renderCell: (params) => (
