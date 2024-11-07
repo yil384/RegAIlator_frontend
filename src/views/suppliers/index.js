@@ -575,9 +575,9 @@ const SuppliersComponent = ({ user }) => {
         // 材料名称列
         {
             field: 'materialName',
-            headerName: 'Material Name',
+            headerName: 'Raw Material Name',
             sortable: true,
-            width: 200,
+            width: 250,
             editable: true, // 可编辑
             valueGetter: (params) => params.row?.materialName || '',
             renderCell: (params) => (
@@ -591,9 +591,9 @@ const SuppliersComponent = ({ user }) => {
         // 零件编号列
         {
             field: 'partNumber',
-            headerName: 'Part Number',
+            headerName: 'Raw Material Part Number',
             sortable: true,
-            width: 190,
+            width: 290,
             editable: true, // 可编辑
             valueGetter: (params) => params.row?.partNumber || '',
             renderCell: (params) => (
@@ -957,7 +957,7 @@ const SuppliersComponent = ({ user }) => {
                                             className={classes.input}
                                         >
                                             <InputLabel htmlFor="materialName">
-                                                Material Name
+                                                Raw Material Name
                                             </InputLabel>
                                             <OutlinedInput
                                                 id="materialName"
@@ -981,7 +981,7 @@ const SuppliersComponent = ({ user }) => {
                                             className={classes.input}
                                         >
                                             <InputLabel htmlFor="partNumber">
-                                                Part Number
+                                                Raw Material Part Number
                                             </InputLabel>
                                             <OutlinedInput
                                                 id="partNumber"

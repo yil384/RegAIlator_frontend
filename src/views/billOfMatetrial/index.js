@@ -9,29 +9,55 @@ import { Typography } from '@material-ui/core';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 import Tooltip from '@material-ui/core/Tooltip';
-import { fetchBillOfMaterials } from './helper'; // 假设的 API 用于获取数据
-
-import { mentionUsers } from '../../views/authentication/session/auth.helper';
+import { fetchBillOfMaterials, addMaterial, batchAddMaterials } from './helper';
+import { fetchSuppliers } from '../suppliers/helper';
+import { useStyles } from './styles';
 import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
-import { NotificationsActive } from '@material-ui/icons';
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    FormControl,
+    FormHelperText,
+    Grid as MuiGrid,
+    InputLabel,
+    OutlinedInput,
+    Select,
+    MenuItem
+} from '@material-ui/core';
+import CloseIcon from '@material-ui/icons/Close';
+import { Formik } from 'formik';
+import * as Yup from 'yup';
+import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
+import AnimateButton from '../../ui-component/extended/AnimateButton';
+import useScriptRef from '../../hooks/useScriptRef';
+import { makeStyles } from '@material-ui/core/styles';
+import { DownloadOutlined } from '@material-ui/icons';
 
 const BillOfMaterials = () => {
     const theme = useTheme();
+    const classes = useStyles();
+    const scriptedRef = useScriptRef();
 
     const [materials, setMaterials] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
+    const [openDialog, setOpenDialog] = React.useState(false);
+    const [importingMaterials, setImportingMaterials] = React.useState(false);
+
+    const [suppliers, setSuppliers] = React.useState([]); // New state for suppliers
 
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
             const response = await fetchBillOfMaterials();
-            const materialsData = response || [];
+            const materialsData = response?.results || [];
 
             materialsData.forEach((material, index) => {
-                material.id = index + 1;
+                if (!material._id) material.id = index + 1;
+                else material.id = material._id;
             });
 
             setMaterials(materialsData);
@@ -47,6 +73,20 @@ const BillOfMaterials = () => {
     React.useEffect(() => {
         loadData();
     }, [loadData]);
+
+    // Fetch suppliers
+    React.useEffect(() => {
+        const loadSuppliers = async () => {
+            try {
+                const suppliersData = await fetchSuppliers();
+                setSuppliers(suppliersData);
+            } catch (error) {
+                console.error('Failed to fetch suppliers:', error);
+                toast.error('Failed to load suppliers');
+            }
+        };
+        loadSuppliers();
+    }, []);
 
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
@@ -65,8 +105,133 @@ const BillOfMaterials = () => {
         }
     };
 
+    const handleOpenDialog = () => {
+        setOpenDialog(true);
+    };
+
+    const handleCloseDialog = () => {
+        setOpenDialog(false);
+    };
+
+    const handleAddSuccess = () => {
+        loadData();
+    };
+
+    const handleExcelUpload = async (event) => {
+        const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            try {
+                setImportingMaterials(true);
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length === 0) {
+                    toast.error('Excel file is empty');
+                    setImportingMaterials(false);
+                    return;
+                }
+
+                // Validate and prepare material data
+                const materialsToAdd = [];
+                const errors = [];
+
+                jsonData.forEach((row, index) => {
+                    const productName = row.productName || row['Product Name'];
+                    const productPartNumber = row.productPartNumber || row['Product Part Number'];
+                    const facility = row.facility || row['Facility'];
+                    const rawMaterialPartDescription = row.rawMaterialPartDescription || row['Raw Material Name'];
+                    const rawMaterialPartNumber = row.rawMaterialPartNumber || row['Raw Material Part Number'];
+                    const functionField = row.function || row['Function'];
+                    const supplierName = row.supplier || row['Supplier Name'];
+
+                    // Basic validation
+                    if (!productName) {
+                        errors.push(`Row ${index + 2}: Missing product name.`);
+                        return;
+                    }
+                    if (!productPartNumber) {
+                        errors.push(`Row ${index + 2}: Missing product part number.`);
+                        return;
+                    }
+                    if (!rawMaterialPartDescription) {
+                        errors.push(`Row ${index + 2}: Missing raw material name.`);
+                        return;
+                    }
+                    if (!rawMaterialPartNumber) {
+                        errors.push(`Row ${index + 2}: Missing raw material part number.`);
+                        return;
+                    }
+                    if (!supplierName) {
+                        errors.push(`Row ${index + 2}: Missing supplier name.`);
+                        return;
+                    }
+
+                    // Find supplier ID from supplier name
+                    const supplier = suppliers.find(
+                        (s) => s.supplierName.toLowerCase() === supplierName.toLowerCase()
+                    );
+
+                    if (!supplier) {
+                        errors.push(`Row ${index + 2}: Supplier "${supplierName}" not found.`);
+                        return;
+                    }
+
+                    materialsToAdd.push({
+                        productName,
+                        productPartNumber,
+                        facility,
+                        rawMaterialPartDescription,
+                        rawMaterialPartNumber,
+                        function: functionField,
+                        supplier: supplier._id, // Use supplier ID
+                    });
+                });
+
+                if (errors.length > 0) {
+                    errors.forEach((error) => toast.error(error));
+                    toast.error('Some rows have errors. Please fix them and try again.');
+                    setImportingMaterials(false);
+                    return;
+                }
+
+                // Batch add materials
+                try {
+                    const result = await batchAddMaterials(materialsToAdd);
+                    if (result.length > 0) {
+                        toast.success(`${materialsToAdd.length} material(s) imported successfully.`);
+                    }
+                    // Reload materials data
+                    await loadData();
+                } catch (batchError) {
+                    console.error('Batch import failed:', batchError);
+                    toast.error('Batch import failed. Please try again.');
+                }
+
+            } catch (error) {
+                console.error('Error reading Excel file:', error);
+                toast.error('Failed to read Excel file.');
+            } finally {
+                setImportingMaterials(false);
+                // Reset the file input
+                event.target.value = null;
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    };
+
+    // Define your columns
     const columns = [
-        // Selection Column (unchanged)
         {
             field: 'select',
             headerName: (
@@ -103,10 +268,10 @@ const BillOfMaterials = () => {
                 );
             },
         },
-        // Updated Product Column
+        // Product Name Column
         {
             field: 'productName',
-            headerName: 'Product name', // Updated header
+            headerName: 'Product Name',
             width: 200,
             valueGetter: (params) => params.row?.productName || '',
             renderCell: (params) => (
@@ -117,10 +282,10 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Updated Product Part Number Column
+        // Product Part Number Column
         {
             field: 'productPartNumber',
-            headerName: 'Product part number', // Updated header
+            headerName: 'Product Part Number',
             width: 250,
             valueGetter: (params) => params.row?.productPartNumber || '',
             renderCell: (params) => (
@@ -131,7 +296,7 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Facility Column (unchanged)
+        // Facility Column
         {
             field: 'facility',
             headerName: 'Facility',
@@ -145,10 +310,10 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Updated Raw Material Name Column
+        // Raw Material Name Column
         {
             field: 'rawMaterialPartDescription',
-            headerName: 'Raw material name', // Updated header
+            headerName: 'Raw Material Name',
             width: 250,
             valueGetter: (params) => params.row?.rawMaterialPartDescription || '',
             renderCell: (params) => (
@@ -159,10 +324,10 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Updated Raw Material Part Number Column
+        // Raw Material Part Number Column
         {
             field: 'rawMaterialPartNumber',
-            headerName: 'Raw material part number', // Updated header
+            headerName: 'Raw Material Part Number',
             width: 300,
             valueGetter: (params) => params.row?.rawMaterialPartNumber || '',
             renderCell: (params) => (
@@ -173,7 +338,7 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Function Column (unchanged)
+        // Function Column
         {
             field: 'function',
             headerName: 'Function',
@@ -187,21 +352,300 @@ const BillOfMaterials = () => {
                 </Tooltip>
             ),
         },
-        // Updated Supplier Column
+        // Supplier Column
         {
             field: 'supplier',
-            headerName: 'Supplier name', // Updated header
+            headerName: 'Supplier Name',
             width: 200,
-            valueGetter: (params) => params.row?.supplier || '',
+            valueGetter: (params) => {
+                const supplierId = params.row?.supplier;
+                const supplier = suppliers.find((s) => s._id === supplierId);
+                return supplier ? supplier.supplierName : '';
+            },
             renderCell: (params) => (
-                <Tooltip title={params.row?.supplier || ''} arrow>
+                <Tooltip title={params.value || ''} arrow>
                     <Typography variant="body1" noWrap>
-                        {params.row?.supplier}
+                        {params.value}
                     </Typography>
                 </Tooltip>
             ),
         },
     ];
+
+    const AddMaterialDialog = ({ open, handleClose }) => {
+        return (
+            <Dialog
+                open={open}
+                onClose={handleClose}
+                fullWidth
+                maxWidth="sm"
+                aria-labelledby="add-material-dialog-title"
+            >
+                <DialogTitle id="add-material-dialog-title">
+                    Add Material
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleClose}
+                        style={{
+                            position: 'absolute',
+                            right: theme.spacing(1),
+                            top: theme.spacing(1)
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Formik
+                        initialValues={{
+                            productName: '',
+                            productPartNumber: '',
+                            facility: '',
+                            rawMaterialPartDescription: '',
+                            rawMaterialPartNumber: '',
+                            function: '',
+                            supplier: ''
+                        }}
+                        validationSchema={Yup.object().shape({
+                            productName: Yup.string().required('Product Name is required'),
+                            productPartNumber: Yup.string().required('Product Part Number is required'),
+                            facility: Yup.string().required('Facility is required'),
+                            rawMaterialPartDescription: Yup.string().required('Raw Material Name is required'),
+                            rawMaterialPartNumber: Yup.string().required('Raw Material Part Number is required'),
+                            function: Yup.string().required('Function is required'),
+                            supplier: Yup.string().required('Supplier Name is required')
+                        })}
+                        onSubmit={async (
+                            values,
+                            { setErrors, setStatus, setSubmitting }
+                        ) => {
+                            try {
+                                if (scriptedRef.current) {
+                                    console.log('Adding material:', values);
+                                    await addMaterial(values);
+                                    setStatus({ success: true });
+                                    setSubmitting(false);
+                                    handleClose();
+                                    handleAddSuccess();
+                                    toast.success('Material added successfully');
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                if (scriptedRef.current) {
+                                    setStatus({ success: false });
+                                    setErrors({ submit: err.message });
+                                    setSubmitting(false);
+                                    toast.error('Failed to add material');
+                                }
+                            }
+                        }}
+                    >
+                        {({
+                            errors,
+                            handleBlur,
+                            handleChange,
+                            handleSubmit,
+                            isSubmitting,
+                            touched,
+                            values
+                        }) => (
+                            <form onSubmit={handleSubmit}>
+                                <MuiGrid container spacing={2}>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl
+                                            fullWidth
+                                            className={classes.input}
+                                        >
+                                            <InputLabel htmlFor="productName">
+                                                Product Name
+                                            </InputLabel>
+                                            <OutlinedInput
+                                                id="productName"
+                                                type="text"
+                                                value={values.productName}
+                                                name="productName"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Product Name"
+                                            />
+                                            {errors.productName && (
+                                                <FormHelperText error>
+                                                    {errors.productName}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl
+                                            fullWidth
+                                            className={classes.input}
+                                        >
+                                            <InputLabel htmlFor="productPartNumber">
+                                                Product Part Number
+                                            </InputLabel>
+                                            <OutlinedInput
+                                                id="productPartNumber"
+                                                type="text"
+                                                value={values.productPartNumber}
+                                                name="productPartNumber"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Product Part Number"
+                                            />
+                                            {errors.productPartNumber && (
+                                                <FormHelperText error>
+                                                    {errors.productPartNumber}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl
+                                            fullWidth
+                                            className={classes.input}
+                                        >
+                                            <InputLabel htmlFor="facility">
+                                                Facility
+                                            </InputLabel>
+                                            <OutlinedInput
+                                                id="facility"
+                                                type="text"
+                                                value={values.facility}
+                                                name="facility"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Facility"
+                                            />
+                                            {errors.facility && (
+                                                <FormHelperText error>
+                                                    {errors.facility}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl
+                                            fullWidth
+                                            className={classes.input}
+                                        >
+                                            <InputLabel htmlFor="rawMaterialPartDescription">
+                                                Raw Material Name
+                                            </InputLabel>
+                                            <OutlinedInput
+                                                id="rawMaterialPartDescription"
+                                                type="text"
+                                                value={values.rawMaterialPartDescription}
+                                                name="rawMaterialPartDescription"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Raw Material Name"
+                                            />
+                                            {errors.rawMaterialPartDescription && (
+                                                <FormHelperText error>
+                                                    {errors.rawMaterialPartDescription}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl
+                                            fullWidth
+                                            className={classes.input}
+                                        >
+                                            <InputLabel htmlFor="rawMaterialPartNumber">
+                                                Raw Material Part Number
+                                            </InputLabel>
+                                            <OutlinedInput
+                                                id="rawMaterialPartNumber"
+                                                type="text"
+                                                value={values.rawMaterialPartNumber}
+                                                name="rawMaterialPartNumber"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Raw Material Part Number"
+                                            />
+                                            {errors.rawMaterialPartNumber && (
+                                                <FormHelperText error>
+                                                    {errors.rawMaterialPartNumber}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl
+                                            fullWidth
+                                            className={classes.input}
+                                        >
+                                            <InputLabel htmlFor="function">
+                                                Function
+                                            </InputLabel>
+                                            <OutlinedInput
+                                                id="function"
+                                                type="text"
+                                                value={values.function}
+                                                name="function"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Function"
+                                            />
+                                            {errors.function && (
+                                                <FormHelperText error>
+                                                    {errors.function}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel id="supplier-label">Supplier Name</InputLabel>
+                                            <Select
+                                                labelId="supplier-label"
+                                                id="supplier"
+                                                value={values.supplier}
+                                                name="supplier"
+                                                onBlur={handleBlur}
+                                                onChange={handleChange}
+                                                label="Supplier Name"
+                                                style={{ paddingTop: '10px' }}
+                                            >
+                                                {suppliers.map((supplier) => (
+                                                    <MenuItem key={supplier._id} value={supplier._id}>
+                                                        {supplier.supplierName}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                            {errors.supplier && (
+                                                <FormHelperText error>{errors.supplier}</FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                </MuiGrid>
+
+                                <AnimateButton>
+                                    <Button
+                                        disableElevation
+                                        disabled={isSubmitting}
+                                        fullWidth
+                                        size="large"
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
+                                        style={{ marginTop: '16px' }}
+                                    >
+                                        {isSubmitting ? (
+                                            <LoaderInnerCircular />
+                                        ) : (
+                                            'Save'
+                                        )}
+                                    </Button>
+                                </AnimateButton>
+                            </form>
+                        )}
+                    </Formik>
+                </DialogContent>
+            </Dialog>
+        );
+    };
 
     return (
         <MainCard title="Bill of Materials" boxShadow shadow={theme.shadows[2]}>
@@ -210,11 +654,28 @@ const BillOfMaterials = () => {
                     variant='contained'
                     color='primary'
                     size='small'
-                    style={{ top: -70, marginLeft: '10px' }} // 调整按钮位置以与表格对齐
-                    startIcon={<NotificationsActive />}
+                    style={{ top: -70, marginLeft: '10px' }}
+                    startIcon={<DownloadOutlined />}
+                    component="label"
+                    onClick={handleOpenDialog}
+                >
+                    Add New Material
+                </Button>
+                <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    startIcon={<DownloadOutlined />}
                     component="label"
                 >
-                   Add New Material
+                    {importingMaterials ? 'Importing...' : 'Batch Import Materials from Excel'}
+                    <input
+                        type="file"
+                        accept=".xlsx, .xls"
+                        style={{ display: 'none' }}
+                        onChange={handleExcelUpload}
+                    />
                 </Button>
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
@@ -226,7 +687,7 @@ const BillOfMaterials = () => {
                     autoPageSize
                     density="standard"
                     disableSelectionOnClick
-                    loading={isLoading}
+                    loading={isLoading || importingMaterials}
                     components={{
                         Toolbar: GridToolbar,
                     }}
@@ -279,6 +740,7 @@ const BillOfMaterials = () => {
                     }}
                 />
             </div>
+            <AddMaterialDialog open={openDialog} handleClose={handleCloseDialog} />
         </MainCard>
     );
 };

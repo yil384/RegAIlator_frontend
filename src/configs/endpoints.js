@@ -24,6 +24,7 @@ const endpoints = {
     errorLogById: (id) => `/error-logs/${id}`,
     upload_file: `videos/upload_file`,
     billOfMaterials: '/auth/my-bill-of-materials',
+    billOfMaterialsBatchAdd: '/auth/my-bill-of-materials-batch-add',
 };
 
 export default endpoints;
