@@ -9,7 +9,13 @@ import { Typography } from '@material-ui/core';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 import Tooltip from '@material-ui/core/Tooltip';
-import { fetchBillOfMaterials, addMaterial, batchAddMaterials } from './helper';
+import {
+    fetchBillOfMaterials,
+    addMaterial,
+    batchAddMaterials,
+    updateMaterial,
+    deleteMaterials
+} from './helper';
 import { fetchSuppliers } from '../suppliers/helper';
 import { useStyles } from './styles';
 import * as XLSX from 'xlsx';
@@ -33,7 +39,8 @@ import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
 import { makeStyles } from '@material-ui/core/styles';
-import { DownloadOutlined } from '@material-ui/icons';
+import { DownloadOutlined, DeleteOutlined } from '@material-ui/icons';
+import Swal from 'sweetalert2';
 
 const BillOfMaterials = () => {
     const theme = useTheme();
@@ -42,10 +49,12 @@ const BillOfMaterials = () => {
 
     const [materials, setMaterials] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [loadingUpdate, setLoadingUpdate] = React.useState(false);
     const [selectedIds, setSelectedIds] = React.useState([]);
     const [filterIds, setFilterIds] = React.useState([]);
     const [openDialog, setOpenDialog] = React.useState(false);
     const [importingMaterials, setImportingMaterials] = React.useState(false);
+    const [deletingMaterials, setDeletingMaterials] = React.useState(false);
 
     const [suppliers, setSuppliers] = React.useState([]); // New state for suppliers
 
@@ -55,10 +64,7 @@ const BillOfMaterials = () => {
             const response = await fetchBillOfMaterials();
             const materialsData = response?.results || [];
 
-            materialsData.forEach((material, index) => {
-                if (!material._id) material.id = index + 1;
-                else material.id = material._id;
-            });
+            console.log('Bill of Materials:', materialsData);
 
             setMaterials(materialsData);
             setFilterIds(materialsData.map((material) => material.id));
@@ -230,6 +236,111 @@ const BillOfMaterials = () => {
         reader.readAsArrayBuffer(file);
     };
 
+    const handleDeleteMaterials = async () => {
+        if (selectedIds.length === 0) {
+            toast.error('No materials selected');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Confirm Deletion',
+            text: `Are you sure you want to delete the selected ${selectedIds.length} materials?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete them!',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        setDeletingMaterials(true);
+
+        try {
+            await deleteMaterials(selectedIds);
+            toast.success('Materials deleted successfully');
+            await loadData();
+            setSelectedIds([]);
+        } catch (error) {
+            console.error('Error deleting materials:', error);
+            toast.error('Failed to delete materials');
+        } finally {
+            setDeletingMaterials(false);
+        }
+    };
+
+    const handleDeleteSingleMaterial = async (id) => {
+        const result = await Swal.fire({
+            title: 'Confirm Deletion',
+            text: 'Are you sure you want to delete this material?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        setDeletingMaterials(true);
+
+        try {
+            await deleteMaterials([id]);
+            toast.success('Material deleted successfully');
+            await loadData();
+            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+        } catch (error) {
+            console.error('Error deleting material:', error);
+            toast.error('Failed to delete material');
+        } finally {
+            setDeletingMaterials(false);
+        }
+    };
+
+    const handleCellEditCommit = React.useCallback(
+        async (params) => {
+            const { id, field, value } = params;
+            // Check if value has changed
+            if (materials.find((material) => material.id === id)[field] === value) {
+                return;
+            }
+            // Prepare data for update
+            let updateData = { [field]: value };
+            if (field === 'supplier') {
+                // Find supplier ID from supplier name
+                const supplier = suppliers.find(
+                    (s) => s.supplierName.toLowerCase() === value.toLowerCase()
+                );
+                if (!supplier) {
+                    toast.error(`Supplier "${value}" not found.`);
+                    return;
+                }
+                updateData = { supplier: supplier._id };
+            }
+            // Update Material
+            try {
+                setLoadingUpdate(true);
+                await updateMaterial(id, updateData);
+                setMaterials((prevMaterials) =>
+                    prevMaterials.map((material) =>
+                        material.id === id
+                            ? { ...material, [field]: value }
+                            : material
+                    )
+                );
+                toast.success('Material updated successfully');
+            } catch (error) {
+                console.error('Failed to update material:', error);
+                toast.error('Failed to update material');
+            } finally {
+                setLoadingUpdate(false);
+            }
+            console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
+        }, [materials, suppliers]
+    );
+
     // Define your columns
     const columns = [
         {
@@ -273,6 +384,7 @@ const BillOfMaterials = () => {
             field: 'productName',
             headerName: 'Product Name',
             width: 200,
+            editable: true,
             valueGetter: (params) => params.row?.productName || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.productName || ''} arrow>
@@ -287,6 +399,7 @@ const BillOfMaterials = () => {
             field: 'productPartNumber',
             headerName: 'Product Part Number',
             width: 250,
+            editable: true,
             valueGetter: (params) => params.row?.productPartNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.productPartNumber || ''} arrow>
@@ -301,6 +414,7 @@ const BillOfMaterials = () => {
             field: 'facility',
             headerName: 'Facility',
             width: 150,
+            editable: true,
             valueGetter: (params) => params.row?.facility || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.facility || ''} arrow>
@@ -315,6 +429,7 @@ const BillOfMaterials = () => {
             field: 'rawMaterialPartDescription',
             headerName: 'Raw Material Name',
             width: 250,
+            editable: true,
             valueGetter: (params) => params.row?.rawMaterialPartDescription || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialPartDescription || ''} arrow>
@@ -329,6 +444,7 @@ const BillOfMaterials = () => {
             field: 'rawMaterialPartNumber',
             headerName: 'Raw Material Part Number',
             width: 300,
+            editable: true,
             valueGetter: (params) => params.row?.rawMaterialPartNumber || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.rawMaterialPartNumber || ''} arrow>
@@ -343,6 +459,7 @@ const BillOfMaterials = () => {
             field: 'function',
             headerName: 'Function',
             width: 200,
+            editable: true,
             valueGetter: (params) => params.row?.function || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.function || ''} arrow>
@@ -357,6 +474,7 @@ const BillOfMaterials = () => {
             field: 'supplier',
             headerName: 'Supplier Name',
             width: 200,
+            editable: true,
             valueGetter: (params) => {
                 const supplierId = params.row?.supplier;
                 const supplier = suppliers.find((s) => s._id === supplierId);
@@ -368,6 +486,24 @@ const BillOfMaterials = () => {
                         {params.value}
                     </Typography>
                 </Tooltip>
+            ),
+        },
+        // Actions Column
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            width: 100,
+            sortable: false,
+            filterable: false,
+            renderCell: (params) => (
+                <IconButton
+                    onClick={(event) => {
+                        event.stopPropagation(); // Prevent event bubbling
+                        handleDeleteSingleMaterial(params.row.id);
+                    }}
+                >
+                    <DeleteOutlined color="secondary" />
+                </IconButton>
             ),
         },
     ];
@@ -677,6 +813,17 @@ const BillOfMaterials = () => {
                         onChange={handleExcelUpload}
                     />
                 </Button>
+                <Button
+                    variant='contained'
+                    color='secondary'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    startIcon={<DeleteOutlined />}
+                    onClick={handleDeleteMaterials}
+                    disabled={deletingMaterials || selectedIds.length === 0}
+                >
+                    {deletingMaterials ? 'Deleting...' : 'Delete Materials'}
+                </Button>
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
                 <DataGrid
@@ -687,10 +834,11 @@ const BillOfMaterials = () => {
                     autoPageSize
                     density="standard"
                     disableSelectionOnClick
-                    loading={isLoading || importingMaterials}
+                    loading={isLoading || loadingUpdate || importingMaterials}
                     components={{
                         Toolbar: GridToolbar,
                     }}
+                    onCellEditCommit={handleCellEditCommit}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
                             return [item.columnField, item.operatorValue, item.value];

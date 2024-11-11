@@ -34,3 +34,25 @@ export const batchAddMaterials = (materialsArray) =>
         },
         true
     );
+
+// Update a material
+export const updateMaterial = (materialId, data) =>
+    fetchApi(
+        {
+            method: 'PUT',
+            url: `${endpoints.billOfMaterials}/${materialId}`,
+            data,
+        },
+        true
+    );
+
+// Delete materials
+export const deleteMaterials = (materialIds) =>
+    fetchApi(
+        {
+            method: 'DELETE',
+            url: endpoints.billOfMaterials,
+            data: materialIds,
+        },
+        true
+    );
