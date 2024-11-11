@@ -28,7 +28,6 @@ const defaultMenuItems = {
         productsMenu,
         regulatoriesMenu,
         usersMenu,
-        logsMenu
     ]
 };
 

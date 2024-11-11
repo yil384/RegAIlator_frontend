@@ -1,6 +1,6 @@
 // assets
 import { IconUsers, IconUserExclamation } from '@tabler/icons';
-import { SupervisorAccountOutlined, PeopleOutline, BallotOutlined, FaceOutlined, ChromeReaderModeOutlined, ProductionQuantityLimitsOutlined } from '@material-ui/icons';
+import { SupervisorAccountOutlined, PeopleOutline, BallotOutlined, FaceOutlined, ChromeReaderModeOutlined, ProductionQuantityLimitsOutlined, ReceiptLongOutlined, AccessAlarmOutlined, StarRateOutlined } from '@material-ui/icons';
 import SvgIcon from '@mui/material/SvgIcon';
 import React from 'react';
 import {ReactComponent as DeliveryIconSvg} from '../assets/images/delivery.svg';
@@ -80,30 +80,30 @@ export const productsMenu = {
                     icon: DeliveryOutlined,
                     breadcrumbs: false
                 },
-                {
-                    id: 'menu_product_packaging',
-                    title: 'Product Packaging',
-                    type: 'item',
-                    url: '/bill-of-materials',
-                    icon: DeliveryOutlined,
-                    breadcrumbs: false
-                },
-                {
-                    id: 'menu_shipping_packaging',
-                    title: 'Shipping Packaging',
-                    type: 'item',
-                    url: '/bill-of-materials',
-                    icon: DeliveryOutlined,
-                    breadcrumbs: false
-                },
-                {
-                    id: 'menu_equipments',
-                    title: 'Equipments',
-                    type: 'item',
-                    url: '/bill-of-materials',
-                    icon: DeliveryOutlined,
-                    breadcrumbs: false
-                },
+                // {
+                //     id: 'menu_product_packaging',
+                //     title: 'Product Packaging',
+                //     type: 'item',
+                //     url: '/bill-of-materials',
+                //     icon: DeliveryOutlined,
+                //     breadcrumbs: false
+                // },
+                // {
+                //     id: 'menu_shipping_packaging',
+                //     title: 'Shipping Packaging',
+                //     type: 'item',
+                //     url: '/bill-of-materials',
+                //     icon: DeliveryOutlined,
+                //     breadcrumbs: false
+                // },
+                // {
+                //     id: 'menu_equipments',
+                //     title: 'Equipments',
+                //     type: 'item',
+                //     url: '/bill-of-materials',
+                //     icon: DeliveryOutlined,
+                //     breadcrumbs: false
+                // },
             ]
         }
     ]
@@ -119,14 +119,14 @@ export const regulatoriesMenu = {
             id: 'regulatories_menu',
             title: 'Regulatory Assessment',
             type: 'collapse',
-            icon: ProductionQuantityLimitsOutlined,
+            icon: ReceiptLongOutlined,
             children: [
                 {
                     id: 'menu_rm_assessment',
-                    title: 'RM Assessment',
+                    title: 'Product Assessment',
                     type: 'item',
                     url: '/rm-assessment',
-                    icon: DeliveryOutlined,
+                    icon: AccessAlarmOutlined,
                     breadcrumbs: false
                 },
                 {
@@ -134,7 +134,7 @@ export const regulatoriesMenu = {
                     title: 'Statement template',
                     type: 'item',
                     url: '/statement-template',
-                    icon: DeliveryOutlined,
+                    icon: StarRateOutlined,
                     breadcrumbs: false
                 },
             ]
