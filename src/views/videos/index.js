@@ -42,7 +42,7 @@ import { get } from 'jquery';
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
 import VisibilityIcon from '@material-ui/icons/Visibility'; // Import the visibility icon
-import JSZip from 'jszip';
+import JSZip, { filter } from 'jszip';
 
 import * as Yup from 'yup';
 import { Formik } from 'formik';
@@ -498,6 +498,7 @@ const VideosComponent = ({ user }) => {
             sortable: false,
             width: 190,
             resizable: false,
+            filterable: false,
             hide: userRole === 'student',
             renderCell: (params) => (
                 <strong>

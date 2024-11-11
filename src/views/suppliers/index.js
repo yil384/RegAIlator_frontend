@@ -611,7 +611,9 @@ const SuppliersComponent = ({ user }) => {
             sortable: true,
             width: 300,
             editable: true,
-            valueGetter: (params) => params.row?.chooseSurvey || '',
+            valueGetter: (params) => surveys.find(
+                (survey) => survey._id === params.row?.chooseSurvey
+            )?.name || '',
             renderCell: (params) => {
                 const selectedSurveyId = params.row?.chooseSurvey || '';
                 const selectedSurvey = surveys.find(
@@ -758,6 +760,7 @@ const SuppliersComponent = ({ user }) => {
             field: 'actions',
             headerName: 'Actions',
             width: 200,
+            filterable: false,
             sortable: false,
             renderCell: (params) => (
                 <strong>
@@ -1193,7 +1196,12 @@ const SuppliersComponent = ({ user }) => {
                             .filter((supplier) => {
                                 return filter.every(
                                     ([field, operator, value]) => {
-                                        const cellValue = supplier[field];
+                                        // [TODO] [FIXME] 特殊处理 Choose Survey 列 和 Feedback 列
+                                        const cellValue = (field === 'chooseSurvey') 
+                                                            ? surveys.find((s) => s._id === supplier.chooseSurvey)?.name 
+                                                            : (field === 'feedback') 
+                                                                ? `Feedbacks (${supplier.feedback.length})` 
+                                                                : supplier[field];
                                         if (operator === 'isEmpty') {
                                             return (
                                                 cellValue === '' ||

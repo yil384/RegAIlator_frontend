@@ -365,6 +365,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Actions',
             width: 200,
             sortable: false,
+            filterable: false,
             renderCell: (params) => (
                 <strong>
                     <Button
@@ -1011,7 +1012,11 @@ const SurveysComponent = ({ user }) => {
                         const filterIds = surveys
                             .filter((survey) => {
                                 return filter.every(([field, operator, value]) => {
-                                    const cellValue = survey[field];
+                                    // [TODO] [FIXME] 特殊处理 Attachments 列
+                                    // const cellValue = survey[field];
+                                    const cellValue = field === 'attachments' 
+                                                        ? survey.attachments.length===0?'No Attachments':`Attachments (${survey.attachments.length})` 
+                                                        : survey[field];
                                     if (operator === 'isEmpty') {
                                         return cellValue === '' || cellValue === undefined;
                                     } else if (operator === 'isNotEmpty') {
