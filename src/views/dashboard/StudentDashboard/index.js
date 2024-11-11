@@ -81,7 +81,7 @@ const StudentDashboard = ({ isLoading }) => {
         const surveySuppliersMap = {};
         suppliers.forEach((supplier) => {
             const surveyId = supplier.chooseSurvey;
-            if (surveyId) {
+            if (surveys.find((survey) => survey._id === surveyId)) {
                 if (!surveySuppliersMap[surveyId]) {
                     surveySuppliersMap[surveyId] = [];
                 }
