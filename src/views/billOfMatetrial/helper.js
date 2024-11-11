@@ -30,7 +30,7 @@ export const batchAddMaterials = (materialsArray) =>
         {
             method: 'POST',
             url: endpoints.billOfMaterialsBatchAdd,
-            data: { materials: materialsArray },
+            data: materialsArray,
         },
         true
     );

@@ -146,13 +146,13 @@ const BillOfMaterials = () => {
                 const errors = [];
 
                 jsonData.forEach((row, index) => {
-                    const productName = row.productName || row['Product Name'];
-                    const productPartNumber = row.productPartNumber || row['Product Part Number'];
+                    const productName = row.productName || row['Product Name'] || row['Product name'];
+                    const productPartNumber = row.productPartNumber || row['Product Part Number'] || row['Product part number'];
                     const facility = row.facility || row['Facility'];
-                    const rawMaterialPartDescription = row.rawMaterialPartDescription || row['Raw Material Name'];
-                    const rawMaterialPartNumber = row.rawMaterialPartNumber || row['Raw Material Part Number'];
+                    const rawMaterialPartDescription = row.rawMaterialPartDescription || row['Raw Material Name'] || row['Raw material name'];
+                    const rawMaterialPartNumber = row.rawMaterialPartNumber || row['Raw Material Part Number'] || row['Raw material part number'];
                     const functionField = row.function || row['Function'];
-                    const supplierName = row.supplier || row['Supplier Name'];
+                    const supplierName = row.supplier || row['Supplier Name'] || row['Supplier name'];
 
                     // Basic validation
                     if (!productName) {
