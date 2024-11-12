@@ -195,7 +195,7 @@ const BillOfMaterials = () => {
                     const productName = row.productName || row['Product Name'] || row['Product name'];
                     const productPartNumber = row.productPartNumber || row['Product Part Number'] || row['Product part number'];
                     const facility = row.facility || row['Facility'];
-                    const rawMaterialPartDescription = row.rawMaterialPartDescription || row['Raw Material Name'] || row['Raw material name'];
+                    const rawMaterialName = row.rawMaterialName || row['Raw Material Name'] || row['Raw material name'];
                     const rawMaterialPartNumber = row.rawMaterialPartNumber || row['Raw Material Part Number'] || row['Raw material part number'];
                     const functionField = row.function || row['Function'];
                     const supplierName = row.supplier || row['Supplier Name'] || row['Supplier name'];
@@ -237,7 +237,7 @@ const BillOfMaterials = () => {
                             productName,
                             productPartNumber,
                             facility,
-                            rawMaterialPartDescription,
+                            rawMaterialName,
                             rawMaterialPartNumber,
                             function: functionField,
                             supplier: supplier._id, // Use supplier ID
@@ -247,7 +247,7 @@ const BillOfMaterials = () => {
                             productName,
                             productPartNumber,
                             facility,
-                            rawMaterialPartDescription,
+                            rawMaterialName,
                             rawMaterialPartNumber,
                             function: functionField,
                         });
@@ -481,11 +481,11 @@ const BillOfMaterials = () => {
             headerName: 'Raw Material Name',
             width: 250,
             editable: true,
-            valueGetter: (params) => params.row?.rawMaterialPartDescription || '',
+            valueGetter: (params) => params.row?.rawMaterialName || '',
             renderCell: (params) => (
-                <Tooltip title={params.row?.rawMaterialPartDescription || ''} arrow>
+                <Tooltip title={params.row?.rawMaterialName || ''} arrow>
                     <Typography variant="body1" noWrap>
-                        {params.row?.rawMaterialPartDescription}
+                        {params.row?.rawMaterialName}
                     </Typography>
                 </Tooltip>
             ),
@@ -588,7 +588,7 @@ const BillOfMaterials = () => {
                             productName: '',
                             productPartNumber: '',
                             facility: '',
-                            rawMaterialPartDescription: '',
+                            rawMaterialName: '',
                             rawMaterialPartNumber: '',
                             function: '',
                             supplier: ''
@@ -597,7 +597,7 @@ const BillOfMaterials = () => {
                             productName: Yup.string().required('Product Name is required'),
                             productPartNumber: Yup.string().required('Product Part Number is required'),
                             facility: Yup.string().required('Facility is required'),
-                            rawMaterialPartDescription: Yup.string().required('Raw Material Name is required'),
+                            rawMaterialName: Yup.string().required('Raw Material Name is required'),
                             rawMaterialPartNumber: Yup.string().required('Raw Material Part Number is required'),
                             function: Yup.string().required('Function is required'),
                             supplier: Yup.string().required('Supplier Name is required')
@@ -715,21 +715,21 @@ const BillOfMaterials = () => {
                                             fullWidth
                                             className={classes.input}
                                         >
-                                            <InputLabel htmlFor="rawMaterialPartDescription">
+                                            <InputLabel htmlFor="rawMaterialName">
                                                 Raw Material Name
                                             </InputLabel>
                                             <OutlinedInput
-                                                id="rawMaterialPartDescription"
+                                                id="rawMaterialName"
                                                 type="text"
-                                                value={values.rawMaterialPartDescription}
-                                                name="rawMaterialPartDescription"
+                                                value={values.rawMaterialName}
+                                                name="rawMaterialName"
                                                 onBlur={handleBlur}
                                                 onChange={handleChange}
                                                 label="Raw Material Name"
                                             />
-                                            {errors.rawMaterialPartDescription && (
+                                            {errors.rawMaterialName && (
                                                 <FormHelperText error>
-                                                    {errors.rawMaterialPartDescription}
+                                                    {errors.rawMaterialName}
                                                 </FormHelperText>
                                             )}
                                         </FormControl>

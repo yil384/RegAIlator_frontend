@@ -1,123 +1,184 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@material-ui/data-grid';
-import { Button, IconButton, Checkbox, Typography, Tooltip } from '@material-ui/core';
+import { Typography, Tooltip } from '@material-ui/core';
 import MainCard from '../../ui-component/cards/MainCard';
 import { useTheme } from '@material-ui/styles';
 import toast from 'react-hot-toast';
+
+// Import functions to fetch materials and compliance data
+import { fetchBillOfMaterials } from '../billOfMatetrial/helper'; // Adjust the path as necessary
+import { fetchVideos } from '../videos/videos.helper'; // Adjust the path as necessary
 
 const RMAssessment = () => {
     const theme = useTheme();
     const [selectedIds, setSelectedIds] = useState([]);
 
-    const data = [
-        { id: 1, product: 'Product XX', reg1: '❌', reg2: '✅', reg3: '❌', action: 'Statement' },
-        { id: 2, product: 'RM1', reg1: '✅', reg2: '❌', reg3: '❌', action: 'Summary' },
-        { id: 3, product: 'RM2', reg1: '❌', reg2: '✅', reg3: '✅', action: 'Summary' },
-        { id: 4, product: 'RM3', reg1: '✅', reg2: '✅', reg3: '✅', action: 'Summary' }
-    ];
+    // State variables
+    const [materials, setMaterials] = useState([]);
+    const [complianceData, setComplianceData] = useState([]);
+    const [regulations, setRegulations] = useState([]);
+    const [rows, setRows] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSelect = (id) => {
-        if (selectedIds.includes(id)) {
-            setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
-        } else {
-            setSelectedIds([...selectedIds, id]);
-        }
-    };
+    // Fetch materials and compliance data
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch materials
+                const materialsResponse = await fetchBillOfMaterials();
+                const materialsData = materialsResponse?.results || [];
 
-    const handleSelectAll = () => {
-        if (selectedIds.length === data.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(data.map((row) => row.id));
-        }
-    };
+                // Fetch compliance data
+                const complianceResponse = await fetchVideos(); // Assuming fetchVideos fetches the files data
+                const complianceDataTemp = complianceResponse?.results || [];
 
+                // 从 complianceDataTemp 中提取出需要的数据
+                let complianceData = [];
+                for (let i = 0; i < complianceDataTemp.length; i++) {
+                    const file = complianceDataTemp[i];
+                    const data = file.json?.data || [];
+                    complianceData = complianceData.concat(data);
+                }
+
+                setMaterials(materialsData);
+                setComplianceData(complianceData);
+
+                console.log('Materials:', materialsData);
+                console.log('Compliance Data:', complianceData);
+
+                // Process complianceData
+                const regulationsSet = new Set();
+                const complianceMap = {}; // Key: materialKey (Product Name + Material Name), Value: {regulation: status}
+
+                complianceData.forEach(item => {
+                    const supplierName = item['Supplier name'] || item['supplierName'] || '';
+                    const materialName = item['Raw material name'] || item['rawMaterialName'] || item['Raw Material Name'] || '';
+                    const regulation = item['Regulation or substance name'] || '';
+                    const complianceStatus = item['Compliant conclusion\n(Compliant, not compliant, not applicable or unclear)'] || item['Compliant conclusion'] || '';
+
+                    // 遇到不合法的数据就跳过这个数据
+                    if (!supplierName || !materialName || !regulation || !complianceStatus) {
+                        console.log('Invalid data:', item);
+                        return;
+                    }
+
+                    // Build materialKey
+                    // const materialKey = `${supplierName}||${materialName}`;
+                    const materialKey = materialName; // 只用 materialName 作为 key
+
+                    if (!complianceMap[materialKey]) {
+                        complianceMap[materialKey] = {};
+                    }
+                    complianceMap[materialKey][regulation] = complianceStatus;
+
+                    // Add to regulationsSet
+                    if (regulation) {
+                        regulationsSet.add(regulation);
+                    }
+                });
+
+                // console.log('Compliance Map:', complianceMap);
+
+                const regulationsArray = Array.from(regulationsSet);
+
+                // Now build rows
+                const rows = materialsData.map((material, index) => {
+                    const productName = material.productName || '';
+                    const supplierName = material.supplierName || '';
+                    const materialName = material.rawMaterialName || '';
+
+                    // const materialKey = `${supplierName}||${materialName}`;
+                    const materialKey = materialName; // 只用 materialName 作为 key
+
+                    const row = {
+                        id: material.id || index,
+                        productName: productName,
+                        materialName: materialName,
+                    };
+
+                    regulationsArray.forEach(regulation => {
+                        const status = complianceMap[materialKey]?.[regulation] || '';
+                        row[regulation] = status;
+                    });
+
+                    return row;
+                });
+
+                setRegulations(regulationsArray);
+                setRows(rows);
+
+                console.log('Regulations:', regulationsArray);
+                console.log('Rows:', rows);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                toast.error('Error fetching data');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    // Build columns
     const columns = [
         {
-            field: 'select',
-            headerName: (
-                <Checkbox
-                    checked={selectedIds.length === data.length}
-                    indeterminate={selectedIds.length > 0 && selectedIds.length < data.length}
-                    onChange={handleSelectAll}
-                />
-            ),
-            width: 60,
-            sortable: false,
-            renderCell: (params) => (
-                <Checkbox
-                    checked={selectedIds.includes(params.row.id)}
-                    onChange={() => handleSelect(params.row.id)}
-                />
-            ),
-        },
-        {
-            field: 'product',
-            headerName: 'Product',
+            field: 'productName',
+            headerName: 'Product Name',
             width: 200,
             renderCell: (params) => (
-                <Tooltip title={params.row.product}>
-                    <Typography noWrap>{params.row.product}</Typography>
+                <Tooltip title={params.value}>
+                    <Typography noWrap>{params.value}</Typography>
                 </Tooltip>
             ),
         },
-        { field: 'reg1', headerName: 'Reg 1', width: 100 },
-        { field: 'reg2', headerName: 'Reg 2', width: 100 },
-        { field: 'reg3', headerName: 'Reg 3', width: 100 },
         {
-            field: 'action',
-            headerName: 'Action',
-            width: 150,
+            field: 'materialName',
+            headerName: 'Material Name',
+            width: 200,
             renderCell: (params) => (
-                <Button variant="contained" color="primary">
-                    {params.row.action}
-                </Button>
+                <Tooltip title={params.value}>
+                    <Typography noWrap>{params.value}</Typography>
+                </Tooltip>
             ),
         },
+        // Dynamically add columns for each regulation
+        ...regulations.map(regulation => ({
+            field: regulation,
+            headerName: regulation,
+            // width 和 regulation 的长度有关，可以根据需要调整
+            width: regulation.length * 8 + 80,
+            renderCell: (params) => {
+                const status = params.value;
+                let color = 'textPrimary';
+                if (status.toLowerCase().includes('compliant')) {
+                    color = 'primary';
+                } else if (status.toLowerCase().includes('not compliant')) {
+                    color = 'secondary';
+                } else if (status.toLowerCase().includes('unclear')) {
+                    color = 'error';
+                }
+                return (
+                    <Typography color={color}>{status}</Typography>
+                );
+            },
+        })),
     ];
-
-    const handleSendSurvey = () => {
-        if (selectedIds.length === 0) {
-            toast.error('Please select at least one product or raw material.');
-            return;
-        }
-        toast.success('Surveys sent successfully!');
-    };
-
-    const handleDownloadStatement = () => {
-        if (selectedIds.length === 0) {
-            toast.error('Please select at least one product or raw material.');
-            return;
-        }
-        toast.success('Statements downloaded successfully!');
-    };
 
     return (
         <MainCard title="RM Assessment" boxShadow shadow={theme.shadows[2]}>
-            <div style={{ width: '100%', height: 400 }}>
+            <div style={{ width: '100%', height: 600 }}>
                 <DataGrid
-                    rows={data}
+                    rows={rows}
                     columns={columns}
-                    pageSize={5}
+                    pageSize={10}
                     autoHeight
                     checkboxSelection={false}
                     disableSelectionOnClick
-                    components={{}}
-                    loading={false}
+                    loading={isLoading}
                 />
-            </div>
-            <div style={{ display: 'flex', marginTop: 16 }}>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    style={{ marginRight: 10 }}
-                    onClick={handleSendSurvey}
-                >
-                    Send out survey
-                </Button>
-                <Button variant="contained" color="secondary" onClick={handleDownloadStatement}>
-                    Download Statement
-                </Button>
             </div>
         </MainCard>
     );
