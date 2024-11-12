@@ -165,7 +165,6 @@ const BillOfMaterials = () => {
                         )
                         );
 
-                        console.log('Supplier:', supplier);
                         if (!supplier) {
                             if (notFoundSuppliers.find(
                                 (s) => s.supplierName.toLowerCase() === supplierName.toLowerCase()
@@ -182,7 +181,6 @@ const BillOfMaterials = () => {
                                 }
                             );
                         }
-                        console.log('Not Found Suppliers:', notFoundSuppliers);
                     }
                 });
                 if (notFoundSuppliers.length > 0) {
