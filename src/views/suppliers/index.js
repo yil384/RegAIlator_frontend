@@ -1,7 +1,7 @@
 // suppliers.js
 
 import React from 'react';
-import { connect } from 'react-redux';
+import { connect, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -79,6 +79,7 @@ const SuppliersComponent = ({ user }) => {
     const [sendingEmails, setSendingEmails] = React.useState(false);
     const [deletingSuppliers, setDeletingSuppliers] = React.useState(false);
     const [importingSuppliers, setImportingSuppliers] = React.useState(false);
+    const emailUpdateCount = useSelector((state) => state.emailReducer.emailUpdateCount);
 
     const classes = useStyles();
     const scriptedRef = useScriptRef();
@@ -145,7 +146,7 @@ const SuppliersComponent = ({ user }) => {
 
     React.useEffect(() => {
         loadData();
-    }, [loadData]);
+    }, [loadData, emailUpdateCount]);
 
     // 处理 Excel 文件上传
     const handleExcelUpload = async (event) => {
