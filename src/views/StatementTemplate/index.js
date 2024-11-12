@@ -1,78 +1,142 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataGrid } from '@material-ui/data-grid';
-import { Button, IconButton, Typography, Tooltip } from '@material-ui/core';
+import { Typography, Tooltip } from '@material-ui/core';
 import MainCard from '../../ui-component/cards/MainCard';
 import { useTheme } from '@material-ui/styles';
-import FileCopyIcon from '@material-ui/icons/FileCopy';
 import toast from 'react-hot-toast';
+
+// Import function to fetch compliance data
+import { fetchVideos } from '../videos/videos.helper'; // Adjust the path as necessary
 
 const StatementTemplate = () => {
     const theme = useTheme();
+    const [rows, setRows] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
-    const data = [
-        { id: 1, regName: 'Reg 1', complianceStatement: 'Compliance statement for Reg 1', nonComplianceStatement: 'Non-compliance statement for Reg 1' },
-        { id: 2, regName: 'Reg 2', complianceStatement: 'Compliance statement for Reg 2', nonComplianceStatement: 'Non-compliance statement for Reg 2' },
-    ];
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch compliance data
+                const complianceResponse = await fetchVideos();
+                const complianceFiles = complianceResponse?.results || [];
+
+                // Process compliance data
+                const regulationMap = {}; // Key: regulation name, Value: { compliant: [], notCompliant: [], unclear: [] }
+
+                for (const file of complianceFiles) {
+                    const fileName = file.title || 'Unknown File';
+                    const data = file.json?.data || [];
+
+                    for (const item of data) {
+                        const regulation = item['Regulation or substance name'] || '';
+                        let complianceStatus = item['Compliant conclusion\n(Compliant, not compliant, not applicable or unclear)'] || item['Compliant conclusion'] || '';
+
+                        // Normalize complianceStatus
+                        complianceStatus = complianceStatus.toLowerCase();
+                        let statusKey = '';
+                        if (complianceStatus.includes('compliant') && !complianceStatus.includes('not compliant')) {
+                            statusKey = 'Compliant';
+                        } else if (complianceStatus.includes('not compliant')) {
+                            statusKey = 'Not Compliant';
+                        } else if (complianceStatus.includes('unclear')) {
+                            statusKey = 'Unclear';
+                        } else {
+                            statusKey = 'Unclear'; // Default to 'Unclear' if status is not recognized
+                        }
+
+                        if (!regulation) continue; // Skip if regulation is missing
+
+                        if (!regulationMap[regulation]) {
+                            regulationMap[regulation] = {
+                                'Compliant': new Set(),
+                                'Not Compliant': new Set(),
+                                'Unclear': new Set(),
+                            };
+                        }
+
+                        regulationMap[regulation][statusKey].add(fileName);
+                    }
+                }
+
+                // Build rows
+                const rows = Object.entries(regulationMap).map(([regulation, statuses], index) => {
+                    const row = {
+                        id: index,
+                        regName: regulation,
+                        Compliant: Array.from(statuses['Compliant']).join(', '),
+                        'Not Compliant': Array.from(statuses['Not Compliant']).join(', '),
+                        Unclear: Array.from(statuses['Unclear']).join(', '),
+                    };
+                    return row;
+                });
+
+                setRows(rows);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                toast.error('Error fetching data');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const columns = [
         {
             field: 'regName',
-            headerName: 'Reg Name',
-            width: 200,
+            headerName: 'Regulation Name',
+            width: 300,
             renderCell: (params) => (
-                <Tooltip title={params.row.regName} arrow>
-                    <Typography noWrap>{params.row.regName}</Typography>
+                <Tooltip title={params.value} arrow>
+                    <Typography noWrap>{params.value}</Typography>
                 </Tooltip>
             ),
         },
         {
-            field: 'complianceStatement',
-            headerName: 'Compliance Statement',
+            field: 'Compliant',
+            headerName: 'Compliant Files',
             width: 300,
             renderCell: (params) => (
-                <Tooltip title={params.row.complianceStatement} arrow>
-                    <IconButton
-                        color="primary"
-                        onClick={() => handleCopy(params.row.complianceStatement)}
-                    >
-                        <FileCopyIcon />
-                    </IconButton>
+                <Tooltip title={params.value} arrow>
+                    <Typography noWrap color={'primary'}>{params.value}</Typography>
                 </Tooltip>
             ),
         },
         {
-            field: 'nonComplianceStatement',
-            headerName: 'Non-Compliance Statement',
+            field: 'Not Compliant',
+            headerName: 'Not Compliant Files',
             width: 300,
             renderCell: (params) => (
-                <Tooltip title={params.row.nonComplianceStatement} arrow>
-                    <IconButton
-                        color="secondary"
-                        onClick={() => handleCopy(params.row.nonComplianceStatement)}
-                    >
-                        <FileCopyIcon />
-                    </IconButton>
+                <Tooltip title={params.value} arrow>
+                    <Typography noWrap color={'second'}>{params.value}</Typography>
+                </Tooltip>
+            ),
+        },
+        {
+            field: 'Unclear',
+            headerName: 'Unclear Files',
+            width: 300,
+            renderCell: (params) => (
+                <Tooltip title={params.value} arrow>
+                    <Typography noWrap color={'error'}>{params.value}</Typography>
                 </Tooltip>
             ),
         },
     ];
 
-    const handleCopy = (statement) => {
-        navigator.clipboard.writeText(statement);
-        toast.success('Statement copied to clipboard!');
-    };
-
     return (
         <MainCard title="Statement Template" boxShadow shadow={theme.shadows[2]}>
-            <div style={{ width: '100%', height: 400 }}>
+            <div style={{ width: '100%', height: 600 }}>
                 <DataGrid
-                    rows={data}
+                    rows={rows}
                     columns={columns}
-                    pageSize={5}
+                    pageSize={10}
                     autoHeight
                     disableSelectionOnClick
-                    components={{}}
-                    loading={false}
+                    loading={isLoading}
                 />
             </div>
         </MainCard>

@@ -149,7 +149,7 @@ const RMAssessment = () => {
             field: regulation,
             headerName: regulation,
             // width 和 regulation 的长度有关，可以根据需要调整
-            width: regulation.length * 8 + 80,
+            width: regulation.length * 5 + 180,
             renderCell: (params) => {
                 const status = params.value;
                 let color = 'textPrimary';
