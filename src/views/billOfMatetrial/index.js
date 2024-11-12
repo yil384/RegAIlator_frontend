@@ -16,7 +16,7 @@ import {
     updateMaterial,
     deleteMaterials
 } from './helper';
-import { fetchSuppliers } from '../suppliers/helper';
+import { fetchSuppliers, batchAddSuppliers } from '../suppliers/helper';
 import { useStyles } from './styles';
 import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
@@ -151,6 +151,48 @@ const BillOfMaterials = () => {
                 const materialsToAdd = [];
                 const errors = [];
 
+                let notFoundSuppliers = [];
+                jsonData.forEach((row, index) => {
+                    const rawMaterialPartDescription = row.rawMaterialPartDescription || row['Raw Material Name'] || row['Raw material name'];
+                    const rawMaterialPartNumber = row.rawMaterialPartNumber || row['Raw Material Part Number'] || row['Raw material part number'];
+                    const supplierName = row.supplier || row['Supplier Name'] || row['Supplier name'];
+                    if (supplierName) {
+                        // create a new supplier based on the supplier name and its raw material name and number if it does not exist
+                        const supplier = suppliers.find(
+                            (s) => (s.supplierName.toLowerCase() === supplierName.toLowerCase()
+                                    && (rawMaterialPartDescription? s.materialName?.toLowerCase() === rawMaterialPartDescription.toLowerCase() : true)
+                                    && (rawMaterialPartNumber? s.partNumber?.toString().toLowerCase() === rawMaterialPartNumber.toString().toLowerCase() : true)
+                        )
+                        );
+
+                        console.log('Supplier:', supplier);
+                        if (!supplier) {
+                            if (notFoundSuppliers.find(
+                                (s) => s.supplierName.toLowerCase() === supplierName.toLowerCase()
+                                    && (rawMaterialPartDescription? s.materialName?.toLowerCase() === rawMaterialPartDescription.toLowerCase() : true)
+                                    && (rawMaterialPartNumber? s.partNumber?.toString().toLowerCase() === rawMaterialPartNumber.toString().toLowerCase() : true)
+                            )) {
+                                return;
+                            }
+                            notFoundSuppliers.push(
+                                {
+                                    supplierName: supplierName,
+                                    materialName: rawMaterialPartDescription,
+                                    partNumber: rawMaterialPartNumber
+                                }
+                            );
+                        }
+                        console.log('Not Found Suppliers:', notFoundSuppliers);
+                    }
+                });
+                if (notFoundSuppliers.length > 0) {
+                    const result = await batchAddSuppliers(notFoundSuppliers);
+                    if (result.length > 0) {
+                        toast.success(`${notFoundSuppliers.length} supplier(s) imported successfully.`);
+                    }
+                    suppliers.push(...result);
+                }
+
                 jsonData.forEach((row, index) => {
                     const productName = row.productName || row['Product Name'] || row['Product name'];
                     const productPartNumber = row.productPartNumber || row['Product Part Number'] || row['Product part number'];
@@ -165,42 +207,53 @@ const BillOfMaterials = () => {
                         errors.push(`Row ${index + 2}: Missing product name.`);
                         return;
                     }
-                    if (!productPartNumber) {
-                        errors.push(`Row ${index + 2}: Missing product part number.`);
-                        return;
-                    }
-                    if (!rawMaterialPartDescription) {
-                        errors.push(`Row ${index + 2}: Missing raw material name.`);
-                        return;
-                    }
-                    if (!rawMaterialPartNumber) {
-                        errors.push(`Row ${index + 2}: Missing raw material part number.`);
-                        return;
-                    }
-                    if (!supplierName) {
-                        errors.push(`Row ${index + 2}: Missing supplier name.`);
-                        return;
-                    }
+                    // if (!productPartNumber) {
+                    //     errors.push(`Row ${index + 2}: Missing product part number.`);
+                    //     return;
+                    // }
+                    // if (!rawMaterialPartDescription) {
+                    //     errors.push(`Row ${index + 2}: Missing raw material name.`);
+                    //     return;
+                    // }
+                    // if (!rawMaterialPartNumber) {
+                    //     errors.push(`Row ${index + 2}: Missing raw material part number.`);
+                    //     return;
+                    // }
+                    // if (!supplierName) {
+                    //     errors.push(`Row ${index + 2}: Missing supplier name.`);
+                    //     return;
+                    // }
 
-                    // Find supplier ID from supplier name
-                    const supplier = suppliers.find(
-                        (s) => s.supplierName.toLowerCase() === supplierName.toLowerCase()
-                    );
+                    if (supplierName) {
+                        // Find supplier ID from supplier name
+                        const supplier = suppliers.find(
+                            (s) => s.supplierName.toLowerCase() === supplierName.toLowerCase()
+                        );
 
-                    if (!supplier) {
-                        errors.push(`Row ${index + 2}: Supplier "${supplierName}" not found.`);
-                        return;
+                        if (!supplier) {
+                            errors.push(`Row ${index + 2}: Supplier "${supplierName}" not found.`);
+                            return;
+                        }
+
+                        materialsToAdd.push({
+                            productName,
+                            productPartNumber,
+                            facility,
+                            rawMaterialPartDescription,
+                            rawMaterialPartNumber,
+                            function: functionField,
+                            supplier: supplier._id, // Use supplier ID
+                        });
+                    } else {
+                        materialsToAdd.push({
+                            productName,
+                            productPartNumber,
+                            facility,
+                            rawMaterialPartDescription,
+                            rawMaterialPartNumber,
+                            function: functionField,
+                        });
                     }
-
-                    materialsToAdd.push({
-                        productName,
-                        productPartNumber,
-                        facility,
-                        rawMaterialPartDescription,
-                        rawMaterialPartNumber,
-                        function: functionField,
-                        supplier: supplier._id, // Use supplier ID
-                    });
                 });
 
                 if (errors.length > 0) {
