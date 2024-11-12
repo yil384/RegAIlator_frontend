@@ -153,14 +153,14 @@ const BillOfMaterials = () => {
 
                 let notFoundSuppliers = [];
                 jsonData.forEach((row, index) => {
-                    const rawMaterialPartDescription = row.rawMaterialPartDescription || row['Raw Material Name'] || row['Raw material name'];
+                    const rawMaterialName = row.rawMaterialName || row['Raw Material Name'] || row['Raw material name'];
                     const rawMaterialPartNumber = row.rawMaterialPartNumber || row['Raw Material Part Number'] || row['Raw material part number'];
                     const supplierName = row.supplier || row['Supplier Name'] || row['Supplier name'];
                     if (supplierName) {
                         // create a new supplier based on the supplier name and its raw material name and number if it does not exist
                         const supplier = suppliers.find(
                             (s) => (s.supplierName.toLowerCase() === supplierName.toLowerCase()
-                                    && (rawMaterialPartDescription? s.materialName?.toLowerCase() === rawMaterialPartDescription.toLowerCase() : true)
+                                    && (rawMaterialName? s.materialName?.toLowerCase() === rawMaterialName.toLowerCase() : true)
                                     && (rawMaterialPartNumber? s.partNumber?.toString().toLowerCase() === rawMaterialPartNumber.toString().toLowerCase() : true)
                         )
                         );
@@ -168,7 +168,7 @@ const BillOfMaterials = () => {
                         if (!supplier) {
                             if (notFoundSuppliers.find(
                                 (s) => s.supplierName.toLowerCase() === supplierName.toLowerCase()
-                                    && (rawMaterialPartDescription? s.materialName?.toLowerCase() === rawMaterialPartDescription.toLowerCase() : true)
+                                    && (rawMaterialName? s.materialName?.toLowerCase() === rawMaterialName.toLowerCase() : true)
                                     && (rawMaterialPartNumber? s.partNumber?.toString().toLowerCase() === rawMaterialPartNumber.toString().toLowerCase() : true)
                             )) {
                                 return;
@@ -176,7 +176,7 @@ const BillOfMaterials = () => {
                             notFoundSuppliers.push(
                                 {
                                     supplierName: supplierName,
-                                    materialName: rawMaterialPartDescription,
+                                    materialName: rawMaterialName,
                                     partNumber: rawMaterialPartNumber
                                 }
                             );
@@ -209,7 +209,7 @@ const BillOfMaterials = () => {
                     //     errors.push(`Row ${index + 2}: Missing product part number.`);
                     //     return;
                     // }
-                    // if (!rawMaterialPartDescription) {
+                    // if (!rawMaterialName) {
                     //     errors.push(`Row ${index + 2}: Missing raw material name.`);
                     //     return;
                     // }
@@ -477,7 +477,7 @@ const BillOfMaterials = () => {
         },
         // Raw Material Name Column
         {
-            field: 'rawMaterialPartDescription',
+            field: 'rawMaterialName',
             headerName: 'Raw Material Name',
             width: 250,
             editable: true,
