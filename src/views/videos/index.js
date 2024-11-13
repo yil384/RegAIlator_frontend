@@ -17,7 +17,7 @@ import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
-import { fetchVideos, deleteVideo, addVideoWithSupplierId } from './videos.helper';
+import { fetchVideos, deleteVideo, addVideoWithSupplierId, parseVideos } from './videos.helper';
 import { useTheme } from '@material-ui/styles';
 
 // Import PDF Viewer Components
@@ -29,7 +29,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import CloseIcon from '@material-ui/icons/Close';
-import { Tooltip, Checkbox } from '@material-ui/core';
+import { Tooltip, Checkbox, CircularProgress } from '@material-ui/core';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // Solid circle with check
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // Hollow circle
@@ -73,6 +73,7 @@ import {
 
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
+import { AddCircleOutlineOutlined, BlurCircularOutlined, Filter9PlusOutlined, PanoramaFishEyeOutlined, RunCircleOutlined } from '@material-ui/icons';
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -85,6 +86,7 @@ const VideosComponent = ({ user }) => {
 
     const [videos, setVideos] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
+    const [isParseLoading, setIsParseLoading] = React.useState(false);
 
     // Dialog state
     const [openDialog, setOpenDialog] = React.useState(false);
@@ -158,7 +160,8 @@ const VideosComponent = ({ user }) => {
         return response;
     };
 
-    const generateColumnsWithTooltip = () => {
+    const generateColumnsWithTooltip = (tableData) => {
+        console.log('Table Data:', tableData);
         if (tableData.length === 0) return [];
 
         return Object.keys(tableData[0]).map((key) => ({
@@ -243,6 +246,41 @@ const VideosComponent = ({ user }) => {
         }
     };
 
+    const [openParsedDialog, setOpenParsedDialog] = React.useState(false);
+    const [parsedResults, setParsedResults] = React.useState([]);
+
+    const handleParseMultiple = async () => {
+        if (selectedIds.length === 0) {
+            toast.warning('No files selected for parsing.');
+            return;
+        }
+
+        setIsParseLoading(true);
+    
+        try {
+            // 解析选中的所有文件，parsedResults是一个数组
+            const parsedResponse = await parseVideos(selectedIds);
+            // 把里面的files的data字段提取拼接成一个数组
+            const parsedResults = parsedResponse.files.map((file) => file.result.data).flat();
+            setIsParseLoading(false);
+            console.log('Parsed Results:', parsedResults);
+            console.log('isParseLoading:', isParseLoading);
+    
+            // 更新数据
+            await loadData();
+            setSelectedIds([]); // 清空选中的 ID
+    
+            // 将解析结果在一个新的 dialog 以表格形式展示
+            setParsedResults(parsedResults);
+            setOpenParsedDialog(true);
+            // toast.success('Selected files have been parsed successfully.');
+        } catch (error) {
+            setIsParseLoading(false);
+            console.error('Failed to parse files:', error);
+            toast.error('Failed to parse selected files.');
+        }
+    };
+    
     // 在 handleDownload 函数中实现多个文件下载
     // const handleDownload = () => {
     //     if (selectedIds.length === 0) {
@@ -491,6 +529,20 @@ const VideosComponent = ({ user }) => {
             )
         },
         {
+            field: 'Parsed',
+            headerName: 'Parsed',
+            description: 'Parsed Status',
+            sortable: false,
+            width: 110,
+            editable: false,
+            resizable: false,
+            renderCell: (params) => (
+                <Typography variant='body1' marginLeft={'15px'}>
+                    {params.row?.json ? '✔️' : ''}
+                </Typography>
+            )
+        },
+        {
             field: 'Actions',
             headerName: 'Actions',
             headerAlign: 'center',
@@ -623,9 +675,30 @@ const VideosComponent = ({ user }) => {
                     color='primary'
                     size='small'
                     style={{ top: -70, marginLeft: '10px' }}
-                    onClick={() => setOpenAddVideoDialog(true)}
+                    onClick={() => 
+                        {
+                            setOpenAddVideoDialog(true)
+                            setSelectedSupplier(null)
+                            setSelectedFiles([])
+                            setUploadPercentage(null)
+                            setTableData([])
+                        }
+                    }
                 >
                     Add Files
+                </Button>
+                <Button
+                    variant='contained'
+                    color='success'
+                    size='small'
+                    style={{ top: -70, marginLeft: '10px' }}
+                    onClick={handleParseMultiple}
+                    disabled={selectedIds.length === 0}
+                    startIcon={ isParseLoading ? <CircularProgress 
+                            style={{ height : "20px", width: "20px"}}
+                        /> : <RunCircleOutlined /> }
+                >
+                    Parse Selected
                 </Button>
                 <Button
                     variant='contained'
@@ -767,7 +840,6 @@ const VideosComponent = ({ user }) => {
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                    <MainCard title='Add File' boxShadow shadow={theme.shadows[2]}>
                         <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
                             <Formik
                                 initialValues={{
@@ -784,12 +856,14 @@ const VideosComponent = ({ user }) => {
                                                 data.append('file', file);
                                             }
                                         }
-                                        console.log('selected supplier', selectedSupplier);
-                                        console.log('selected files', selectedFiles);
-                                        const response = await uploadFile(selectedSupplier._id, data);
+                                        const response = await uploadFile(selectedSupplier?._id, data);
                                         if (response?.status) {
-                                            toast.success('Parse successful!');
+                                            toast.success('Upload successful!');
                                             handleFilePreview(response);
+                                            // Clear form fields
+                                            setSelectedFiles([]);
+                                            setUploadPercentage(null);
+                                            setTableData([]);
                                         }
                                         setProcessingFile(false);
                                     } catch (err) {
@@ -822,7 +896,7 @@ const VideosComponent = ({ user }) => {
                                                             labelId="select-supplier-label"
                                                             id="select-supplier"
                                                             name="supplier"
-                                                            value={selectedSupplier?.supplierName}
+                                                            value={selectedSupplier? selectedSupplier : null}
                                                             onChange={(e) => {
                                                                 console.log('selected supplier', e.target.value);
                                                                 setSelectedSupplier(e.target.value);
@@ -926,14 +1000,14 @@ const VideosComponent = ({ user }) => {
                                 )}
                             </Formik>
                         </Box>
-                        {tableData.length > 0 && (
+                        {/* {tableData.length > 0 && (
                             <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
                                 <DataGrid
                                     rows={tableData.map((row, index) => ({
                                         ...row,
                                         id: index + 1,
                                     }))}
-                                    columns={generateColumnsWithTooltip()}
+                                    columns={generateColumnsWithTooltip(tableData)}
                                     pageSize={10}
                                     checkboxSelection={false}
                                     autoHeight
@@ -948,8 +1022,7 @@ const VideosComponent = ({ user }) => {
                                     }}
                                 />
                             </Box>
-                        )}
-                    </MainCard>
+                        )} */}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => { setOpenAddVideoDialog(false); loadData(); }} color="primary">
@@ -1154,6 +1227,57 @@ const VideosComponent = ({ user }) => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setOpenSelectedDetailsDialog(false)} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* **Dialog Component** */}
+            <Dialog
+                open={openParsedDialog}
+                onClose={() => setOpenParsedDialog(false)}
+                fullWidth
+                maxWidth="lg"
+                height="100%"
+                aria-labelledby="parsed-dialog"
+            >
+                <DialogTitle id="parsed-dialog">
+                    Parsed Files
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => setOpenParsedDialog(false)}
+                        style={{ position: 'absolute', right: 8, top: 8 }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    {parsedResults.length > 0 ? (
+                        <DataGrid
+                            rows={parsedResults.map((row, index) => ({
+                                ...row,
+                                id: index + 1,
+                            }))}
+                            columns={generateColumnsWithTooltip(parsedResults)}
+                            pageSize={10}
+                            checkboxSelection={false}
+                            autoHeight
+                            autoPageSize
+                            density={'standard'}
+                            disableSelectionOnClick
+                            loading={isLoading}
+                            components={{
+                                Toolbar: () => <CustomToolbar title={'Parsed Data'} length={parsedResults.length} />,
+                                LoadingOverlay: CustomLoadingOverlay,
+                                NoRowsOverlay: CustomNoRowsOverlay
+                            }}
+                        />
+                    ) : (
+                        <Typography variant='body1'>No data available.</Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenParsedDialog(false)} color="primary">
                         Close
                     </Button>
                 </DialogActions>

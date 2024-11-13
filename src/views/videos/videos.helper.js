@@ -34,3 +34,10 @@ export const deleteVideo = (id) =>
         method: 'DELETE',
         url: endpoints.videosById(id)
     }, true);
+
+export const parseVideos = (ids) =>
+    fetchApi({
+        method: 'POST',
+        url: `${endpoints.videos}/parse`,
+        data: ids
+    }, true);
