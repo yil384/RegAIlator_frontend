@@ -389,6 +389,7 @@ const BillOfMaterials = () => {
                 setLoadingUpdate(false);
             }
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
+            await loadData();
         }, [materials, suppliers]
     );
 

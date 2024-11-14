@@ -10,6 +10,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
+import Divider from '@material-ui/core/Divider';
 import { DataGrid } from '@material-ui/data-grid';
 import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import { useTheme } from '@material-ui/styles';
@@ -28,6 +29,7 @@ import { fetchSurveys } from '../survey-templates/helper';
 import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import Typography from '@material-ui/core/Typography';
 import {
+    AddOutlined,
     DeleteOutlined,
     DoneOutlineOutlined,
     DownloadOutlined,
@@ -230,11 +232,11 @@ const SuppliersComponent = ({ user }) => {
                 const errors = [];
 
                 jsonData.forEach((row, index) => {
-                    const supplierName = row.supplierName || row['Supplier Name'];
-                    const contact = row.contact || row['Contact'];
-                    const materialName = row.materialName || row['Material Name'];
-                    const partNumber = row.partNumber || row['Part Number'];
-                    const chooseSurvey = row.chooseSurvey || row['Choose Survey'];
+                    const supplierName = row.supplierName || row['Supplier Name'] || row['Supplier'];
+                    const contact = row.contact || row['Contact'] || row['Email'];
+                    const materialName = row.materialName || row.rawMaterialName || row['Material Name'] || row['Raw Material Name'];
+                    const partNumber = row.partNumber || row.rawMaterialPartNumber || row['Part Number'] || row['Raw Material Part Number'];
+                    const chooseSurvey = row.chooseSurvey || row['Choose Survey'] || row['Survey'] || row['Survey Name'];
                     const status = row.status || row['Status'] || 'inactive'; // Default to 'inactive'
 
                     // Basic validation
@@ -267,11 +269,15 @@ const SuppliersComponent = ({ user }) => {
                         }
                     }
 
+                    const rawMaterials = [];
+                    if (materialName || partNumber) {
+                        rawMaterials.push({ rawMaterialName: materialName, rawMaterialPartNumber: partNumber });
+                    }
+
                     suppliersToAdd.push({
                         supplierName,
                         contact,
-                        materialName,
-                        partNumber,
+                        rawMaterials,
                         chooseSurvey: validSurveyId,
                         status
                     });
@@ -570,6 +576,52 @@ const SuppliersComponent = ({ user }) => {
         return prefix + ' ' + timeLeft + ' ' + suffix;
     };
 
+    const [openRawMaterialsDialog, setOpenRawMaterialsDialog] = React.useState(false);
+    const [selectedRawMaterials, setSelectedRawMaterials] = React.useState(null);
+    const [selectedRawMaterialsSupplierId, setSelectedRawMaterialsSupplierId] = React.useState(null);
+    const [newMaterial, setNewMaterial] = React.useState({ rawMaterialName: '', rawMaterialPartNumber: '' });
+    const handleOpenRawMaterialsDialog = (rawMaterials, supplierId) => {
+        setSelectedRawMaterials(rawMaterials.map((rawMaterial) => ({ id: rawMaterial._id, ...rawMaterial })));
+        setSelectedRawMaterialsSupplierId(supplierId);
+        setOpenRawMaterialsDialog(true);
+    };
+    const handleCloseRawMaterialsDialog = async () => {
+        setSelectedRawMaterials(null);
+        setSelectedRawMaterialsSupplierId(null);
+        setOpenRawMaterialsDialog(false);
+        setNewMaterial({ rawMaterialName: '', rawMaterialPartNumber: '' });
+        await loadData();
+    };
+    const handleAddRawMaterialInputChange = (e) => {
+        setNewMaterial({ ...newMaterial, [e.target.name]: e.target.value });
+    }
+    const handleAddRawMaterial = async () => {
+        if (!newMaterial.rawMaterialName && !newMaterial.rawMaterialPartNumber) {
+            toast.error('Please enter raw material name or part number');
+            return;
+        }
+        const updatedRawMaterials = [...selectedRawMaterials, newMaterial];
+        const result = await updateSupplier(selectedRawMaterialsSupplierId, { rawMaterials: updatedRawMaterials }); 
+        if (!result) {
+            toast.error('Failed to add raw material');
+            return;
+        }
+        toast.success('Raw material added successfully');
+        setSelectedRawMaterials(result.rawMaterials.map((rawMaterial) => ({ id: rawMaterial._id, ...rawMaterial })));
+        console.log('selectedRawMaterials', selectedRawMaterials);
+        setNewMaterial({ rawMaterialName: '', rawMaterialPartNumber: '' });
+    };
+
+    const handleDeleteSingleRawMaterial = async (rawMaterialId) => {
+        const result = await updateSupplier(selectedRawMaterialsSupplierId, { rawMaterials: selectedRawMaterials.filter((rawMaterial) => rawMaterial.id !== rawMaterialId) });
+        if (!result) {
+            toast.error('Failed to delete raw material');
+            return;
+        }
+        toast.success('Raw material deleted successfully');
+        setSelectedRawMaterials(result.rawMaterials.map((rawMaterial) => ({ id: rawMaterial._id, ...rawMaterial })));
+    }
+
     // 列定义
     const columns = [
         // 选择列
@@ -657,15 +709,44 @@ const SuppliersComponent = ({ user }) => {
             headerName: 'Raw Material Name',
             sortable: true,
             width: 250,
-            editable: true, // 可编辑
-            valueGetter: (params) => params.row?.materialName || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.materialName || ''} arrow>
-                    <Typography variant="body1" noWrap>
-                        {params.row?.materialName}
-                    </Typography>
-                </Tooltip>
-            )
+            valueGetter: (params) => params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialName).join(', ') || '',
+            renderCell: (params) => {
+                const supplierId = params.row?.id;
+                const rawMaterials = params.row?.rawMaterials || [];
+                return (
+                    <Tooltip title={params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialName).join(', ') || ''} arrow>
+                        <Button
+                            variant="text"
+                            color="inherit"
+                            onClick={() => {
+                                console.log('rawMaterials', rawMaterials);
+                                handleOpenRawMaterialsDialog(rawMaterials, supplierId);
+                            }}
+                            style={{
+                                width: '104%',
+                                height: '100%',
+                                paddingLeft: 0,
+                                marginLeft: '-2%',
+                                display: 'flex',   // 确保按钮是 flex 布局
+                                justifyContent: 'flex-start', // 将内容对齐到左边
+                                alignItems: 'center'  // 如果你想垂直居中内容
+                            }}
+                        >
+                            <Typography 
+                                variant="body1" 
+                                noWrap 
+                                style={{
+                                    paddingLeft: '2%',
+                                    textAlign: 'left',  // 设置文本对齐方式为左对齐
+                                    width: '100%'       // 使文本内容填满整个宽度，确保左对齐
+                                }}
+                            >
+                                {params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialName).join(', ')}
+                            </Typography>
+                        </Button>
+                    </Tooltip>
+                );
+            }
         },
         // 零件编号列
         {
@@ -673,15 +754,44 @@ const SuppliersComponent = ({ user }) => {
             headerName: 'Raw Material Part Number',
             sortable: true,
             width: 290,
-            editable: true, // 可编辑
-            valueGetter: (params) => params.row?.partNumber || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row?.partNumber || ''} arrow>
-                    <Typography variant="body1" noWrap>
-                        {params.row?.partNumber}
-                    </Typography>
-                </Tooltip>
-            )
+            valueGetter: (params) => params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialPartNumber).join(', ') || '',
+            renderCell: (params) => {
+                const supplierId = params.row?.id;
+                const rawMaterials = params.row?.rawMaterials || [];
+                return (
+                    <Tooltip title={params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialPartNumber).join(', ') || ''} arrow>
+                        <Button
+                                variant="text"
+                                color="inherit"
+                                onClick={() => {
+                                    console.log('rawMaterials', rawMaterials);
+                                    handleOpenRawMaterialsDialog(rawMaterials, supplierId);
+                                }}
+                                style={{
+                                    width: '104%',
+                                    height: '100%',
+                                    paddingLeft: 0,
+                                    marginLeft: '-2%',
+                                    display: 'flex',   // 确保按钮是 flex 布局
+                                    justifyContent: 'flex-start', // 将内容对齐到左边
+                                    alignItems: 'center'  // 如果你想垂直居中内容
+                                }}
+                            >
+                            <Typography 
+                                variant="body1" 
+                                noWrap 
+                                style={{
+                                    paddingLeft: '2%',
+                                    textAlign: 'left',  // 设置文本对齐方式为左对齐
+                                    width: '100%'       // 使文本内容填满整个宽度，确保左对齐
+                                }}
+                            >
+                                {params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialPartNumber).join(', ')}
+                            </Typography>
+                        </Button>
+                    </Tooltip>
+                );
+            }
         },
         // 选择调查列
         {
@@ -917,6 +1027,33 @@ const SuppliersComponent = ({ user }) => {
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
         }, [suppliers]
     );
+
+    const handleRawMaterialsDialogDataGridCellEditCommit = React.useCallback(
+        async (params) => {
+            const { id, field, value } = params;
+            // 如果没有变化，不执行任何操作
+            if (selectedRawMaterials.find((rawMaterial) => rawMaterial.id === id)[field] === value) {
+                return;
+            }
+            // 更新供应商数据
+            try {
+                setLoadingUpdate(true);
+                const updatedRawMaterials = selectedRawMaterials.map((rawMaterial) =>
+                    rawMaterial.id === id ? { ...rawMaterial, [field]: value } : rawMaterial
+                );
+                await updateSupplier(selectedRawMaterialsSupplierId, { rawMaterials: updatedRawMaterials });
+                setSelectedRawMaterials(updatedRawMaterials);
+                toast.success('Raw material updated successfully');
+            } catch (error) {
+                console.error('Failed to update raw material:', error);
+                toast.error('Failed to update raw material');
+            } finally {
+                setLoadingUpdate(false);
+            }
+            // 你可以在这里添加其他逻辑，比如发送更新到服务器
+            console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
+        }, [selectedRawMaterials, selectedRawMaterialsSupplierId]
+    );
     
     // 添加供应商对话框
     const AddSupplierDialog = ({ open, handleClose }) => {
@@ -964,12 +1101,8 @@ const SuppliersComponent = ({ user }) => {
                             contact: Yup.string().required(
                                 'Contact is required'
                             ),
-                            materialName: Yup.string().required(
-                                'Material Name is required'
-                            ),
-                            partNumber: Yup.string().required(
-                                'Part Number is required'
-                            ),
+                            materialName: Yup.string(),
+                            partNumber: Yup.string(),
                             chooseSurvey: Yup.string(),
                             status: Yup.string()
                                 .oneOf(statusOptions)
@@ -980,6 +1113,14 @@ const SuppliersComponent = ({ user }) => {
                             { setErrors, setStatus, setSubmitting }
                         ) => {
                             try {
+                                if (values.materialName || values.partNumber) {
+                                    values.rawMaterials = [
+                                        {
+                                            rawMaterialName: values.materialName,
+                                            rawMaterialPartNumber: values.partNumber
+                                        }
+                                    ];
+                                }
                                 const dataToSubmit = {
                                     ...values,
                                     nextEmailSendTime: dateTimePickerValue || null // 如果时间选择器为空，传递 null
@@ -1573,6 +1714,120 @@ const SuppliersComponent = ({ user }) => {
                 <DialogActions>
                     <Button onClick={handleCloseDialogFeedback} color="primary">
                         Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog
+                open={openRawMaterialsDialog}
+                onClose={handleCloseRawMaterialsDialog}
+                fullWidth
+                maxWidth="lg"
+                aria-labelledby="add-raw-material-dialog-title"
+            >
+                <DialogTitle id="add-raw-material-dialog-title">
+                    {selectedRawMaterials ? 'Edit Raw Materials' : 'Add Raw Material'}
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleCloseRawMaterialsDialog}
+                        style={{
+                            position: 'absolute',
+                            right: theme.spacing(1),
+                            top: theme.spacing(1)
+                        }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <DataGrid
+                            rows={ selectedRawMaterials || [] }
+                            columns={[
+                                {
+                                    field: 'rawMaterialName',
+                                    headerName: 'Raw Material Name',
+                                    width: 500,
+                                    editable: true,
+                                    renderCell: (params) => (
+                                        <Tooltip title={params.value || ''} arrow>
+                                            <Typography noWrap>{params.value}</Typography>
+                                        </Tooltip>
+                                    ),
+                                },
+                                {
+                                    field: 'rawMaterialPartNumber',
+                                    headerName: 'Raw Material Part Number',
+                                    width: 500,
+                                    editable: true,
+                                    renderCell: (params) => (
+                                        <Tooltip title={params.value || ''} arrow>
+                                            <Typography noWrap>{params.value}</Typography>
+                                        </Tooltip>
+                                    ),
+                                },
+                                {
+                                    field: 'actions',
+                                    headerName: 'Actions',
+                                    width: 200,
+                                    filterable: false,
+                                    sortable: false,
+                                    renderCell: (params) => (
+                                        <strong>
+                                            <IconButton
+                                                onClick={(event) => {
+                                                    event.stopPropagation(); // Prevent event bubbling
+                                                    handleDeleteSingleRawMaterial(params.row.id);
+                                                }}
+                                            >
+                                                <DeleteOutlined color="secondary" />
+                                            </IconButton>
+                                        </strong>
+                                    ),
+                                }
+                            ]}
+                            pageSize={5}
+                            onCellEditCommit={handleRawMaterialsDialogDataGridCellEditCommit}
+                            autoHeight
+                            disableSelectionOnClick
+                            density={'standard'}
+                        />
+                        <Divider style={{marginTop: "10px", marginBottom: "-10px"}}/>
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                            <TextField
+                                label="New Material Name"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                name="rawMaterialName"
+                                value={newMaterial.rawMaterialName}
+                                onChange={handleAddRawMaterialInputChange}
+                            />
+                            <TextField
+                                label="New Part Number"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                name="rawMaterialPartNumber"
+                                value={newMaterial.rawMaterialPartNumber}
+                                onChange={handleAddRawMaterialInputChange}
+                            />
+                            <Button 
+                                fullWidth
+                                onClick={handleAddRawMaterial} 
+                                color="primary"
+                                variant="contained"
+                                startIcon={<AddOutlined />}   
+                                // 上下居中
+                                style={{ marginTop: '17px', marginBottom: '10px', width: '50%' }}
+                            >
+                                Add Raw Material
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseRawMaterialsDialog} color="primary">
+                        Cancel
                     </Button>
                 </DialogActions>
             </Dialog>
