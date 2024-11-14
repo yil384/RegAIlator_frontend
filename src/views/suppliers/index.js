@@ -107,7 +107,6 @@ const SuppliersComponent = ({ user }) => {
         setSelectedDocument(null);
         setSelectedFeedbackSupplierId(null);
         setDateTimePickerValue(new Date());
-        await loadData();
     };
     const [selectedDocument, setSelectedDocument] = React.useState(null);
     const [previewingFileType, setPreviewingFileType] = React.useState('');
@@ -508,6 +507,7 @@ const SuppliersComponent = ({ user }) => {
         });
     
         if (!result.isConfirmed) {
+            setSelectedSurveyId('');
             return;
         }
     
@@ -920,6 +920,8 @@ const SuppliersComponent = ({ user }) => {
     
     // 添加供应商对话框
     const AddSupplierDialog = ({ open, handleClose }) => {
+        const [dateTimePickerValue, setDateTimePickerValue] = React.useState(null); // 记录选择的时间
+
         return (
             <Dialog
                 open={open}
@@ -952,7 +954,8 @@ const SuppliersComponent = ({ user }) => {
                             chooseSurvey: '',
                             status: 'inactive',
                             feedback: '',
-                            supplierDocuments: ''
+                            supplierDocuments: '',
+                            nextEmailSendTime: null // 初始化为 null，可以为空
                         }}
                         validationSchema={Yup.object().shape({
                             supplierName: Yup.string().required(
@@ -977,8 +980,13 @@ const SuppliersComponent = ({ user }) => {
                             { setErrors, setStatus, setSubmitting }
                         ) => {
                             try {
+                                const dataToSubmit = {
+                                    ...values,
+                                    nextEmailSendTime: dateTimePickerValue || null // 如果时间选择器为空，传递 null
+                                };
+
                                 if (scriptedRef.current) {
-                                    await addSupplier(values);
+                                    await addSupplier(dataToSubmit);
                                     setStatus({ success: true });
                                     setSubmitting(false);
                                     handleClose();
@@ -1137,6 +1145,33 @@ const SuppliersComponent = ({ user }) => {
                                         </FormControl>
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <LocalizationProvider 
+                                                dateAdapter={AdapterDateFns}
+                                            >
+                                                <InputLabel 
+                                                    htmlFor="nextEmailSendTime"
+                                                    style={{ paddingLeft: '50%', marginTop: '-5px' }}
+                                                >
+                                                    Email Send Time (Optional) {`—>`}
+                                                </InputLabel>
+                                                <DateTimePicker
+                                                    id="nextEmailSendTime"
+                                                    value={dateTimePickerValue}
+                                                    onChange={setDateTimePickerValue}
+                                                    renderInput={(params) => <TextField {...params} />}
+                                                    minDate={new Date()} // 禁止选择过去的时间
+                                                    minDateTime={new Date()} // 禁止选择过去的时间
+                                                />
+                                            </LocalizationProvider>
+                                            {errors.nextEmailSendTime && (
+                                                <FormHelperText error>
+                                                    {errors.nextEmailSendTime}
+                                                </FormHelperText>
+                                            )}
+                                        </FormControl>
+                                    </MuiGrid>
+                                    {/* <MuiGrid item xs={12}>
                                         <FormControl
                                             fullWidth
                                             className={classes.input}
@@ -1168,7 +1203,7 @@ const SuppliersComponent = ({ user }) => {
                                                 </FormHelperText>
                                             )}
                                         </FormControl>
-                                    </MuiGrid>
+                                    </MuiGrid> */}
                                 </MuiGrid>
 
                                 <AnimateButton>
@@ -1211,7 +1246,7 @@ const SuppliersComponent = ({ user }) => {
                     style={{ marginLeft: '10px', top: -63, right: -124, marginTop: -10 }}
                 >
                     <MenuItem value="" disabled>
-                        {selectedIds.length === 0 ? 'Select suppliers first' : 'Assign Survey'}
+                        Assign Survey
                     </MenuItem>
                     {surveys.map((survey) => (
                         <MenuItem key={survey._id} value={survey._id}>
@@ -1526,6 +1561,7 @@ const SuppliersComponent = ({ user }) => {
                                         isEmailSent: false
                                     });
                                     handleCloseDialogFeedback();
+                                    await loadData();
                                 }}
                             >
                                 Confirm Timer

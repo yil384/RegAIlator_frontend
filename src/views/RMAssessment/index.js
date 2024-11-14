@@ -6,7 +6,7 @@ import { useTheme } from '@material-ui/styles';
 import toast from 'react-hot-toast';
 
 // Import functions to fetch materials and compliance data
-import { fetchBillOfMaterials } from '../billOfMatetrial/helper'; // Adjust the path as necessary
+import { fetchBillOfMaterials, updateMaterial } from '../billOfMatetrial/helper'; // Adjust the path as necessary
 import { fetchVideos } from '../videos/videos.helper'; // Adjust the path as necessary
 
 const RMAssessment = () => {
@@ -53,19 +53,19 @@ const RMAssessment = () => {
 
                 complianceData.forEach(item => {
                     const supplierName = item['Supplier name'] || item['supplierName'] || '';
-                    const materialName = item['Raw material name'] || item['rawMaterialName'] || item['Raw Material Name'] || '';
+                    const rawMaterialName = item['Raw material name'] || item['rawMaterialName'] || item['Raw Material Name'] || '';
                     const regulation = item['Regulation or substance name'] || '';
                     const complianceStatus = item['Compliant conclusion\n(Compliant, not compliant, not applicable or unclear)'] || item['Compliant conclusion'] || '';
 
                     // 遇到不合法的数据就跳过这个数据
-                    if (!supplierName || !materialName || !regulation || !complianceStatus) {
+                    if (!supplierName || !rawMaterialName || !regulation || !complianceStatus) {
                         console.log('Invalid data:', item);
                         return;
                     }
 
                     // Build materialKey
                     // const materialKey = `${supplierName}||${materialName}`;
-                    const materialKey = materialName; // 只用 materialName 作为 key
+                    const materialKey = rawMaterialName; // 只用 materialName 作为 key
 
                     if (!complianceMap[materialKey]) {
                         complianceMap[materialKey] = {};
@@ -78,23 +78,21 @@ const RMAssessment = () => {
                     }
                 });
 
-                // console.log('Compliance Map:', complianceMap);
-
                 const regulationsArray = Array.from(regulationsSet);
 
                 // Now build rows
                 const rows = materialsData.map((material, index) => {
                     const productName = material.productName || '';
                     const supplierName = material.supplierName || '';
-                    const materialName = material.rawMaterialName || '';
+                    const rawMaterialName = material.rawMaterialName || '';
 
                     // const materialKey = `${supplierName}||${materialName}`;
-                    const materialKey = materialName; // 只用 materialName 作为 key
+                    const materialKey = rawMaterialName; // 只用 materialName 作为 key
 
                     const row = {
                         id: material.id || index,
                         productName: productName,
-                        materialName: materialName,
+                        rawMaterialName: rawMaterialName,
                     };
 
                     regulationsArray.forEach(regulation => {
@@ -108,9 +106,6 @@ const RMAssessment = () => {
                 setRegulations(regulationsArray);
                 setRows(rows);
 
-                console.log('Regulations:', regulationsArray);
-                console.log('Rows:', rows);
-
             } catch (error) {
                 console.error('Error fetching data:', error);
                 toast.error('Error fetching data');
@@ -122,12 +117,45 @@ const RMAssessment = () => {
         fetchData();
     }, []);
 
+    // Handle cell edit commit
+    const handleCellEditCommit = React.useCallback(
+        async (params) => {
+            const { id, field, value } = params;
+            // Check if value has changed
+            if (materials.find((material) => material.id === id)[field] === value) {
+                return;
+            }
+            // Prepare data for update
+            let updateData = { [field]: value };
+            // Update Material
+            try {
+                setIsLoading(true);
+                await updateMaterial(id, updateData); // Assuming `updateMaterial` is a function to update the material
+                setMaterials((prevMaterials) =>
+                    prevMaterials.map((material) =>
+                        material.id === id
+                            ? { ...material, [field]: value }
+                            : material
+                    )
+                );
+                toast.success('Material updated successfully');
+            } catch (error) {
+                console.error('Failed to update material:', error);
+                toast.error('Failed to update material');
+            } finally {
+                setIsLoading(false);
+            }
+            console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
+        }, [materials]
+    );
+
     // Build columns
     const columns = [
         {
             field: 'productName',
             headerName: 'Product Name',
             width: 200,
+            editable: true, // Make it editable
             renderCell: (params) => (
                 <Tooltip title={params.value}>
                     <Typography noWrap>{params.value}</Typography>
@@ -135,9 +163,10 @@ const RMAssessment = () => {
             ),
         },
         {
-            field: 'materialName',
-            headerName: 'Material Name',
+            field: 'rawMaterialName',
+            headerName: 'Raw Material Name',
             width: 200,
+            editable: true, // Make it editable
             renderCell: (params) => (
                 <Tooltip title={params.value}>
                     <Typography noWrap>{params.value}</Typography>
@@ -168,7 +197,7 @@ const RMAssessment = () => {
     ];
 
     return (
-        <MainCard title="RM Assessment" boxShadow shadow={theme.shadows[2]}>
+        <MainCard title="Product Assessment" boxShadow shadow={theme.shadows[2]}>
             <div style={{ width: '100%', height: 600 }}>
                 <DataGrid
                     rows={rows}
@@ -178,6 +207,7 @@ const RMAssessment = () => {
                     checkboxSelection={false}
                     disableSelectionOnClick
                     loading={isLoading}
+                    onCellEditCommit={handleCellEditCommit} // Handle commit event
                 />
             </div>
         </MainCard>
