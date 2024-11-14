@@ -29,6 +29,7 @@ import { mentionUsers } from '../../views/authentication/session/auth.helper';
 import Typography from '@material-ui/core/Typography';
 import {
     DeleteOutlined,
+    DoneOutlineOutlined,
     DownloadOutlined,
     ImportContactsOutlined,
     NotificationsActive
@@ -60,6 +61,10 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
+import { DateTimePicker, LocalizationProvider } from '@mui/lab';
+import AdapterDateFns from '@date-io/date-fns';
+import { set } from 'date-fns';
+import { file } from 'jszip';
 // 设置 PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -86,16 +91,23 @@ const SuppliersComponent = ({ user }) => {
 
     const [openDialogFeedback, setOpenDialogFeedback] = React.useState(false);
     const [selectedFeedback, setSelectedFeedback] = React.useState([]);
+    const [selectedFeedbackSupplierId, setSelectedFeedbackSupplierId] = React.useState(null);
+    const [dateTimePickerValue, setDateTimePickerValue] = React.useState(new Date());
     // Function to open the dialog and set selected feedback
-    const handleOpenDialogFeedback = (feedbackArray) => {
+    const handleOpenDialogFeedback = (feedbackArray, supplierId, nextSendTime) => {
         setSelectedFeedback(feedbackArray);
         setOpenDialogFeedback(true);
+        setSelectedFeedbackSupplierId(supplierId);
+        setDateTimePickerValue(nextSendTime ? new Date(nextSendTime) : new Date());
     };
     // Function to close the dialog
-    const handleCloseDialogFeedback = () => {
+    const handleCloseDialogFeedback = async () => {
         setOpenDialogFeedback(false);
         setSelectedFeedback([]);
         setSelectedDocument(null);
+        setSelectedFeedbackSupplierId(null);
+        setDateTimePickerValue(new Date());
+        await loadData();
     };
     const [selectedDocument, setSelectedDocument] = React.useState(null);
     const [previewingFileType, setPreviewingFileType] = React.useState('');
@@ -129,6 +141,47 @@ const SuppliersComponent = ({ user }) => {
             toast.error('Failed to load suppliers');
         }
     }, []);
+
+    const [lastEmailSentTime, setLastEmailSentTime] = React.useState(null); // 记录上次发送邮件的时间
+
+    React.useEffect(() => {
+        const checkEmailReminders = async () => {
+            let suppliersEmailing = [];
+            const now = new Date();
+            // 如果上次发送邮件的时间存在，且距离现在小于10s，则跳过发送
+            if (lastEmailSentTime && (now - lastEmailSentTime < 10000)) {
+                console.log('Email already sent within the last minute. Skipping...');
+                return;
+            }
+            suppliers.forEach((supplier) => {
+                if (!supplier.nextEmailSendTime) {
+                    return;
+                }
+                const nextSendTime = new Date(supplier.nextEmailSendTime);
+                if (nextSendTime <= now && !supplier.isEmailSent) {
+                    suppliersEmailing.push(supplier);
+                }
+            });
+            if (suppliersEmailing.length === 0) {
+                return;
+            }
+            setSendingEmails(true); // 设置发送邮件中...
+            const response = await sendEmailsToSuppliers(suppliersEmailing);
+            if (response) {
+                toast.success(`${suppliersEmailing.length} email(s) sent successfully`);
+                await updateSuppliers(suppliersEmailing.map((supplier) => supplier.id), {
+                    nextEmailSendTime: new Date(),
+                    isEmailSent: true
+                });
+                loadData();
+                // 更新上次发送邮件的时间
+                setLastEmailSentTime(new Date());
+            }
+            setSendingEmails(false); // 结束发送邮件的状态
+        };
+    
+        checkEmailReminders();
+    }, [suppliers]);  // 只在 suppliers 更新时触发    
 
     // 加载调查数据
     React.useEffect(() => {
@@ -492,6 +545,31 @@ const SuppliersComponent = ({ user }) => {
         setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩小到0.4
     };
 
+    // 计算剩余时间，返回一个友好的格式
+    const calculateTimeLeft = (nextSendTime) => {
+        const now = new Date();
+        let timeDifference = new Date(nextSendTime) - now;
+
+        // 前缀后缀设置为 “in” 或 “ago” 取决于时间差是否小于等于0
+        const prefix = timeDifference > 0 ? 'Next email in' : 'Emailed';
+        const suffix = timeDifference > 0 ? '' : 'ago';
+        timeDifference = Math.abs(timeDifference);
+
+        const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+
+        let timeLeft = '';
+        if (days === 0 && hours === 0) {
+            timeLeft = `${minutes}m`;
+        } else if (days === 0) {
+            timeLeft = `${hours}h ${minutes}m`;
+        } else {
+            timeLeft = `${days}d ${hours}h`;
+        }
+        return prefix + ' ' + timeLeft + ' ' + suffix;
+    };
+
     // 列定义
     const columns = [
         // 选择列
@@ -733,29 +811,51 @@ const SuppliersComponent = ({ user }) => {
                 if (feedbackArray.length > 0) {
                     return `Feedbacks (${feedbackArray.length})`;
                 } else {
-                    return 'No Feedback Available';
+                    const nextSendTime = params.row?.nextEmailSendTime;
+                    if (nextSendTime) {
+                        const timeLeft = calculateTimeLeft(nextSendTime);
+                        return `No Feedback - ${timeLeft}`;
+                    }
+                    return 'No Feedback';
                 }
             },
             renderCell: (params) => {
                 const feedbackArray = params.row?.feedback;
+                const nextSendTime = params.row?.nextEmailSendTime;
+                const supplierId = params.row?.id;
+                const isEmailSent = params.row?.isEmailSent;
                 return (
                     <div
                         style={{ width: '100%', cursor: 'pointer' }}
-                        onClick={() => handleOpenDialogFeedback(feedbackArray)}
+                        onClick={() => handleOpenDialogFeedback(feedbackArray, supplierId, nextSendTime)}
                     >
                         {feedbackArray.length > 0 ? (
                             <Typography variant="body1" noWrap>
                                 {`Feedbacks (${feedbackArray.length})`}
                             </Typography>
                         ) : (
-                            <Typography variant="body1" noWrap>
-                                No Feedback Available
-                            </Typography>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <Tooltip title="No feedback">
+                                    <Typography variant="body1" noWrap>
+                                        No Feedback
+                                    </Typography>
+                                </Tooltip>
+                                {nextSendTime && (
+                                    <Tooltip title={`${calculateTimeLeft(nextSendTime)}`}>
+                                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <NotificationsActive style={{ marginLeft: 8, color: isEmailSent ? '#4caf50' : '#ff9800' }} />
+                                            <Typography variant="body2" color="textSecondary" style={{ marginLeft: 8 }}>
+                                                {`- ${calculateTimeLeft(nextSendTime)}`}
+                                            </Typography>
+                                        </div>
+                                    </Tooltip>
+                                )}
+                            </div>
                         )}
                     </div>
                 );
             },
-        },
+        },        
         // Actions Column
         {
             field: 'actions',
@@ -1253,7 +1353,11 @@ const SuppliersComponent = ({ user }) => {
                 />
             </div>
             <AddSupplierDialog open={openDialog} handleClose={handleCloseDialog} />
-            <Dialog open={openDialogFeedback} onClose={handleCloseDialogFeedback} maxWidth="lg" fullWidth>
+            <Dialog 
+                open={openDialogFeedback} 
+                onClose={handleCloseDialogFeedback} 
+                maxWidth={selectedFeedback.length > 0 ? 'lg' : 'sm'}
+                fullWidth>
                 <DialogTitle>
                     Feedback & Documents
                     <IconButton
@@ -1398,9 +1502,36 @@ const SuppliersComponent = ({ user }) => {
                             </div>
                         </div>
                     ) : (
-                        <Typography variant="body1">
-                            No Feedback Available
-                        </Typography>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                            <div>
+                            <Typography variant="body1" style={{ marginBottom: '16px' }}>
+                                No Feedback Available. Please select a date and time:
+                            </Typography>
+                            <DateTimePicker
+                                value={dateTimePickerValue}
+                                onChange={setDateTimePickerValue}
+                                renderInput={(params) => <TextField {...params} fullWidth />}
+                                minutesStep={1} // 设置分钟步长为1，精确到分钟
+                                minDate={new Date()} // 禁止选择现在之前的时间
+                                minDateTime={new Date()} // 除了日期，时间也需要禁止选择当前时间之前
+                            />
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                style={{ marginTop: '16px' }}
+                                onClick={async () => {
+                                    await updateSupplier(selectedFeedbackSupplierId, { 
+                                        nextEmailSendTime: dateTimePickerValue,
+                                        isEmailSent: false
+                                    });
+                                    handleCloseDialogFeedback();
+                                }}
+                            >
+                                Confirm Timer
+                            </Button>
+                            </div>
+                        </LocalizationProvider>
                     )}
                 </DialogContent>
                 <DialogActions>
