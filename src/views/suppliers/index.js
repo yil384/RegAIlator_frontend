@@ -714,7 +714,27 @@ const SuppliersComponent = ({ user }) => {
                 const supplierId = params.row?.id;
                 const rawMaterials = params.row?.rawMaterials || [];
                 return (
-                    <Tooltip title={params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialName).join(', ') || ''} arrow>
+                    <Tooltip 
+                        title={
+                            <div style={{ display: 'table' }}>
+                                {rawMaterials.map((rawMaterial, index) => (
+                                    <div key={index} style={{ display: 'table-row' }}>
+                                        <span 
+                                            style={{
+                                                fontStyle: 'italic',  // 设置斜体
+                                                color: 'lightblue',         // 设置特殊颜色
+                                                marginRight: '8px'    // 给斜体的索引一些右侧间距
+                                            }}
+                                        >
+                                            {(index+1) + '.'}
+                                        </span>
+                                        {rawMaterial.rawMaterialName}
+                                    </div>
+                                ))}
+                            </div>
+                        } 
+                        arrow
+                    >
                         <Button
                             variant="text"
                             color="inherit"
@@ -727,22 +747,33 @@ const SuppliersComponent = ({ user }) => {
                                 height: '100%',
                                 paddingLeft: 0,
                                 marginLeft: '-2%',
-                                display: 'flex',   // 确保按钮是 flex 布局
-                                justifyContent: 'flex-start', // 将内容对齐到左边
-                                alignItems: 'center'  // 如果你想垂直居中内容
+                                display: 'flex',
+                                flexDirection: 'column', // 使子元素垂直排列
+                                justifyContent: 'flex-start',
+                                alignItems: 'flex-start',
+                                overflowY: 'auto',  // 允许垂直滚动
+                                maxHeight: '100%'  // 设置最大高度
                             }}
                         >
-                            <Typography 
-                                variant="body1" 
-                                noWrap 
-                                style={{
-                                    paddingLeft: '2%',
-                                    textAlign: 'left',  // 设置文本对齐方式为左对齐
-                                    width: '100%'       // 使文本内容填满整个宽度，确保左对齐
-                                }}
-                            >
-                                {params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialName).join(', ')}
-                            </Typography>
+                           {rawMaterials.map((rawMaterial, index) => (
+                                <Typography
+                                    key={index}
+                                    variant="body1"
+                                    // noWrap
+                                    style={{
+                                        paddingLeft: '2%',
+                                        textAlign: 'left',
+                                        width: '100%',
+                                        height: '100%',
+                                        marginTop: '10px',
+                                        marginBottom: '10px',
+                                    }}
+                                    // 设置颜色，不断交替
+                                    color={index % 2 === 0 ? 'primary' : 'secondary'}
+                                >
+                                    {rawMaterial.rawMaterialName}
+                                </Typography>
+                            ))}
                         </Button>
                     </Tooltip>
                 );
@@ -759,35 +790,66 @@ const SuppliersComponent = ({ user }) => {
                 const supplierId = params.row?.id;
                 const rawMaterials = params.row?.rawMaterials || [];
                 return (
-                    <Tooltip title={params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialPartNumber).join(', ') || ''} arrow>
+                    <Tooltip 
+                        title={
+                            <div style={{ display: 'table' }}>
+                                {rawMaterials.map((rawMaterial, index) => (
+                                    <div key={index} style={{ display: 'table-row' }}>
+                                        <span 
+                                            style={{
+                                                fontStyle: 'italic',  // 设置斜体
+                                                color: 'lightblue',         // 设置特殊颜色
+                                                marginRight: '8px'    // 给斜体的索引一些右侧间距
+                                            }}
+                                        >
+                                            {(index+1) + '.'}
+                                        </span>
+                                        {rawMaterial.rawMaterialPartNumber}
+                                    </div>
+                                ))}
+                            </div>
+                        } 
+                        arrow
+                    >
                         <Button
-                                variant="text"
-                                color="inherit"
-                                onClick={() => {
-                                    console.log('rawMaterials', rawMaterials);
-                                    handleOpenRawMaterialsDialog(rawMaterials, supplierId);
-                                }}
-                                style={{
-                                    width: '104%',
-                                    height: '100%',
-                                    paddingLeft: 0,
-                                    marginLeft: '-2%',
-                                    display: 'flex',   // 确保按钮是 flex 布局
-                                    justifyContent: 'flex-start', // 将内容对齐到左边
-                                    alignItems: 'center'  // 如果你想垂直居中内容
-                                }}
-                            >
-                            <Typography 
-                                variant="body1" 
-                                noWrap 
-                                style={{
-                                    paddingLeft: '2%',
-                                    textAlign: 'left',  // 设置文本对齐方式为左对齐
-                                    width: '100%'       // 使文本内容填满整个宽度，确保左对齐
-                                }}
-                            >
-                                {params.row?.rawMaterials.map((rawMaterial) => rawMaterial.rawMaterialPartNumber).join(', ')}
-                            </Typography>
+                            variant="text"
+                            color="inherit"
+                            onClick={() => {
+                                console.log('rawMaterials', rawMaterials);
+                                handleOpenRawMaterialsDialog(rawMaterials, supplierId);
+                            }}
+                            style={{
+                                width: '104%',
+                                height: '100%',
+                                paddingLeft: 0,
+                                marginLeft: '-2%',
+                                display: 'flex',
+                                flexDirection: 'column', // 使子元素垂直排列
+                                justifyContent: 'flex-start',
+                                alignItems: 'flex-start',
+                                overflowY: 'auto',  // 允许垂直滚动
+                                maxHeight: '100%'  // 设置最大高度
+                            }}
+                        >
+                           {rawMaterials.map((rawMaterial, index) => (
+                                <Typography
+                                    key={index}
+                                    variant="body1"
+                                    // noWrap
+                                    style={{
+                                        paddingLeft: '2%',
+                                        textAlign: 'left',
+                                        width: '100%',
+                                        height: '100%',
+                                        marginTop: '10px',
+                                        marginBottom: '10px',
+                                    }}
+                                    // 设置颜色，不断交替
+                                    color={index % 2 === 0 ? 'primary' : 'secondary'}
+                                >
+                                    {rawMaterial.rawMaterialPartNumber}
+                                </Typography>
+                            ))}
                         </Button>
                     </Tooltip>
                 );
