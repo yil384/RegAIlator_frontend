@@ -290,11 +290,27 @@ const SuppliersComponent = ({ user }) => {
                     return;
                 }
 
+                // 将 supplierName, contact, chooseSurvey 都相同的suppliers合并为一个（如果都不存在字段也视为相同）
+                const uniqueSuppliers = suppliersToAdd.reduce((acc, supplier) => {
+                    const existingSupplier = acc.find(
+                        (s) =>
+                            s.supplierName === supplier.supplierName &&
+                            s.contact === supplier.contact &&
+                            s.chooseSurvey === supplier.chooseSurvey
+                    );
+                    if (existingSupplier) {
+                        existingSupplier.rawMaterials.push(...supplier.rawMaterials);
+                    } else {
+                        acc.push(supplier);
+                    }
+                    return acc;
+                }, []);
+
                 // Batch add suppliers
                 try {
-                    const result = await batchAddSuppliers(suppliersToAdd);
+                    const result = await batchAddSuppliers(uniqueSuppliers);
                     if (result.length > 0) {
-                        toast.success(`${suppliersToAdd.length} supplier(s) imported successfully.`);
+                        toast.success(`${uniqueSuppliers.length} supplier(s) imported successfully.`);
                     }
                     // Reload suppliers data
                     await loadData();
