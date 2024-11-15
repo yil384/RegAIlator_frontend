@@ -3,6 +3,7 @@ import { DataGrid } from '@material-ui/data-grid';
 import { Typography, Tooltip } from '@material-ui/core';
 import MainCard from '../../ui-component/cards/MainCard';
 import { useTheme } from '@material-ui/styles';
+import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import toast from 'react-hot-toast';
 
 // Import functions to fetch materials and compliance data
@@ -20,102 +21,101 @@ const RMAssessment = () => {
     const [rows, setRows] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Fetch materials and compliance data
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                // Fetch materials
-                const materialsResponse = await fetchBillOfMaterials();
-                const materialsData = materialsResponse?.results || [];
+    const loadData = React.useCallback(async () => {
+        setIsLoading(true);
+        try {
+            // Fetch materials
+            const materialsResponse = await fetchBillOfMaterials();
+            const materialsData = materialsResponse?.results || [];
 
-                // Fetch compliance data
-                const complianceResponse = await fetchVideos(); // Assuming fetchVideos fetches the files data
-                const complianceDataTemp = complianceResponse?.results || [];
+            // Fetch compliance data
+            const complianceResponse = await fetchVideos(); // Assuming fetchVideos fetches the files data
+            const complianceDataTemp = complianceResponse?.results || [];
 
-                // 从 complianceDataTemp 中提取出需要的数据
-                let complianceData = [];
-                for (let i = 0; i < complianceDataTemp.length; i++) {
-                    const file = complianceDataTemp[i];
-                    const data = file.json?.data || [];
-                    complianceData = complianceData.concat(data);
+            // 从 complianceDataTemp 中提取出需要的数据
+            let complianceData = [];
+            for (let i = 0; i < complianceDataTemp.length; i++) {
+                const file = complianceDataTemp[i];
+                const data = file.json?.data || [];
+                complianceData = complianceData.concat(data);
+            }
+
+            setMaterials(materialsData);
+            setComplianceData(complianceData);
+
+            console.log('Materials:', materialsData);
+            console.log('Compliance Data:', complianceData);
+
+            // Process complianceData
+            const regulationsSet = new Set();
+            const complianceMap = {}; // Key: materialKey (Product Name + Material Name), Value: {regulation: status}
+
+            complianceData.forEach(item => {
+                const supplierName = item['Supplier name'] || item['supplierName'] || '';
+                const rawMaterialName = item['Raw material name'] || item['rawMaterialName'] || item['Raw Material Name'] || '';
+                const regulation = item['Regulation or substance name'] || '';
+                const complianceStatus = item['Compliant conclusion\n(Compliant, not compliant, not applicable or unclear)'] || item['Compliant conclusion'] || '';
+
+                // 遇到不合法的数据就跳过这个数据
+                if (!supplierName || !rawMaterialName || !regulation || !complianceStatus) {
+                    console.log('Invalid data:', item);
+                    return;
                 }
 
-                setMaterials(materialsData);
-                setComplianceData(complianceData);
+                // Build materialKey
+                // const materialKey = `${supplierName}||${materialName}`;
+                const materialKey = rawMaterialName; // 只用 materialName 作为 key
 
-                console.log('Materials:', materialsData);
-                console.log('Compliance Data:', complianceData);
+                if (!complianceMap[materialKey]) {
+                    complianceMap[materialKey] = {};
+                }
+                complianceMap[materialKey][regulation] = complianceStatus;
 
-                // Process complianceData
-                const regulationsSet = new Set();
-                const complianceMap = {}; // Key: materialKey (Product Name + Material Name), Value: {regulation: status}
+                // Add to regulationsSet
+                if (regulation) {
+                    regulationsSet.add(regulation);
+                }
+            });
 
-                complianceData.forEach(item => {
-                    const supplierName = item['Supplier name'] || item['supplierName'] || '';
-                    const rawMaterialName = item['Raw material name'] || item['rawMaterialName'] || item['Raw Material Name'] || '';
-                    const regulation = item['Regulation or substance name'] || '';
-                    const complianceStatus = item['Compliant conclusion\n(Compliant, not compliant, not applicable or unclear)'] || item['Compliant conclusion'] || '';
+            const regulationsArray = Array.from(regulationsSet);
 
-                    // 遇到不合法的数据就跳过这个数据
-                    if (!supplierName || !rawMaterialName || !regulation || !complianceStatus) {
-                        console.log('Invalid data:', item);
-                        return;
-                    }
+            // Now build rows
+            const rows = materialsData.map((material, index) => {
+                const productName = material.productName || '';
+                const supplierName = material.supplierName || '';
+                const rawMaterialName = material.rawMaterialName || '';
 
-                    // Build materialKey
-                    // const materialKey = `${supplierName}||${materialName}`;
-                    const materialKey = rawMaterialName; // 只用 materialName 作为 key
+                // const materialKey = `${supplierName}||${materialName}`;
+                const materialKey = rawMaterialName; // 只用 materialName 作为 key
 
-                    if (!complianceMap[materialKey]) {
-                        complianceMap[materialKey] = {};
-                    }
-                    complianceMap[materialKey][regulation] = complianceStatus;
+                const row = {
+                    id: material.id || index,
+                    productName: productName,
+                    rawMaterialName: rawMaterialName,
+                };
 
-                    // Add to regulationsSet
-                    if (regulation) {
-                        regulationsSet.add(regulation);
-                    }
+                regulationsArray.forEach(regulation => {
+                    const status = complianceMap[materialKey]?.[regulation] || '';
+                    row[regulation] = status;
                 });
 
-                const regulationsArray = Array.from(regulationsSet);
+                return row;
+            });
 
-                // Now build rows
-                const rows = materialsData.map((material, index) => {
-                    const productName = material.productName || '';
-                    const supplierName = material.supplierName || '';
-                    const rawMaterialName = material.rawMaterialName || '';
+            setRegulations(regulationsArray);
+            setRows(rows);
 
-                    // const materialKey = `${supplierName}||${materialName}`;
-                    const materialKey = rawMaterialName; // 只用 materialName 作为 key
-
-                    const row = {
-                        id: material.id || index,
-                        productName: productName,
-                        rawMaterialName: rawMaterialName,
-                    };
-
-                    regulationsArray.forEach(regulation => {
-                        const status = complianceMap[materialKey]?.[regulation] || '';
-                        row[regulation] = status;
-                    });
-
-                    return row;
-                });
-
-                setRegulations(regulationsArray);
-                setRows(rows);
-
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                toast.error('Error fetching data');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            toast.error('Error fetching data');
+        } finally {
+            setIsLoading(false);
+        }
     }, []);
+
+    React.useEffect(() => {
+        loadData();
+    }, [loadData]);
 
     // Handle cell edit commit
     const handleCellEditCommit = React.useCallback(
@@ -138,6 +138,7 @@ const RMAssessment = () => {
                             : material
                     )
                 );
+                await loadData();
                 toast.success('Material updated successfully');
             } catch (error) {
                 console.error('Failed to update material:', error);
@@ -182,6 +183,7 @@ const RMAssessment = () => {
             renderCell: (params) => {
                 const status = params.value;
                 let color = 'textPrimary';
+                const emoji = status.toLowerCase().includes('compliant') ? '✅' : status.toLowerCase().includes('not compliant') ? '❌' : status.toLowerCase().includes('unclear') ? '❓' : '';
                 if (status.toLowerCase().includes('compliant')) {
                     color = 'primary';
                 } else if (status.toLowerCase().includes('not compliant')) {
@@ -190,7 +192,7 @@ const RMAssessment = () => {
                     color = 'error';
                 }
                 return (
-                    <Typography color={color}>{status}</Typography>
+                    <Typography color={color}>{emoji} {status}</Typography>
                 );
             },
         })),
@@ -207,6 +209,9 @@ const RMAssessment = () => {
                     checkboxSelection={false}
                     disableSelectionOnClick
                     loading={isLoading}
+                    components={{
+                        Toolbar: () => <CustomToolbar title={"Products"} length={materials.length} />, // Custom toolbar
+                    }}
                     onCellEditCommit={handleCellEditCommit} // Handle commit event
                 />
             </div>
