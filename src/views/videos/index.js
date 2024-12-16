@@ -119,7 +119,7 @@ const VideosComponent = ({ user }) => {
     }, [selectedFiles]);
 
     const { getRootProps, getInputProps } = useDropzone({
-        maxFiles: 10,
+        maxFiles: 100,
         minSize: 1,
         onDrop
     });

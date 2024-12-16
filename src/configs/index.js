@@ -10,9 +10,9 @@ const config = {
     env: 'prod',
     // env: 'local',
     prod: {
-        baseURL: 'http://3.137.84.84',
-        httpURL: 'http://3.137.84.84/api/v1',
-        wsURL: 'http://3.137.84.84/socket.io'
+        baseURL: 'https://regailator.com',
+        httpURL: 'https://regailator.com/api/v1',
+        wsURL: 'https://regailator.com/socket.io'
     },
     local: {
         baseURL: 'http://localhost:3000',
