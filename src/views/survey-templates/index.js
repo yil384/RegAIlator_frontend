@@ -248,7 +248,7 @@ const SurveysComponent = ({ user }) => {
             valueGetter: (params) => params.row?.emailTemplate || '',
             renderCell: (params) => (
                 <Tooltip title="View Email Template" arrow>
-                    <Button variant="outlined" color="primary" onClick={() => handleOpenEmailTemplatePreview(params.row.html)}>
+                    <Button variant="outlined" color="primary" onClick={() => handleOpenEmailTemplatePreview(params.row.json, params.row.id)}>
                         View Template
                     </Button>
                 </Tooltip>
@@ -357,15 +357,136 @@ const SurveysComponent = ({ user }) => {
         }
     ];
 
+    const [openEmailTemplateDialog, setOpenEmailTemplateDialog] = React.useState(false);
+    const [emailTemplate, setEmailTemplate] = React.useState(null);
+    const [emailTemplateSurveyId, setEmailTemplateSurveyId] = React.useState(null);
     // Function to handle previewing the email template
-    const handleOpenEmailTemplatePreview = (emailTemplate) => {
-        Swal.fire({
-            html: emailTemplate ? emailTemplate : 'No Template Available',
-            width: '60%',
-            heightAuto: true,
-            showCloseButton: true,
-            showConfirmButton: false,
-        });
+    const handleOpenEmailTemplatePreview = (emailTemplate, surveyId) => {
+        setEmailTemplateSurveyId(surveyId);
+        setEmailTemplate(emailTemplate);
+        setOpenEmailTemplateDialog(true);
+    };
+    const handleCloseEmailTemplateDialog = () => {
+        setOpenEmailTemplateDialog(false);
+        setEmailTemplate(null);
+        setEmailTemplateSurveyId(null);
+    };
+
+    const EmailTemplateDialog = ({ open, handleClose, emailTemplate, surveyId }) => {
+        const emailEditorRef = useRef(null);
+        const [sampleTemplate, setSampleTemplate] = React.useState(emailTemplate);
+
+        const exportJson = () => {
+            return new Promise((resolve, reject) => {
+                if (emailEditorRef.current) {
+                    emailEditorRef.current.editor.saveDesign((data) => {
+                        resolve(data);
+                    });
+                } else {
+                    reject(new Error('Email editor not initialized'));
+                }
+            });
+        };
+
+        const onLoad = (unlayer) => {
+            unlayer.loadDesign(JSON.parse(emailTemplate));
+        };
+
+        return (
+            <Dialog open={open} onClose={handleClose} fullWidth maxWidth="lg">
+                <DialogTitle id="add-survey-dialog-title">
+                    Email Template Preview
+                    <IconButton
+                        aria-label="close"
+                        onClick={handleClose}
+                        style={{ position: 'absolute', right: theme.spacing(1), top: theme.spacing(1) }}
+                    >
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers>
+                    <MuiGrid container spacing={2}>
+                        <MuiGrid item xs={12} sm={6}>
+                            <FormControl fullWidth className={classes.input} style={{ height: '60%' }}>
+                                <Select
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        height: '100%'
+                                    }}
+                                    value={sampleTemplate}
+                                    onChange={(e) => {
+                                        // 解析 JSON 字符串并加载到 EmailEditor
+                                        emailEditorRef.current.editor.loadDesign(JSON.parse(e.target.value));
+                                        setSampleTemplate(e.target.value);
+                                    }}
+                                    displayEmpty
+                                    color="primary"
+                                    size="large"
+                                >
+                                    <MenuItem value={null} disabled>
+                                        Load from another Survey
+                                    </MenuItem>
+                                    {surveys.map((survey) => (
+                                        <MenuItem key={survey.id} value={survey.json}>
+                                            {survey.title}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </MuiGrid>
+                        <MuiGrid item xs={12} sm={2}>
+                            <FormControl fullWidth className={classes.input} style={{ height: '60%' }}>
+                                <Button
+                                    style={{ height: '100%' }}
+                                    variant="contained"
+                                    color="primary"
+                                    onClick={() => {
+                                        // Reset the Email Editor
+                                        emailEditorRef.current.editor.loadDesign(JSON.parse(emailTemplate));
+                                        setSampleTemplate(emailTemplate);
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                            </FormControl>
+                        </MuiGrid>
+                        <MuiGrid item xs={12} sm={4}>
+                            <FormControl fullWidth className={classes.input} style={{ height: '60%' }}>
+                                <Button
+                                    style={{ height: '100%' }}
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={async () => {
+                                        const json = await exportJson();
+                                        const formData = new FormData();
+                                        formData.append('json', JSON.stringify(json));
+                                        await updateSurvey(surveyId, formData);
+                                        handleClose();
+                                        toast.success('Survey updated successfully');
+                                        loadData();
+                                    }}
+                                >
+                                    Update Email Template
+                                </Button>
+                            </FormControl>
+                        </MuiGrid>
+                        <MuiGrid item xs={12}>
+                            {/* <Typography variant="h6">Email Template</Typography> */}
+                            <div style={{ border: '1px solid #ccc', minHeight: '300px', marginTop: "-2%" }}>
+                                <EmailEditor ref={emailEditorRef} onLoad={onLoad} />
+                            </div>
+                        </MuiGrid>
+                    </MuiGrid>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleClose} color="primary">
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
     };
 
     // Modify handleDownloadAttachments to handle individual attachment download
@@ -1043,6 +1164,7 @@ const SurveysComponent = ({ user }) => {
                 />
             </div>
             <AddSurveyDialog open={openDialog} handleClose={handleCloseDialog} loadData={loadData} />
+            <EmailTemplateDialog open={openEmailTemplateDialog} handleClose={handleCloseEmailTemplateDialog} emailTemplate={emailTemplate} surveyId={emailTemplateSurveyId} />
             <AttachmentsDialog
                 open={openAttachmentsDialog}
                 handleClose={handleCloseAttachmentsDialog}
