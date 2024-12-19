@@ -880,19 +880,16 @@ const SuppliersComponent = ({ user }) => {
             editable: true,
             valueGetter: (params) => surveys.find(
                 (survey) => survey._id === params.row?.chooseSurvey
-            )?.name || '',
+            )?.title || '',
             renderCell: (params) => {
                 const selectedSurveyId = params.row?.chooseSurvey || '';
                 const selectedSurvey = surveys.find(
                     (survey) => survey._id === selectedSurveyId
                 );
                 return (
-                    <Tooltip
-                        title={selectedSurvey ? selectedSurvey.name : ''}
-                        arrow
-                    >
+                    <Tooltip title={selectedSurvey ? selectedSurvey.title : ''} arrow>
                         <Typography variant="body1" noWrap>
-                            {selectedSurvey ? selectedSurvey.name : ''}
+                            {selectedSurvey ? selectedSurvey.title : ''}
                         </Typography>
                     </Tooltip>
                 );
@@ -939,7 +936,7 @@ const SuppliersComponent = ({ user }) => {
                     >
                         {surveys.map((survey) => (
                             <MenuItem key={survey._id} value={survey._id}>
-                                {survey.name}
+                                {survey.title}
                             </MenuItem>
                         ))}
                     </Select>
@@ -1138,13 +1135,7 @@ const SuppliersComponent = ({ user }) => {
         const [dateTimePickerValue, setDateTimePickerValue] = React.useState(null); // 记录选择的时间
 
         return (
-            <Dialog
-                open={open}
-                onClose={handleClose}
-                fullWidth
-                maxWidth="sm"
-                aria-labelledby="add-supplier-dialog-title"
-            >
+            <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" aria-labelledby="add-supplier-dialog-title">
                 <DialogTitle id="add-supplier-dialog-title">
                     Add Supplier
                     <IconButton
@@ -1173,23 +1164,14 @@ const SuppliersComponent = ({ user }) => {
                             nextEmailSendTime: null // 初始化为 null，可以为空
                         }}
                         validationSchema={Yup.object().shape({
-                            supplierName: Yup.string().required(
-                                'Supplier Name is required'
-                            ),
-                            contact: Yup.string().required(
-                                'Contact is required'
-                            ),
+                            supplierName: Yup.string().required('Supplier Name is required'),
+                            contact: Yup.string().required('Contact is required'),
                             materialName: Yup.string(),
                             partNumber: Yup.string(),
                             chooseSurvey: Yup.string(),
-                            status: Yup.string()
-                                .oneOf(statusOptions)
-                                .required('Status is required')
+                            status: Yup.string().oneOf(statusOptions).required('Status is required')
                         })}
-                        onSubmit={async (
-                            values,
-                            { setErrors, setStatus, setSubmitting }
-                        ) => {
+                        onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             try {
                                 if (values.materialName || values.partNumber) {
                                     values.rawMaterials = [
@@ -1223,25 +1205,12 @@ const SuppliersComponent = ({ user }) => {
                             }
                         }}
                     >
-                        {({
-                            errors,
-                            handleBlur,
-                            handleChange,
-                            handleSubmit,
-                            isSubmitting,
-                            touched,
-                            values
-                        }) => (
+                        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                             <form onSubmit={handleSubmit}>
                                 <MuiGrid container spacing={2}>
                                     <MuiGrid item xs={12}>
-                                        <FormControl
-                                            fullWidth
-                                            className={classes.input}
-                                        >
-                                            <InputLabel htmlFor="supplierName">
-                                                Supplier Name
-                                            </InputLabel>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="supplierName">Supplier Name</InputLabel>
                                             <OutlinedInput
                                                 id="supplierName"
                                                 type="text"
@@ -1251,21 +1220,12 @@ const SuppliersComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 label="Supplier Name"
                                             />
-                                            {errors.supplierName && (
-                                                <FormHelperText error>
-                                                    {errors.supplierName}
-                                                </FormHelperText>
-                                            )}
+                                            {errors.supplierName && <FormHelperText error>{errors.supplierName}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
-                                        <FormControl
-                                            fullWidth
-                                            className={classes.input}
-                                        >
-                                            <InputLabel htmlFor="contact">
-                                                Contact
-                                            </InputLabel>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="contact">Contact</InputLabel>
                                             <OutlinedInput
                                                 id="contact"
                                                 type="text"
@@ -1275,21 +1235,12 @@ const SuppliersComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 label="Contact"
                                             />
-                                            {errors.contact && (
-                                                <FormHelperText error>
-                                                    {errors.contact}
-                                                </FormHelperText>
-                                            )}
+                                            {errors.contact && <FormHelperText error>{errors.contact}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
-                                        <FormControl
-                                            fullWidth
-                                            className={classes.input}
-                                        >
-                                            <InputLabel htmlFor="materialName">
-                                                Raw Material Name
-                                            </InputLabel>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="materialName">Raw Material Name</InputLabel>
                                             <OutlinedInput
                                                 id="materialName"
                                                 type="text"
@@ -1299,21 +1250,12 @@ const SuppliersComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 label="Material Name"
                                             />
-                                            {errors.materialName && (
-                                                <FormHelperText error>
-                                                    {errors.materialName}
-                                                </FormHelperText>
-                                            )}
+                                            {errors.materialName && <FormHelperText error>{errors.materialName}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
-                                        <FormControl
-                                            fullWidth
-                                            className={classes.input}
-                                        >
-                                            <InputLabel htmlFor="partNumber">
-                                                Raw Material Part Number
-                                            </InputLabel>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel htmlFor="partNumber">Raw Material Part Number</InputLabel>
                                             <OutlinedInput
                                                 id="partNumber"
                                                 type="text"
@@ -1323,21 +1265,12 @@ const SuppliersComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 label="Part Number"
                                             />
-                                            {errors.partNumber && (
-                                                <FormHelperText error>
-                                                    {errors.partNumber}
-                                                </FormHelperText>
-                                            )}
+                                            {errors.partNumber && <FormHelperText error>{errors.partNumber}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
-                                        <FormControl
-                                            fullWidth
-                                            className={classes.input}
-                                        >
-                                            <InputLabel id="chooseSurvey-label">
-                                                Choose Survey
-                                            </InputLabel>
+                                        <FormControl fullWidth className={classes.input}>
+                                            <InputLabel id="chooseSurvey-label">Choose Survey</InputLabel>
                                             <Select
                                                 labelId="chooseSurvey-label"
                                                 id="chooseSurvey"
@@ -1348,30 +1281,18 @@ const SuppliersComponent = ({ user }) => {
                                                 style={{ paddingTop: '10px' }}
                                             >
                                                 {surveys.map((survey) => (
-                                                    <MenuItem
-                                                        key={survey._id}
-                                                        value={survey._id}
-                                                    >
-                                                        {survey.name}
+                                                    <MenuItem key={survey._id} value={survey._id}>
+                                                        {survey.title}
                                                     </MenuItem>
                                                 ))}
                                             </Select>
-                                            {errors.chooseSurvey && (
-                                                <FormHelperText error>
-                                                    {errors.chooseSurvey}
-                                                </FormHelperText>
-                                            )}
+                                            {errors.chooseSurvey && <FormHelperText error>{errors.chooseSurvey}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
                                     <MuiGrid item xs={12}>
                                         <FormControl fullWidth className={classes.input}>
-                                            <LocalizationProvider 
-                                                dateAdapter={AdapterDateFns}
-                                            >
-                                                <InputLabel 
-                                                    htmlFor="nextEmailSendTime"
-                                                    style={{ paddingLeft: '50%', marginTop: '-5px' }}
-                                                >
+                                            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                                <InputLabel htmlFor="nextEmailSendTime" style={{ paddingLeft: '50%', marginTop: '-5px' }}>
                                                     Email Send Time (Optional) {`—>`}
                                                 </InputLabel>
                                                 <DateTimePicker
@@ -1383,11 +1304,7 @@ const SuppliersComponent = ({ user }) => {
                                                     minDateTime={new Date()} // 禁止选择过去的时间
                                                 />
                                             </LocalizationProvider>
-                                            {errors.nextEmailSendTime && (
-                                                <FormHelperText error>
-                                                    {errors.nextEmailSendTime}
-                                                </FormHelperText>
-                                            )}
+                                            {errors.nextEmailSendTime && <FormHelperText error>{errors.nextEmailSendTime}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
                                     {/* <MuiGrid item xs={12}>
@@ -1436,11 +1353,7 @@ const SuppliersComponent = ({ user }) => {
                                         color="primary"
                                         style={{ marginTop: '16px' }}
                                     >
-                                        {isSubmitting ? (
-                                            <LoaderInnerCircular />
-                                        ) : (
-                                            'Save'
-                                        )}
+                                        {isSubmitting ? <LoaderInnerCircular /> : 'Save'}
                                     </Button>
                                 </AnimateButton>
                             </form>
