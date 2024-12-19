@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { connect } from 'react-redux';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -7,29 +7,37 @@ import config from '../../configs';
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { DataGrid } from '@material-ui/data-grid';
 import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import { useTheme } from '@material-ui/styles';
-import Select from '@material-ui/core/Select';
-import MenuItem from '@material-ui/core/MenuItem';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import { fetchSurveys, addSurvey, deleteSurveys, updateSurvey, addSurveyAttachment } from './helper'; // Adjust the path as needed
+import { fetchSurveys, addSurvey, deleteSurveys, updateSurvey, addSurveyAttachment } from './helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import { DeleteOutlined, DownloadOutlined, ImportContactsOutlined, FileUpload as FileUploadIcon } from '@material-ui/icons';
 
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
+
 import Checkbox from '@material-ui/core/Checkbox';
 
-import { mentionUsers } from '../../views/authentication/session/auth.helper';
-import * as XLSX from 'xlsx';  // Import xlsx library
-
-import { useStyles } from './styles'; // Create a styles file or adjust styles as needed
+import * as XLSX from 'xlsx';
+import { useStyles } from './styles';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
-import { Dialog, DialogContent, DialogTitle, DialogActions, FormControl, FormHelperText, Grid as MuiGrid, InputLabel, OutlinedInput, TextField } from '@material-ui/core';
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogActions,
+    FormControl,
+    FormHelperText,
+    Grid as MuiGrid,
+    InputLabel,
+    OutlinedInput,
+    TextField
+} from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -37,13 +45,14 @@ import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import { useDropzone } from 'react-dropzone';
 import ClearIcon from '@material-ui/icons/Clear';
-import LinearProgressBar from '../../ui-component/LinearProgress'; // Assuming this is a custom progress bar component
-import { data } from 'jquery';
+import LinearProgressBar from '../../ui-component/LinearProgress';
 
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
-// 设置 PDF Worker
+import EmailEditor from 'react-email-editor'; // Import EmailEditor
+
+// Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const SurveysComponent = ({ user }) => {
@@ -180,10 +189,7 @@ const SurveysComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={
-                        filterIds.length > 0 &&
-                        filterIds.every((id) => selectedIds.includes(id))
-                    }
+                    checked={filterIds.length > 0 && filterIds.every((id) => selectedIds.includes(id))}
                     indeterminate={
                         filterIds.length > 0 &&
                         filterIds.some((id) => selectedIds.includes(id)) &&
@@ -207,31 +213,11 @@ const SurveysComponent = ({ user }) => {
                 return (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <IconButton onClick={() => handleSelect(params.row.id)}>
-                            {isSelected ? (
-                                <CheckCircleIcon style={{ color: 'green' }} />
-                            ) : (
-                                <RadioButtonUncheckedIcon />
-                            )}
+                            {isSelected ? <CheckCircleIcon style={{ color: 'green' }} /> : <RadioButtonUncheckedIcon />}
                         </IconButton>
                     </div>
                 );
-            },
-        },
-        // Survey Name Column
-        {
-            field: 'name',
-            headerName: 'Survey Name',
-            width: 190,
-            sortable: true,
-            editable: true, // 可编辑
-            valueGetter: (params) => params.row?.name || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row.name || ''} arrow>
-                    <Typography variant="body2" noWrap>
-                        {params.row.name}
-                    </Typography>
-                </Tooltip>
-            ),
+            }
         },
         // Survey Subject Column
         {
@@ -247,39 +233,23 @@ const SurveysComponent = ({ user }) => {
                         {params.row.title}
                     </Typography>
                 </Tooltip>
-            ),
+            )
         },
-        // Survey Content Column
+        // Email Template Column (New)
         {
-            field: 'content',
-            headerName: 'Survey Content',
-            width: 300,
-            sortable: false,
-            editable: true, // 可编辑
-            valueGetter: (params) => params.row?.content || '',
-            renderCell: (params) => (
-                <Tooltip title={params.row.content || ''} arrow>
-                    <Typography variant="body2" noWrap>
-                        {params.row.content}
-                    </Typography>
-                </Tooltip>
-            ),
-        },
-        // Description Column
-        {
-            field: 'description',
-            headerName: 'Description',
+            field: 'emailTemplate',
+            headerName: 'Email Template',
             width: 200,
             sortable: false,
-            editable: true, // 可编辑
-            valueGetter: (params) => params.row?.description || '',
+            editable: false,
+            valueGetter: (params) => params.row?.emailTemplate || '',
             renderCell: (params) => (
-                <Tooltip title={params.row.description || ''} arrow>
-                    <Typography variant="body2" noWrap>
-                        {params.row.description}
-                    </Typography>
+                <Tooltip title="View Email Template" arrow>
+                    <Button variant="outlined" color="primary" onClick={() => handleOpenEmailTemplatePreview(params.row.html)}>
+                        View Template
+                    </Button>
                 </Tooltip>
-            ),
+            )
         },
         // Attachments Column
         {
@@ -287,30 +257,23 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Attachments',
             width: 200,
             sortable: false,
-            valueGetter: (params) => params.row?.attachments && params.row.attachments.length > 0 
-                    ? 'Attachments ('+params.row.attachments.length + ')'
+            valueGetter: (params) =>
+                params.row?.attachments && params.row.attachments.length > 0
+                    ? 'Attachments (' + params.row.attachments.length + ')'
                     : 'No Attachments',
             renderCell: (params) => {
                 const attachments = params.row.attachments || [];
                 const count = attachments.length;
                 return count > 0 ? (
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        onClick={() => handleOpenAttachmentsDialog(params.row.id, attachments)}
-                    >
+                    <Button variant="outlined" color="primary" onClick={() => handleOpenAttachmentsDialog(params.row.id, attachments)}>
                         Attachments ({count})
                     </Button>
                 ) : (
-                    <Button
-                        variant="outlined"
-                        color="secondary"
-                        onClick={() => handleOpenAttachmentsDialog(params.row.id, attachments)}
-                    >
+                    <Button variant="outlined" color="secondary" onClick={() => handleOpenAttachmentsDialog(params.row.id, attachments)}>
                         No Attachments
                     </Button>
                 );
-            },
+            }
         },
         // Revision Column
         {
@@ -325,7 +288,7 @@ const SurveysComponent = ({ user }) => {
                         {params.row.revision}
                     </Typography>
                 </Tooltip>
-            ),
+            )
         },
         // Created At Column
         {
@@ -341,7 +304,7 @@ const SurveysComponent = ({ user }) => {
                         {new Date(params.row?.createdAt).toLocaleString()}
                     </Typography>
                 </Tooltip>
-            ),
+            )
         },
         // Updated At Column
         {
@@ -357,7 +320,7 @@ const SurveysComponent = ({ user }) => {
                         {new Date(params.row?.updatedAt).toLocaleString()}
                     </Typography>
                 </Tooltip>
-            ),
+            )
         },
         // Actions Column
         {
@@ -368,7 +331,7 @@ const SurveysComponent = ({ user }) => {
             filterable: false,
             renderCell: (params) => (
                 <strong>
-                    <Button
+                    {/* <Button
                         variant='contained'
                         color='primary'
                         size='small'
@@ -377,7 +340,7 @@ const SurveysComponent = ({ user }) => {
                         onClick={() => handleOpenDetailsDialog(params.row)}
                     >
                         Details
-                    </Button>
+                    </Button> */}
                     <IconButton
                         onClick={(event) => {
                             event.stopPropagation(); // Prevent event bubbling
@@ -387,9 +350,20 @@ const SurveysComponent = ({ user }) => {
                         <DeleteOutlined color="secondary" />
                     </IconButton>
                 </strong>
-            ),
-        },
+            )
+        }
     ];
+
+    // Function to handle previewing the email template
+    const handleOpenEmailTemplatePreview = (emailTemplate) => {
+        Swal.fire({
+            html: emailTemplate ? emailTemplate : 'No Template Available',
+            width: '60%',
+            heightAuto: true,
+            showCloseButton: true,
+            showConfirmButton: false,
+        });
+    };
 
     // Modify handleDownloadAttachments to handle individual attachment download
     const handleDownloadAttachment = async (attachment) => {
@@ -452,9 +426,9 @@ const SurveysComponent = ({ user }) => {
         // For example, set a state with survey details and open a new Dialog component
     };
 
-    // Add Survey Dialog Component with Attachment Upload Capability
+    // Add Survey Dialog Component with Attachment Upload Capability and Email Editor
     const AddSurveyDialog = ({ open, handleClose, loadData }) => {
-        // Move file upload states into the dialog
+        const emailEditorRef = useRef(null);
         const [selectedFiles, setSelectedFiles] = React.useState([]);
         const [uploadPercentage, setUploadPercentage] = React.useState(null);
         const [processingSurvey, setProcessingSurvey] = React.useState(false);
@@ -477,12 +451,25 @@ const SurveysComponent = ({ user }) => {
             setSelectedFiles([]);
         };
 
+        // Function to export the email template from the editor
+        const exportHtml = () => {
+            return new Promise((resolve, reject) => {
+                if (emailEditorRef.current) {
+                    emailEditorRef.current.editor.exportHtml((data) => {
+                        resolve(data);
+                    });
+                } else {
+                    reject(new Error('Email editor not initialized'));
+                }
+            });
+        };
+
         return (
             <Dialog
                 open={open}
                 onClose={handleClose}
                 fullWidth
-                maxWidth="sm"
+                maxWidth="xl" // Increased width to accommodate EmailEditor
                 aria-labelledby="add-survey-dialog-title"
             >
                 <DialogTitle id="add-survey-dialog-title">
@@ -499,30 +486,26 @@ const SurveysComponent = ({ user }) => {
                     <Formik
                         initialValues={{
                             title: '',
-                            name: '',
-                            content: '',
-                            description: '',
-                            revision: 1,
+                            revision: 1
                         }}
                         validationSchema={Yup.object().shape({
                             title: Yup.string().required('Subject is required'),
-                            name: Yup.string().required('Name is required'),
-                            content: Yup.string().required('Content is required'),
-                            revision: Yup.number().integer().min(1).required('Revision is required'),
+                            revision: Yup.number().integer().min(1).required('Revision is required')
                         })}
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             try {
+                                // Export the email template
+                                const emailTemplateData = await exportHtml();
+
                                 const formData = new FormData();
                                 formData.append('title', values.title);
-                                formData.append('name', values.name);
-                                formData.append('content', values.content);
-                                formData.append('description', values.description);
                                 formData.append('revision', values.revision);
-                        
+                                formData.append('html', emailTemplateData.html);
+
                                 selectedFiles.forEach((file) => {
                                     formData.append('file', file);
                                 });
-                        
+
                                 await addSurvey(formData);
                                 setStatus({ success: true });
                                 setSubmitting(false);
@@ -536,29 +519,12 @@ const SurveysComponent = ({ user }) => {
                                 setSubmitting(false);
                                 toast.error('Failed to add survey');
                             }
-                        }}                        
+                        }}
                     >
                         {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                             <form onSubmit={handleSubmit}>
                                 <MuiGrid container spacing={2}>
-                                    <MuiGrid item xs={12}>
-                                        <FormControl fullWidth className={classes.input}>
-                                            <InputLabel htmlFor="name">Survey Name</InputLabel>
-                                            <OutlinedInput
-                                                id="name"
-                                                type="text"
-                                                value={values.name}
-                                                name="name"
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                                label="Name"
-                                            />
-                                            {errors.name && (
-                                                <FormHelperText error>{errors.name}</FormHelperText>
-                                            )}
-                                        </FormControl>
-                                    </MuiGrid>
-                                    <MuiGrid item xs={12}>
+                                    <MuiGrid item xs={12} sm={11}>
                                         <FormControl fullWidth className={classes.input}>
                                             <InputLabel htmlFor="title">Survey Subject</InputLabel>
                                             <OutlinedInput
@@ -570,56 +536,10 @@ const SurveysComponent = ({ user }) => {
                                                 onChange={handleChange}
                                                 label="Subject"
                                             />
-                                            {errors.title && (
-                                                <FormHelperText error>{errors.title}</FormHelperText>
-                                            )}
+                                            {errors.title && <FormHelperText error>{errors.title}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
-                                    <MuiGrid item xs={12}>
-                                        <FormControl fullWidth className={classes.input}>
-                                            <TextField
-                                                id="content"
-                                                label="Survey Content"
-                                                multiline
-                                                rows={5}
-                                                value={values.content}
-                                                name="content"
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                                InputLabelProps={{
-                                                    classes: {
-                                                        shrink: classes.shrinkLabel
-                                                    }
-                                                }}
-                                            />
-                                            {errors.content && (
-                                                <FormHelperText error>{errors.content}</FormHelperText>
-                                            )}
-                                        </FormControl>
-                                    </MuiGrid>
-                                    <MuiGrid item xs={12}>
-                                        <FormControl fullWidth className={classes.input}>
-                                            <TextField
-                                                id="description"
-                                                label="Description"
-                                                multiline
-                                                rows={2}
-                                                value={values.description}
-                                                name="description"
-                                                onBlur={handleBlur}
-                                                onChange={handleChange}
-                                                InputLabelProps={{
-                                                    classes: {
-                                                        shrink: classes.shrinkLabel
-                                                    }
-                                                }}
-                                            />
-                                            {errors.description && (
-                                                <FormHelperText error>{errors.description}</FormHelperText>
-                                            )}
-                                        </FormControl>
-                                    </MuiGrid>
-                                    <MuiGrid item xs={12}>
+                                    <MuiGrid item xs={12} sm={1}>
                                         <FormControl fullWidth className={classes.input}>
                                             <InputLabel htmlFor="revision">Revision</InputLabel>
                                             <OutlinedInput
@@ -632,35 +552,47 @@ const SurveysComponent = ({ user }) => {
                                                 label="Revision"
                                                 inputProps={{ min: 1 }}
                                             />
-                                            {errors.revision && (
-                                                <FormHelperText error>{errors.revision}</FormHelperText>
-                                            )}
+                                            {errors.revision && <FormHelperText error>{errors.revision}</FormHelperText>}
                                         </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12}>
+                                        {/* <Typography variant="h6">Email Template</Typography> */}
+                                        <div style={{ border: '1px solid #ccc', minHeight: '300px' }}>
+                                            <EmailEditor ref={emailEditorRef} />
+                                        </div>
                                     </MuiGrid>
                                 </MuiGrid>
 
                                 {/* Attachment Upload Section */}
                                 <section className="container">
-                                    <div {...getRootProps({ className: 'dropzone' })} style={{
-                                        border: '2px dashed #cccccc',
-                                        padding: '20px',
-                                        textAlign: 'center',
-                                        cursor: 'pointer',
-                                        marginTop: '20px',
-                                        borderRadius: '5px',
-                                        backgroundColor: '#fafafa',
-                                    }}>
+                                    <div
+                                        {...getRootProps({ className: 'dropzone' })}
+                                        style={{
+                                            border: '2px dashed #cccccc',
+                                            padding: '20px',
+                                            textAlign: 'center',
+                                            cursor: 'pointer',
+                                            marginTop: '20px',
+                                            borderRadius: '5px',
+                                            backgroundColor: '#fafafa'
+                                        }}
+                                    >
                                         <input {...getInputProps()} />
                                         <FileUploadIcon style={{ fontSize: '48px', color: '#aaaaaa' }} />
-                                        <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT)</p>
+                                        <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT, Images)</p>
                                     </div>
                                     {!!selectedFiles.length && (
                                         <aside style={{ marginTop: '20px' }}>
                                             <Typography variant="h6">Selected Files</Typography>
                                             <ul style={{ listStyle: 'none', padding: 0 }}>
                                                 {selectedFiles.map((file) => (
-                                                    <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                                                        <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+                                                    <li
+                                                        key={file.path}
+                                                        style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}
+                                                    >
+                                                        <Typography variant="body2">
+                                                            {file.path} - {(file.size / 1024).toFixed(2)} KB
+                                                        </Typography>
                                                         <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
                                                             <ClearIcon />
                                                         </IconButton>
@@ -773,7 +705,7 @@ const SurveysComponent = ({ user }) => {
                     formData.append('file', file);
                 });
 
-                // Assuming updateSurvey can handle adding attachments via FormData
+                // Assuming addSurveyAttachment handles adding attachments via FormData
                 await addSurveyAttachment(surveyId, formData);
                 toast.success('Attachments added successfully');
                 setSelectedFiles([]);
@@ -891,7 +823,7 @@ const SurveysComponent = ({ user }) => {
                         }}>
                             <input {...getInputProps()} />
                             <FileUploadIcon style={{ fontSize: '48px', color: '#aaaaaa' }} />
-                            <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT)</p>
+                            <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT, Images)</p>
                         </div>
                         {!!selectedFiles.length && (
                             <aside style={{ marginTop: '20px' }}>
@@ -933,6 +865,9 @@ const SurveysComponent = ({ user }) => {
             </Dialog>
         );
     };
+
+    // Updated Attachments Dialog Component with Add/Delete Functionality
+    // ... (AttachmentsDialog remains unchanged)
 
     const handleCellEditCommit = React.useCallback(
         async (params) => {
