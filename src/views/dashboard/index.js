@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import AdminDashboard from './AdminDashboard';
-import StudentDashboard from './StudentDashboard';
+import RegAllatorDashboard from './RegAllatorDashboard';
 
 const Dashboard = ({ isLoading, user }) => {
     if (isLoading) {
@@ -10,7 +10,7 @@ const Dashboard = ({ isLoading, user }) => {
     }
     switch (user.role) {
         case 'user':
-            return <StudentDashboard />;
+            return <RegAllatorDashboard />;
         default:
             return <AdminDashboard />;
     }
@@ -22,4 +22,3 @@ const mapStateToProps = (state) => ({
 });
 
 export default connect(mapStateToProps, null)(Dashboard);
-
