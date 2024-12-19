@@ -1382,7 +1382,7 @@ const SuppliersComponent = ({ user }) => {
                     </MenuItem>
                     {surveys.map((survey) => (
                         <MenuItem key={survey._id} value={survey._id}>
-                            {survey.name}
+                            {survey.title}
                         </MenuItem>
                     ))}
                 </Select>

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { connect } from 'react-redux';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -11,6 +11,8 @@ import { DataGrid } from '@material-ui/data-grid';
 import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import { useTheme } from '@material-ui/styles';
 import Tooltip from '@material-ui/core/Tooltip';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
 
 import { fetchSurveys, addSurvey, deleteSurveys, updateSurvey, addSurveyAttachment } from './helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -51,6 +53,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 
 import EmailEditor from 'react-email-editor'; // Import EmailEditor
+import nullTemplate from './null.json'; // Import nullTemplate
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -430,8 +433,7 @@ const SurveysComponent = ({ user }) => {
     const AddSurveyDialog = ({ open, handleClose, loadData }) => {
         const emailEditorRef = useRef(null);
         const [selectedFiles, setSelectedFiles] = React.useState([]);
-        const [uploadPercentage, setUploadPercentage] = React.useState(null);
-        const [processingSurvey, setProcessingSurvey] = React.useState(false);
+        const [sampleTemplate, setSampleTemplate] = React.useState(null);
 
         // Using react-dropzone for file drag-and-drop upload
         const { getRootProps, getInputProps } = useDropzone({
@@ -462,6 +464,21 @@ const SurveysComponent = ({ user }) => {
                     reject(new Error('Email editor not initialized'));
                 }
             });
+        };
+        const exportJson = () => {
+            return new Promise((resolve, reject) => {
+                if (emailEditorRef.current) {
+                    emailEditorRef.current.editor.saveDesign((data) => {
+                        resolve(data);
+                    });
+                } else {
+                    reject(new Error('Email editor not initialized'));
+                }
+            });
+        };
+
+        const onLoad = (unlayer) => {
+            unlayer.loadDesign(nullTemplate);
         };
 
         return (
@@ -495,12 +512,14 @@ const SurveysComponent = ({ user }) => {
                         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                             try {
                                 // Export the email template
-                                const emailTemplateData = await exportHtml();
+                                const emailTemplateHtml = await exportHtml();
+                                const emailTemplateJson = await exportJson();
 
                                 const formData = new FormData();
                                 formData.append('title', values.title);
                                 formData.append('revision', values.revision);
-                                formData.append('html', emailTemplateData.html);
+                                formData.append('html', emailTemplateHtml.html);
+                                formData.append('json', JSON.stringify(emailTemplateJson));
 
                                 selectedFiles.forEach((file) => {
                                     formData.append('file', file);
@@ -524,7 +543,7 @@ const SurveysComponent = ({ user }) => {
                         {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                             <form onSubmit={handleSubmit}>
                                 <MuiGrid container spacing={2}>
-                                    <MuiGrid item xs={12} sm={11}>
+                                    <MuiGrid item xs={12} sm={6}>
                                         <FormControl fullWidth className={classes.input}>
                                             <InputLabel htmlFor="title">Survey Subject</InputLabel>
                                             <OutlinedInput
@@ -555,10 +574,57 @@ const SurveysComponent = ({ user }) => {
                                             {errors.revision && <FormHelperText error>{errors.revision}</FormHelperText>}
                                         </FormControl>
                                     </MuiGrid>
+                                    {/* Load from another Survey */}
+                                    <MuiGrid item xs={12} sm={4}>
+                                        <FormControl fullWidth className={classes.input} style={{ height: '80%' }}>
+                                            <Select
+                                                style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    height: '100%',
+                                                }}
+                                                value={sampleTemplate}
+                                                onChange={(e) => {
+                                                    // 解析 JSON 字符串并加载到 EmailEditor
+                                                    emailEditorRef.current.editor.loadDesign(JSON.parse(e.target.value));
+                                                    setSampleTemplate(e.target.value);
+                                                }}
+                                                displayEmpty
+                                                color="primary"
+                                                size="large"
+                                            >
+                                                <MenuItem value={null} disabled>
+                                                    Load from another Survey
+                                                </MenuItem>
+                                                {surveys.map((survey) => (
+                                                    <MenuItem key={survey.id} value={survey.json}>
+                                                        {survey.title}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </MuiGrid>
+                                    <MuiGrid item xs={12} sm={1}>
+                                        <FormControl fullWidth className={classes.input} style={{ height: '80%' }}>
+                                            <Button
+                                                style={{ height: '100%' }}
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => {
+                                                    // Reset the Email Editor
+                                                    emailEditorRef.current.editor.loadDesign(nullTemplate);
+                                                    setSampleTemplate(null);
+                                                }}
+                                            >
+                                                Reset
+                                            </Button>
+                                        </FormControl>
+                                    </MuiGrid>
                                     <MuiGrid item xs={12}>
                                         {/* <Typography variant="h6">Email Template</Typography> */}
                                         <div style={{ border: '1px solid #ccc', minHeight: '300px' }}>
-                                            <EmailEditor ref={emailEditorRef} />
+                                            <EmailEditor ref={emailEditorRef} onLoad={onLoad} />
                                         </div>
                                     </MuiGrid>
                                 </MuiGrid>
