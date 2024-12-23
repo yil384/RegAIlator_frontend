@@ -376,6 +376,18 @@ const SurveysComponent = ({ user }) => {
         const emailEditorRef = useRef(null);
         const [sampleTemplate, setSampleTemplate] = React.useState(emailTemplate);
 
+        // Function to export the email template from the editor
+        const exportHtml = () => {
+            return new Promise((resolve, reject) => {
+                if (emailEditorRef.current) {
+                    emailEditorRef.current.editor.exportHtml((data) => {
+                        resolve(data);
+                    });
+                } else {
+                    reject(new Error('Email editor not initialized'));
+                }
+            });
+        };
         const exportJson = () => {
             return new Promise((resolve, reject) => {
                 if (emailEditorRef.current) {
@@ -460,8 +472,10 @@ const SurveysComponent = ({ user }) => {
                                     color="secondary"
                                     onClick={async () => {
                                         const json = await exportJson();
+                                        const html = await exportHtml();
                                         const formData = new FormData();
                                         formData.append('json', JSON.stringify(json));
+                                        formData.append('html', html.html);
                                         await updateSurvey(surveyId, formData);
                                         handleClose();
                                         toast.success('Survey updated successfully');
@@ -474,7 +488,7 @@ const SurveysComponent = ({ user }) => {
                         </MuiGrid>
                         <MuiGrid item xs={12}>
                             {/* <Typography variant="h6">Email Template</Typography> */}
-                            <div style={{ border: '1px solid #ccc', minHeight: '300px', marginTop: "-2%" }}>
+                            <div style={{ border: '1px solid #ccc', minHeight: '300px', marginTop: '-2%' }}>
                                 <EmailEditor ref={emailEditorRef} onLoad={onLoad} />
                             </div>
                         </MuiGrid>
