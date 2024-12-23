@@ -1468,7 +1468,7 @@ const SuppliersComponent = ({ user }) => {
                                         const cellValue = (field === 'chooseSurvey') 
                                                             ? surveys.find((s) => s._id === supplier.chooseSurvey)?.name 
                                                             : (field === 'feedback') 
-                                                                ? `Feedbacks (${supplier.feedback.length})` 
+                                                                ? (supplier.feedback.length > 0 ? `Feedbacks (${supplier.feedback.length})`: 'No Feedback')
                                                                 : supplier[field];
                                         if (operator === 'isEmpty') {
                                             return (
