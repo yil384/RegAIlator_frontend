@@ -1,17 +1,18 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Grid } from '@material-ui/core';
-import { gridSpacing } from '../../../store/constant';
+import { Container, Grid } from '@material-ui/core';
+// import { gridSpacing } from '../../../store/constant';
 import LoaderInnerCircular from '../../../ui-component/LoaderInnerCircular';
-import { fetchSuppliers } from '../../../views/suppliers/helper';
-import { fetchSurveys } from '../../../views/survey-templates/helper'; // 需要实现这个函数
+import { fetchSuppliers } from '../../suppliers/helper';
+import { fetchSurveys } from '../../survey-templates/helper'; // 需要实现这个函数
 import CompliancePieChart from '../components/CompliancePieChart'; // 导入饼图组件
 
-const StudentDashboard = ({ isLoading }) => {
+const RegAllatorDashboard = ({ isLoading }) => {
     const [suppliersData, setSuppliersData] = React.useState([]);
+
     const [productsData, setProductsData] = React.useState([
         { name: 'Compliant', value: 11 },
-        { name: 'Not Compliant', value: 89 },
+        { name: 'Not Compliant', value: 89 }
     ]);
     const [surveysChartData, setSurveysChartData] = React.useState([]); // 新增的状态
     const [error, setError] = React.useState(null);
@@ -59,14 +60,14 @@ const StudentDashboard = ({ isLoading }) => {
             const status = supplier.feedback?.length ? 'With Feedback' : 'Without Feedback';
             return {
                 ...acc,
-                [status]: acc[status] ? acc[status] + 1 : 1,
+                [status]: acc[status] ? acc[status] + 1 : 1
             };
         }, {});
 
         // 转换为适合 Recharts 的数据格式
         return Object.keys(statusCount).map((key) => ({
             name: key,
-            value: statusCount[key],
+            value: statusCount[key]
         }));
     };
 
@@ -96,19 +97,19 @@ const StudentDashboard = ({ isLoading }) => {
                 const status = supplier.feedback?.length ? 'With Feedback' : 'Without Feedback';
                 return {
                     ...acc,
-                    [status]: acc[status] ? acc[status] + 1 : 1,
+                    [status]: acc[status] ? acc[status] + 1 : 1
                 };
             }, {});
 
             const data = Object.keys(statusCount).map((key) => ({
                 name: key,
-                value: statusCount[key],
+                value: statusCount[key]
             }));
 
             return {
                 surveyId,
                 surveyName: surveyMap[surveyId] || 'Unknown Survey',
-                data,
+                data
             };
         });
 
@@ -124,31 +125,31 @@ const StudentDashboard = ({ isLoading }) => {
     }
 
     return (
-        <Grid container spacing={gridSpacing}>
-            <Grid item xs={12}>
-                <Grid container spacing={gridSpacing}>
-                    {/* 第一个饼图：供应商合规性 */}
-                    <Grid item xs={12} md={6}>
+        <Container maxWidth={false} disableGutters style={{ width: '100%', margin: 0 }}>
+            <Grid container spacing={2} style={{ overflow: 'auto', padding: '16px' }}>
+                {!!suppliersData?.length && (
+                    <Grid item xs={12} sm={6} md={4}>
                         <CompliancePieChart data={suppliersData} title="Suppliers Compliance" />
                     </Grid>
-                    {/* 第二个饼图：产品合规性 */}
-                    <Grid item xs={12} md={6}>
+                )}
+                {!!productsData.length && (
+                    <Grid item xs={12} sm={6} md={4}>
                         <CompliancePieChart data={productsData} title="Products Compliance" />
                     </Grid>
-                    {/* 新增的 n 个饼图 */}
-                    {surveysChartData.map((chartItem) => (
-                        <Grid item xs={12} md={6} key={chartItem.surveyId}>
+                )}
+                {!!surveysChartData?.length &&
+                    surveysChartData.map((chartItem) => (
+                        <Grid item xs={12} sm={6} md={4} key={chartItem.surveyId}>
                             <CompliancePieChart data={chartItem.data} title={`Suppliers Compliance (Survey: ${chartItem.surveyName})`} />
                         </Grid>
                     ))}
-                </Grid>
             </Grid>
-        </Grid>
+        </Container>
     );
 };
 
 const mapStateToProps = (state) => ({
-    isLoading: state.authReducer.isLoading,
+    isLoading: state.authReducer.isLoading
 });
 
-export default connect(mapStateToProps, null)(StudentDashboard);
+export default connect(mapStateToProps, null)(RegAllatorDashboard);
