@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { connect } from 'react-redux';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -24,7 +24,6 @@ import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked';
 
 import Checkbox from '@material-ui/core/Checkbox';
 
-import * as XLSX from 'xlsx';
 import { useStyles } from './styles';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
 import useScriptRef from '../../hooks/useScriptRef';
@@ -37,8 +36,7 @@ import {
     FormHelperText,
     Grid as MuiGrid,
     InputLabel,
-    OutlinedInput,
-    TextField
+    OutlinedInput
 } from '@material-ui/core';
 import CloseIcon from '@material-ui/icons/Close';
 import { Formik } from 'formik';
@@ -84,7 +82,7 @@ const SurveysComponent = ({ user }) => {
             const response = await fetchSurveys();
             const surveysData = response.map((survey, index) => ({
                 ...survey,
-                id: survey._id || index + 1, // Ensure each survey has a unique 'id'
+                id: survey._id || index + 1 // Ensure each survey has a unique 'id'
             }));
             setSurveys(surveysData);
             setFilterIds(surveysData.map((survey) => survey.id));
@@ -103,7 +101,7 @@ const SurveysComponent = ({ user }) => {
     // 新增 useEffect，监听 surveys 的变化，并更新 currentAttachments
     React.useEffect(() => {
         if (openAttachmentsDialog && currentSurveyId) {
-            const updatedSurvey = surveys.find(survey => survey.id === currentSurveyId);
+            const updatedSurvey = surveys.find((survey) => survey.id === currentSurveyId);
             if (updatedSurvey) {
                 setCurrentAttachments(updatedSurvey.attachments || []);
             }
@@ -128,7 +126,7 @@ const SurveysComponent = ({ user }) => {
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete them!',
-            cancelButtonText: 'Cancel',
+            cancelButtonText: 'Cancel'
         });
 
         if (!result.isConfirmed) {
@@ -248,7 +246,11 @@ const SurveysComponent = ({ user }) => {
             valueGetter: (params) => params.row?.emailTemplate || '',
             renderCell: (params) => (
                 <Tooltip title="View Email Template" arrow>
-                    <Button variant="outlined" color="primary" onClick={() => handleOpenEmailTemplatePreview(params.row.json, params.row.id)}>
+                    <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => handleOpenEmailTemplatePreview(params.row.json, params.row.id)}
+                    >
                         View Template
                     </Button>
                 </Tooltip>
@@ -401,7 +403,9 @@ const SurveysComponent = ({ user }) => {
         };
 
         const onLoad = (unlayer) => {
-            unlayer.loadDesign(JSON.parse(emailTemplate));
+            if (emailTemplate) {
+                unlayer.loadDesign(JSON.parse(emailTemplate));
+            }
         };
 
         return (
@@ -508,7 +512,7 @@ const SurveysComponent = ({ user }) => {
         try {
             console.log('Downloading attachment:', attachment);
             const response = await fetch(config[config.env].baseURL + attachment.content, {
-                method: 'GET',
+                method: 'GET'
             });
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -536,7 +540,7 @@ const SurveysComponent = ({ user }) => {
             icon: 'warning',
             showCancelButton: true,
             confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel',
+            cancelButtonText: 'Cancel'
         });
 
         if (!result.isConfirmed) {
@@ -549,7 +553,7 @@ const SurveysComponent = ({ user }) => {
             await deleteSurveys([id]);
             toast.success('Survey deleted successfully');
             await loadData();
-            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+            setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
         } catch (error) {
             console.error('Error deleting survey:', error);
             toast.error('Failed to delete survey');
@@ -573,15 +577,15 @@ const SurveysComponent = ({ user }) => {
         // Using react-dropzone for file drag-and-drop upload
         const { getRootProps, getInputProps } = useDropzone({
             onDrop: (acceptedFiles) => {
-                setSelectedFiles(prevFiles => [...prevFiles, ...acceptedFiles]);
+                setSelectedFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
             },
             maxFiles: 10,
             minSize: 1,
-            multiple: true,
+            multiple: true
         });
 
         const removeFile = (file) => () => {
-            setSelectedFiles(prevFiles => prevFiles.filter(f => f !== file));
+            setSelectedFiles((prevFiles) => prevFiles.filter((f) => f !== file));
         };
 
         const removeAllFiles = () => {
@@ -717,7 +721,7 @@ const SurveysComponent = ({ user }) => {
                                                     display: 'flex',
                                                     justifyContent: 'center',
                                                     alignItems: 'center',
-                                                    height: '100%',
+                                                    height: '100%'
                                                 }}
                                                 value={sampleTemplate}
                                                 onChange={(e) => {
@@ -830,7 +834,6 @@ const SurveysComponent = ({ user }) => {
                 </DialogContent>
             </Dialog>
         );
-
     };
 
     // Updated Attachments Dialog Component with Add/Delete Functionality
@@ -847,15 +850,15 @@ const SurveysComponent = ({ user }) => {
 
         const { getRootProps, getInputProps } = useDropzone({
             onDrop: (acceptedFiles) => {
-                setSelectedFiles(prevFiles => [...prevFiles, ...acceptedFiles]);
+                setSelectedFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
             },
             maxFiles: 10,
             minSize: 1,
-            multiple: true,
+            multiple: true
         });
 
         const removeFile = (file) => () => {
-            setSelectedFiles(prevFiles => prevFiles.filter(f => f !== file));
+            setSelectedFiles((prevFiles) => prevFiles.filter((f) => f !== file));
         };
 
         const removeAllFiles = () => {
@@ -876,10 +879,10 @@ const SurveysComponent = ({ user }) => {
         // Handle deleting an attachment
         const handleDeleteAttachment = async (attachmentId) => {
             setIsDeleting(true);
-            
+
             try {
                 // Assuming updateSurvey can handle removing an attachment by its ID
-                const updatedAttachments = attachments.filter(att => att._id !== attachmentId);
+                const updatedAttachments = attachments.filter((att) => att._id !== attachmentId);
                 await updateSurvey(surveyId, { attachments: updatedAttachments });
                 toast.success('Attachment deleted successfully');
                 loadData();
@@ -923,11 +926,7 @@ const SurveysComponent = ({ user }) => {
             <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
                 <DialogTitle>
                     Attachments
-                    <IconButton
-                        aria-label="close"
-                        onClick={handleClose}
-                        style={{ position: 'absolute', right: 8, top: 8 }}
-                    >
+                    <IconButton aria-label="close" onClick={handleClose} style={{ position: 'absolute', right: 8, top: 8 }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
@@ -1013,15 +1012,18 @@ const SurveysComponent = ({ user }) => {
                 <DialogContent dividers>
                     {/* Attachment Upload Section */}
                     <section className="container">
-                        <div {...getRootProps({ className: 'dropzone' })} style={{
-                            border: '2px dashed #cccccc',
-                            padding: '20px',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            marginTop: '20px',
-                            borderRadius: '5px',
-                            backgroundColor: '#fafafa',
-                        }}>
+                        <div
+                            {...getRootProps({ className: 'dropzone' })}
+                            style={{
+                                border: '2px dashed #cccccc',
+                                padding: '20px',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                marginTop: '20px',
+                                borderRadius: '5px',
+                                backgroundColor: '#fafafa'
+                            }}
+                        >
                             <input {...getInputProps()} />
                             <FileUploadIcon style={{ fontSize: '48px', color: '#aaaaaa' }} />
                             <p>Drag and drop files here, or click to select files (PDF, DOCX, XLSX, TXT, Images)</p>
@@ -1032,7 +1034,9 @@ const SurveysComponent = ({ user }) => {
                                 <ul style={{ listStyle: 'none', padding: 0 }}>
                                     {selectedFiles.map((file) => (
                                         <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                                            <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+                                            <Typography variant="body2">
+                                                {file.path} - {(file.size / 1024).toFixed(2)} KB
+                                            </Typography>
                                             <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
                                                 <ClearIcon />
                                             </IconButton>
@@ -1045,12 +1049,7 @@ const SurveysComponent = ({ user }) => {
                                     </Button>
                                 )}
                                 <div style={{ marginTop: '10px' }}>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        onClick={handleAddAttachments}
-                                        disabled={isUploading}
-                                    >
+                                    <Button variant="contained" color="primary" onClick={handleAddAttachments} disabled={isUploading}>
                                         {isUploading ? 'Uploading...' : 'Upload Attachments'}
                                     </Button>
                                 </div>
@@ -1081,13 +1080,7 @@ const SurveysComponent = ({ user }) => {
             try {
                 setLoadingUpdate(true);
                 await updateSurvey(id, { [field]: value });
-                setSurveys((prevSurveys) =>
-                    prevSurveys.map((survey) =>
-                        survey.id === id 
-                            ? { ...survey, [field]: value } 
-                            : survey
-                    )
-                );
+                setSurveys((prevSurveys) => prevSurveys.map((survey) => (survey.id === id ? { ...survey, [field]: value } : survey)));
                 toast.success('Survey updated successfully');
             } catch (error) {
                 console.error('Failed to update survey:', error);
@@ -1096,7 +1089,8 @@ const SurveysComponent = ({ user }) => {
                 setLoadingUpdate(false);
             }
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
-        }, [surveys] 
+        },
+        [surveys]
     );
 
     return (
@@ -1113,9 +1107,9 @@ const SurveysComponent = ({ user }) => {
                     Add Survey
                 </Button>
                 <Button
-                    variant='contained'
-                    color='secondary'
-                    size='small'
+                    variant="contained"
+                    color="secondary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
                     startIcon={<DeleteOutlined />}
                     onClick={handleDeleteSurveys}
@@ -1136,9 +1130,9 @@ const SurveysComponent = ({ user }) => {
                     disableSelectionOnClick
                     loading={isLoading || loadingUpdate}
                     components={{
-                        Toolbar: () => <CustomToolbar title={"Surveys"} length={surveys.length} />,
+                        Toolbar: () => <CustomToolbar title={'Surveys'} length={surveys.length} />,
                         LoadingOverlay: CustomLoadingOverlay,
-                        NoRowsOverlay: CustomNoRowsOverlay,
+                        NoRowsOverlay: CustomNoRowsOverlay
                     }}
                     onCellEditCommit={handleCellEditCommit}
                     onFilterModelChange={(model) => {
@@ -1150,9 +1144,12 @@ const SurveysComponent = ({ user }) => {
                                 return filter.every(([field, operator, value]) => {
                                     // [TODO] [FIXME] 特殊处理 Attachments 列
                                     // const cellValue = survey[field];
-                                    const cellValue = field === 'attachments' 
-                                                        ? survey.attachments.length===0?'No Attachments':`Attachments (${survey.attachments.length})` 
-                                                        : survey[field];
+                                    const cellValue =
+                                        field === 'attachments'
+                                            ? survey.attachments.length === 0
+                                                ? 'No Attachments'
+                                                : `Attachments (${survey.attachments.length})`
+                                            : survey[field];
                                     if (operator === 'isEmpty') {
                                         return cellValue === '' || cellValue === undefined;
                                     } else if (operator === 'isNotEmpty') {
@@ -1178,7 +1175,12 @@ const SurveysComponent = ({ user }) => {
                 />
             </div>
             <AddSurveyDialog open={openDialog} handleClose={handleCloseDialog} loadData={loadData} />
-            <EmailTemplateDialog open={openEmailTemplateDialog} handleClose={handleCloseEmailTemplateDialog} emailTemplate={emailTemplate} surveyId={emailTemplateSurveyId} />
+            <EmailTemplateDialog
+                open={openEmailTemplateDialog}
+                handleClose={handleCloseEmailTemplateDialog}
+                emailTemplate={emailTemplate}
+                surveyId={emailTemplateSurveyId}
+            />
             <AttachmentsDialog
                 open={openAttachmentsDialog}
                 handleClose={handleCloseAttachmentsDialog}
@@ -1193,7 +1195,7 @@ const SurveysComponent = ({ user }) => {
 
 // Function to map Redux state to component props
 const mapStateToProps = (state) => ({
-    user: state.authReducer.user,
+    user: state.authReducer.user
 });
 
 export default connect(mapStateToProps, null)(SurveysComponent);
