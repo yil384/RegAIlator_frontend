@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Container, Grid, Paper } from '@material-ui/core';
+import { Container, Grid } from '@material-ui/core';
 // import { gridSpacing } from '../../../store/constant';
 import LoaderInnerCircular from '../../../ui-component/LoaderInnerCircular';
 import { fetchSuppliers } from '../../suppliers/helper';
