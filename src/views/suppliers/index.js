@@ -341,9 +341,10 @@ const SuppliersComponent = ({ user }) => {
     };
 
     const generateRawMaterialsCSV = (rawMaterials) => {
+        const separatorHeader = 'sep=;';
         const header = 'SN; Raw Material Name; Raw Material Part Number';
         const rows = rawMaterials.map((material, index) => `${index + 1}; ${material.rawMaterialName}; ${material.rawMaterialPartNumber}`);
-        return [header, ...rows].join('\n');
+        return [separatorHeader, header, ...rows].join('\n');
     };
 
     // 处理发送邮件
