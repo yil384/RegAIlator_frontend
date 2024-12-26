@@ -115,10 +115,10 @@ const SuppliersComponent = ({ user }) => {
     const [numPages, setNumPages] = React.useState(null);
     const handleDocumentClick = (document) => {
         setSelectedDocument(document);
-        console.log('document',document);
+        console.log('document', document);
         // Determine the file type based on the document
         const fileExtension = document.filename.split('.').pop();
-        console.log('file extension',fileExtension);
+        console.log('file extension', fileExtension);
         setPreviewingFileType(fileExtension);
     };
     // 加载供应商数据
@@ -150,7 +150,7 @@ const SuppliersComponent = ({ user }) => {
             let suppliersEmailing = [];
             const now = new Date();
             // 如果上次发送邮件的时间存在，且距离现在小于10s，则跳过发送
-            if (lastEmailSentTime && (now - lastEmailSentTime < 10000)) {
+            if (lastEmailSentTime && now - lastEmailSentTime < 10000) {
                 console.log('Email already sent within the last minute. Skipping...');
                 return;
             }
@@ -170,19 +170,22 @@ const SuppliersComponent = ({ user }) => {
             const response = await sendEmailsToSuppliers(suppliersEmailing);
             if (response) {
                 toast.success(`${suppliersEmailing.length} email(s) sent successfully`);
-                await updateSuppliers(suppliersEmailing.map((supplier) => supplier.id), {
-                    nextEmailSendTime: new Date(),
-                    isEmailSent: true
-                });
+                await updateSuppliers(
+                    suppliersEmailing.map((supplier) => supplier.id),
+                    {
+                        nextEmailSendTime: new Date(),
+                        isEmailSent: true
+                    }
+                );
                 loadData();
                 // 更新上次发送邮件的时间
                 setLastEmailSentTime(new Date());
             }
             setSendingEmails(false); // 结束发送邮件的状态
         };
-    
+
         checkEmailReminders();
-    }, [suppliers]);  // 只在 suppliers 更新时触发    
+    }, [suppliers]); // 只在 suppliers 更新时触发
 
     // 加载调查数据
     React.useEffect(() => {
@@ -220,7 +223,7 @@ const SuppliersComponent = ({ user }) => {
                 const worksheet = workbook.Sheets[sheetName];
 
                 const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                
+
                 if (jsonData.length === 0) {
                     toast.error('Excel file is empty');
                     setImportingSuppliers(false);
@@ -318,7 +321,6 @@ const SuppliersComponent = ({ user }) => {
                     console.error('Batch import failed:', batchError);
                     toast.error('Batch import failed. Please try again.');
                 }
-
             } catch (error) {
                 console.error('Error reading Excel file:', error);
                 toast.error('Failed to read Excel file.');
@@ -332,11 +334,17 @@ const SuppliersComponent = ({ user }) => {
         reader.readAsArrayBuffer(file);
     };
 
-    
     // 验证邮箱格式的函数
     const isValidEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
+    };
+
+    const generateRawMaterialsCSV = (rawMaterials) => {
+        const separatorHeader = 'sep=;';
+        const header = 'SN; Raw Material Name; Raw Material Part Number';
+        const rows = rawMaterials.map((material, index) => `${index + 1}; ${material.rawMaterialName}; ${material.rawMaterialPartNumber}`);
+        return [separatorHeader, header, ...rows].join('\n');
     };
 
     // 处理发送邮件
@@ -362,50 +370,42 @@ const SuppliersComponent = ({ user }) => {
         setSendingEmails(true);
 
         try {
-            const selectedSuppliers = suppliers.filter((supplier) =>
-                selectedIds.includes(supplier.id)
-            );
+            const selectedSuppliers = suppliers.filter((supplier) => selectedIds.includes(supplier.id));
             const emailData = selectedSuppliers.map((supplier) => {
                 const email = supplier.contact;
                 if (!email) {
-                    throw new Error(
-                        `Supplier "${supplier.supplierName}" is missing an email address`
-                    );
+                    throw new Error(`Supplier "${supplier.supplierName}" is missing an email address`);
                 }
 
                 if (!isValidEmail(email)) {
-                    throw new Error(
-                        `Invalid email format for supplier "${supplier.supplierName}"`
-                    );
+                    throw new Error(`Invalid email format for supplier "${supplier.supplierName}"`);
                 }
 
-                let survey = surveys.find(
-                    (s) => s._id === supplier.chooseSurvey
-                );
+                let survey = surveys.find((s) => s._id === supplier.chooseSurvey);
+
+                if (supplier.rawMaterials?.length > 0) {
+                    survey.rawMaterials = generateRawMaterialsCSV(supplier.rawMaterials);
+                }
 
                 return {
                     email,
-                    survey,
+                    survey
                 };
             });
 
             const results = await sendEmailsToSuppliers(emailData);
 
-            const fulfilled = results.filter((r) => r.status === 'fulfilled')
-                .length;
-            const rejected = results.filter((r) => r.status === 'rejected');
+            const fulfilled = results?.filter((r) => r.status === 'fulfilled')?.length;
+            const rejected = results?.filter((r) => r.status === 'rejected');
 
             if (fulfilled > 0) {
                 toast.success(`${fulfilled} email(s) sent successfully`);
             }
 
-            if (rejected.length > 0) {
+            if (rejected?.length > 0) {
                 rejected.forEach((r) => {
                     if (r.reason) {
-                        toast.error(
-                            r.reason.message ||
-                                'Error occurred while sending email'
-                        );
+                        toast.error(r.reason.message || 'Error occurred while sending email');
                     }
                 });
             }
@@ -517,7 +517,7 @@ const SuppliersComponent = ({ user }) => {
     const handleAssignSurvey = async (event) => {
         const surveyId = event.target.value;
         setSelectedSurveyId(surveyId);
-    
+
         // Confirmation dialog
         const result = await Swal.fire({
             title: 'Confirm Assign Survey',
@@ -527,28 +527,24 @@ const SuppliersComponent = ({ user }) => {
             confirmButtonText: 'Yes, assign it!',
             cancelButtonText: 'Cancel'
         });
-    
+
         if (!result.isConfirmed) {
             setSelectedSurveyId('');
             return;
         }
-    
+
         // Make API call to update suppliers
         try {
             setLoadingUpdate(true);
-            console.log('selectedIds',selectedIds);
-            console.log('surveyId',surveyId);
+            console.log('selectedIds', selectedIds);
+            console.log('surveyId', surveyId);
             await updateSuppliers(selectedIds, { chooseSurvey: surveyId });
-    
+
             // Update the suppliers in local state
             setSuppliers((prevSuppliers) =>
-                prevSuppliers.map((supplier) =>
-                    selectedIds.includes(supplier.id)
-                        ? { ...supplier, chooseSurvey: surveyId }
-                        : supplier
-                )
+                prevSuppliers.map((supplier) => (selectedIds.includes(supplier.id) ? { ...supplier, chooseSurvey: surveyId } : supplier))
             );
-    
+
             toast.success('Survey assigned successfully');
         } catch (error) {
             console.error('Failed to assign survey:', error);
@@ -557,14 +553,14 @@ const SuppliersComponent = ({ user }) => {
             setLoadingUpdate(false);
             setSelectedSurveyId('');
         }
-    };    
+    };
 
     const [scale, setScale] = React.useState(1.0); // 初始缩放比例为1.0
     const handleZoomIn = () => {
-        setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // 最大缩放到3.0
+        setScale((prevScale) => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // 最大缩放到3.0
     };
     const handleZoomOut = () => {
-        setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩小到0.4
+        setScale((prevScale) => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩小到0.4
     };
 
     // 计算剩余时间，返回一个友好的格式
@@ -610,14 +606,14 @@ const SuppliersComponent = ({ user }) => {
     };
     const handleAddRawMaterialInputChange = (e) => {
         setNewMaterial({ ...newMaterial, [e.target.name]: e.target.value });
-    }
+    };
     const handleAddRawMaterial = async () => {
         if (!newMaterial.rawMaterialName && !newMaterial.rawMaterialPartNumber) {
             toast.error('Please enter raw material name or part number');
             return;
         }
         const updatedRawMaterials = [...selectedRawMaterials, newMaterial];
-        const result = await updateSupplier(selectedRawMaterialsSupplierId, { rawMaterials: updatedRawMaterials }); 
+        const result = await updateSupplier(selectedRawMaterialsSupplierId, { rawMaterials: updatedRawMaterials });
         if (!result) {
             toast.error('Failed to add raw material');
             return;
@@ -629,14 +625,16 @@ const SuppliersComponent = ({ user }) => {
     };
 
     const handleDeleteSingleRawMaterial = async (rawMaterialId) => {
-        const result = await updateSupplier(selectedRawMaterialsSupplierId, { rawMaterials: selectedRawMaterials.filter((rawMaterial) => rawMaterial.id !== rawMaterialId) });
+        const result = await updateSupplier(selectedRawMaterialsSupplierId, {
+            rawMaterials: selectedRawMaterials.filter((rawMaterial) => rawMaterial.id !== rawMaterialId)
+        });
         if (!result) {
             toast.error('Failed to delete raw material');
             return;
         }
         toast.success('Raw material deleted successfully');
         setSelectedRawMaterials(result.rawMaterials.map((rawMaterial) => ({ id: rawMaterial._id, ...rawMaterial })));
-    }
+    };
 
     // 列定义
     const columns = [
@@ -645,10 +643,7 @@ const SuppliersComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={
-                        filterIds.length > 0 &&
-                        filterIds.every((id) => selectedIds.includes(id))
-                    }
+                    checked={filterIds.length > 0 && filterIds.every((id) => selectedIds.includes(id))}
                     indeterminate={
                         filterIds.length > 0 &&
                         filterIds.some((id) => selectedIds.includes(id)) &&
@@ -677,11 +672,7 @@ const SuppliersComponent = ({ user }) => {
                         }}
                     >
                         <IconButton onClick={() => handleSelect(params.row.id)}>
-                            {isSelected ? (
-                                <CheckCircleIcon style={{ color: 'green' }} />
-                            ) : (
-                                <RadioButtonUncheckedIcon />
-                            )}
+                            {isSelected ? <CheckCircleIcon style={{ color: 'green' }} /> : <RadioButtonUncheckedIcon />}
                         </IconButton>
                     </div>
                 );
@@ -730,25 +721,25 @@ const SuppliersComponent = ({ user }) => {
                 const supplierId = params.row?.id;
                 const rawMaterials = params.row?.rawMaterials || [];
                 return (
-                    <Tooltip 
+                    <Tooltip
                         title={
                             <div style={{ display: 'table' }}>
                                 {rawMaterials.map((rawMaterial, index) => (
                                     <div key={index} style={{ display: 'table-row' }}>
-                                        <span 
+                                        <span
                                             style={{
-                                                fontStyle: 'italic',  // 设置斜体
-                                                color: 'lightblue',         // 设置特殊颜色
-                                                marginRight: '8px'    // 给斜体的索引一些右侧间距
+                                                fontStyle: 'italic', // 设置斜体
+                                                color: 'lightblue', // 设置特殊颜色
+                                                marginRight: '8px' // 给斜体的索引一些右侧间距
                                             }}
                                         >
-                                            {(index+1) + '.'}
+                                            {index + 1 + '.'}
                                         </span>
                                         {rawMaterial.rawMaterialName}
                                     </div>
                                 ))}
                             </div>
-                        } 
+                        }
                         arrow
                     >
                         <Button
@@ -767,11 +758,11 @@ const SuppliersComponent = ({ user }) => {
                                 flexDirection: 'column', // 使子元素垂直排列
                                 justifyContent: 'flex-start',
                                 alignItems: 'flex-start',
-                                overflowY: 'auto',  // 允许垂直滚动
-                                maxHeight: '100%'  // 设置最大高度
+                                overflowY: 'auto', // 允许垂直滚动
+                                maxHeight: '100%' // 设置最大高度
                             }}
                         >
-                           {rawMaterials.map((rawMaterial, index) => (
+                            {rawMaterials.map((rawMaterial, index) => (
                                 <Typography
                                     key={index}
                                     variant="body1"
@@ -782,7 +773,7 @@ const SuppliersComponent = ({ user }) => {
                                         width: '100%',
                                         height: '100%',
                                         marginTop: '10px',
-                                        marginBottom: '10px',
+                                        marginBottom: '10px'
                                     }}
                                     // 设置颜色，不断交替
                                     color={index % 2 === 0 ? 'primary' : 'secondary'}
@@ -806,25 +797,25 @@ const SuppliersComponent = ({ user }) => {
                 const supplierId = params.row?.id;
                 const rawMaterials = params.row?.rawMaterials || [];
                 return (
-                    <Tooltip 
+                    <Tooltip
                         title={
                             <div style={{ display: 'table' }}>
                                 {rawMaterials.map((rawMaterial, index) => (
                                     <div key={index} style={{ display: 'table-row' }}>
-                                        <span 
+                                        <span
                                             style={{
-                                                fontStyle: 'italic',  // 设置斜体
-                                                color: 'lightblue',         // 设置特殊颜色
-                                                marginRight: '8px'    // 给斜体的索引一些右侧间距
+                                                fontStyle: 'italic', // 设置斜体
+                                                color: 'lightblue', // 设置特殊颜色
+                                                marginRight: '8px' // 给斜体的索引一些右侧间距
                                             }}
                                         >
-                                            {(index+1) + '.'}
+                                            {index + 1 + '.'}
                                         </span>
                                         {rawMaterial.rawMaterialPartNumber}
                                     </div>
                                 ))}
                             </div>
-                        } 
+                        }
                         arrow
                     >
                         <Button
@@ -843,11 +834,11 @@ const SuppliersComponent = ({ user }) => {
                                 flexDirection: 'column', // 使子元素垂直排列
                                 justifyContent: 'flex-start',
                                 alignItems: 'flex-start',
-                                overflowY: 'auto',  // 允许垂直滚动
-                                maxHeight: '100%'  // 设置最大高度
+                                overflowY: 'auto', // 允许垂直滚动
+                                maxHeight: '100%' // 设置最大高度
                             }}
                         >
-                           {rawMaterials.map((rawMaterial, index) => (
+                            {rawMaterials.map((rawMaterial, index) => (
                                 <Typography
                                     key={index}
                                     variant="body1"
@@ -858,7 +849,7 @@ const SuppliersComponent = ({ user }) => {
                                         width: '100%',
                                         height: '100%',
                                         marginTop: '10px',
-                                        marginBottom: '10px',
+                                        marginBottom: '10px'
                                     }}
                                     // 设置颜色，不断交替
                                     color={index % 2 === 0 ? 'primary' : 'secondary'}
@@ -878,14 +869,10 @@ const SuppliersComponent = ({ user }) => {
             sortable: true,
             width: 300,
             editable: true,
-            valueGetter: (params) => surveys.find(
-                (survey) => survey._id === params.row?.chooseSurvey
-            )?.title || '',
+            valueGetter: (params) => surveys.find((survey) => survey._id === params.row?.chooseSurvey)?.title || '',
             renderCell: (params) => {
                 const selectedSurveyId = params.row?.chooseSurvey || '';
-                const selectedSurvey = surveys.find(
-                    (survey) => survey._id === selectedSurveyId
-                );
+                const selectedSurvey = surveys.find((survey) => survey._id === selectedSurveyId);
                 return (
                     <Tooltip title={selectedSurvey ? selectedSurvey.title : ''} arrow>
                         <Typography variant="body1" noWrap>
@@ -905,9 +892,7 @@ const SuppliersComponent = ({ user }) => {
                         await updateSupplier(id, { chooseSurvey: selectedSurveyId });
                         setSuppliers((prevSuppliers) =>
                             prevSuppliers.map((supplier) =>
-                                supplier.id === id
-                                    ? { ...supplier, chooseSurvey: selectedSurveyId }
-                                    : supplier
+                                supplier.id === id ? { ...supplier, chooseSurvey: selectedSurveyId } : supplier
                             )
                         );
                         toast.success('Survey updated successfully');
@@ -1039,8 +1024,8 @@ const SuppliersComponent = ({ user }) => {
                         )}
                     </div>
                 );
-            },
-        },        
+            }
+        },
         // Actions Column
         {
             field: 'actions',
@@ -1051,9 +1036,9 @@ const SuppliersComponent = ({ user }) => {
             renderCell: (params) => (
                 <strong>
                     <Button
-                        variant='contained'
-                        color='primary'
-                        size='small'
+                        variant="contained"
+                        color="primary"
+                        size="small"
                         startIcon={<ImportContactsOutlined />}
                         style={{ marginRight: 16 }}
                         onClick={() => handleOpenDetailsDialog(params.row)}
@@ -1069,8 +1054,8 @@ const SuppliersComponent = ({ user }) => {
                         <DeleteOutlined color="secondary" />
                     </IconButton>
                 </strong>
-            ),
-        },
+            )
+        }
     ];
 
     const handleCellEditCommit = React.useCallback(
@@ -1085,11 +1070,7 @@ const SuppliersComponent = ({ user }) => {
                 setLoadingUpdate(true);
                 await updateSupplier(id, { [field]: value });
                 setSuppliers((prevSuppliers) =>
-                    prevSuppliers.map((supplier) =>
-                        supplier.id === id
-                            ? { ...supplier, [field]: value }
-                            : supplier
-                    )
+                    prevSuppliers.map((supplier) => (supplier.id === id ? { ...supplier, [field]: value } : supplier))
                 );
                 toast.success('Survey updated successfully');
             } catch (error) {
@@ -1100,7 +1081,8 @@ const SuppliersComponent = ({ user }) => {
             }
             // 你可以在这里添加其他逻辑，比如发送更新到服务器
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
-        }, [suppliers]
+        },
+        [suppliers]
     );
 
     const handleRawMaterialsDialogDataGridCellEditCommit = React.useCallback(
@@ -1127,9 +1109,10 @@ const SuppliersComponent = ({ user }) => {
             }
             // 你可以在这里添加其他逻辑，比如发送更新到服务器
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
-        }, [selectedRawMaterials, selectedRawMaterialsSupplierId]
+        },
+        [selectedRawMaterials, selectedRawMaterialsSupplierId]
     );
-    
+
     // 添加供应商对话框
     const AddSupplierDialog = ({ open, handleClose }) => {
         const [dateTimePickerValue, setDateTimePickerValue] = React.useState(null); // 记录选择的时间
@@ -1366,15 +1349,15 @@ const SuppliersComponent = ({ user }) => {
 
     // 主渲染部分
     return (
-        <MainCard title='Suppliers' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title="Suppliers" boxShadow shadow={theme.shadows[2]}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <Select
                     value={selectedSurveyId}
                     onChange={handleAssignSurvey}
                     disabled={selectedIds.length === 0}
                     displayEmpty
-                    color='primary'
-                    size='small'
+                    color="primary"
+                    size="small"
                     style={{ marginLeft: '10px', top: -63, right: -124, marginTop: -10 }}
                 >
                     <MenuItem value="" disabled>
@@ -1387,36 +1370,31 @@ const SuppliersComponent = ({ user }) => {
                     ))}
                 </Select>
                 <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px', right: -124 }}
-                        startIcon={<DownloadOutlined />}
+                    startIcon={<DownloadOutlined />}
                     component="label"
-                        onClick={handleOpenDialog}
+                    onClick={handleOpenDialog}
                 >
                     Add Supplier
                 </Button>
                 <Button
-                variant='contained'
-                color='primary'
-                size='small'
-                style={{ top: -70, marginLeft: '10px', right: -124 }}
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    style={{ top: -70, marginLeft: '10px', right: -124 }}
                     startIcon={<DownloadOutlined />}
                     component="label"
                 >
                     {importingSuppliers ? 'Importing...' : 'Batch Import Suppliers from Excel'}
-                    <input
-                        type="file"
-                        accept=".xlsx, .xls"
-                        style={{ display: 'none' }}
-                        onChange={handleExcelUpload}
-                    />
+                    <input type="file" accept=".xlsx, .xls" style={{ display: 'none' }} onChange={handleExcelUpload} />
                 </Button>
                 <Button
-                    variant='contained'
-                    color='secondary'
-                    size='small'
+                    variant="contained"
+                    color="secondary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px', right: -124 }}
                     startIcon={<DeleteOutlined />}
                     onClick={handleDeleteSuppliers}
@@ -1425,15 +1403,15 @@ const SuppliersComponent = ({ user }) => {
                     {deletingSuppliers ? 'Deleting...' : 'Delete Suppliers'}
                 </Button>
                 <Button
-                    variant='contained'
-                    color='secondary'
-                    size='small'
+                    variant="contained"
+                    color="secondary"
+                    size="small"
                     style={{ zIndex: 1 }}
-                        startIcon={<NotificationsActive />}
-                        onClick={handleSendEmails}
-                        disabled={sendingEmails || selectedIds.length === 0}
-                    >
-                        {sendingEmails ? 'Sending...' : 'Send Emails'}
+                    startIcon={<NotificationsActive />}
+                    onClick={handleSendEmails}
+                    disabled={sendingEmails || selectedIds.length === 0}
+                >
+                    {sendingEmails ? 'Sending...' : 'Send Emails'}
                 </Button>
             </div>
             <div style={{ width: '100%', marginTop: -31 }}>
@@ -1448,71 +1426,44 @@ const SuppliersComponent = ({ user }) => {
                     disableSelectionOnClick
                     loading={isLoading || loadingUpdate || sendingEmails || importingSuppliers || deletingSuppliers}
                     components={{
-                        Toolbar: () => <CustomToolbar title={"Suppliers"} length={suppliers.length} />
+                        Toolbar: () => <CustomToolbar title={'Suppliers'} length={suppliers.length} />
                     }}
                     onCellEditCommit={handleCellEditCommit}
                     experimentalFeatures={{ newEditingApi: true }}
                     onFilterModelChange={(model) => {
                         const filter = model.items.map((item) => {
-                            return [
-                                item.columnField,
-                                item.operatorValue,
-                                item.value
-                            ];
+                            return [item.columnField, item.operatorValue, item.value];
                         });
                         const filterids = suppliers
                             .filter((supplier) => {
-                                return filter.every(
-                                    ([field, operator, value]) => {
-                                        // [TODO] [FIXME] 特殊处理 Choose Survey 列 和 Feedback 列
-                                        const cellValue = (field === 'chooseSurvey') 
-                                                            ? surveys.find((s) => s._id === supplier.chooseSurvey)?.name 
-                                                            : (field === 'feedback') 
-                                                                ? (supplier.feedback.length > 0 ? `Feedbacks (${supplier.feedback.length})`: 'No Feedback')
-                                                                : supplier[field];
-                                        if (operator === 'isEmpty') {
-                                            return (
-                                                cellValue === '' ||
-                                                cellValue === undefined
-                                            );
-                                        } else if (operator === 'isNotEmpty') {
-                                            return (
-                                                cellValue !== '' &&
-                                                cellValue !== undefined
-                                            );
-                                        } else if (value === undefined) {
-                                            return true;
-                                        } else if (operator === 'contains') {
-                                            return cellValue
-                                                ?.toString()
-                                                .toLowerCase()
-                                                .includes(
-                                                    value.toLowerCase()
-                                                );
-                                        } else if (operator === 'equals') {
-                                            return (
-                                                cellValue
-                                                    ?.toString()
-                                                    .toLowerCase() ===
-                                                value.toLowerCase()
-                                            );
-                                        } else if (operator === 'startsWith') {
-                                            return cellValue
-                                                ?.toString()
-                                                .toLowerCase()
-                                                .startsWith(
-                                                    value.toLowerCase()
-                                                );
-                                        } else if (operator === 'endsWith') {
-                                            return cellValue
-                                                ?.toString()
-                                                .toLowerCase()
-                                                .endsWith(value.toLowerCase());
-                                        } else {
-                                            return false;
-                                        }
+                                return filter.every(([field, operator, value]) => {
+                                    // [TODO] [FIXME] 特殊处理 Choose Survey 列 和 Feedback 列
+                                    const cellValue =
+                                        field === 'chooseSurvey'
+                                            ? surveys.find((s) => s._id === supplier.chooseSurvey)?.name
+                                            : field === 'feedback'
+                                            ? supplier.feedback.length > 0
+                                                ? `Feedbacks (${supplier.feedback.length})`
+                                                : 'No Feedback'
+                                            : supplier[field];
+                                    if (operator === 'isEmpty') {
+                                        return cellValue === '' || cellValue === undefined;
+                                    } else if (operator === 'isNotEmpty') {
+                                        return cellValue !== '' && cellValue !== undefined;
+                                    } else if (value === undefined) {
+                                        return true;
+                                    } else if (operator === 'contains') {
+                                        return cellValue?.toString().toLowerCase().includes(value.toLowerCase());
+                                    } else if (operator === 'equals') {
+                                        return cellValue?.toString().toLowerCase() === value.toLowerCase();
+                                    } else if (operator === 'startsWith') {
+                                        return cellValue?.toString().toLowerCase().startsWith(value.toLowerCase());
+                                    } else if (operator === 'endsWith') {
+                                        return cellValue?.toString().toLowerCase().endsWith(value.toLowerCase());
+                                    } else {
+                                        return false;
                                     }
-                                );
+                                });
                             })
                             .map((supplier) => supplier.id);
                         setFilterIds(filterids);
@@ -1520,18 +1471,15 @@ const SuppliersComponent = ({ user }) => {
                 />
             </div>
             <AddSupplierDialog open={openDialog} handleClose={handleCloseDialog} />
-            <Dialog 
-                open={openDialogFeedback} 
-                onClose={handleCloseDialogFeedback} 
+            <Dialog
+                open={openDialogFeedback}
+                onClose={handleCloseDialogFeedback}
                 maxWidth={selectedFeedback.length > 0 ? 'lg' : 'sm'}
-                fullWidth>
+                fullWidth
+            >
                 <DialogTitle>
                     Feedback & Documents
-                    <IconButton
-                        aria-label="close"
-                        onClick={handleCloseDialogFeedback}
-                        style={{ position: 'absolute', right: 8, top: 8 }}
-                    >
+                    <IconButton aria-label="close" onClick={handleCloseDialogFeedback} style={{ position: 'absolute', right: 8, top: 8 }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
@@ -1539,17 +1487,19 @@ const SuppliersComponent = ({ user }) => {
                     {selectedFeedback.length > 0 ? (
                         <div style={{ display: 'flex', height: 666, width: '100%' }}>
                             {/* Document Preview Area */}
-                            <div style={{
-                                flex: '9',
-                                height: '100%',
-                                border: `1px solid ${theme.palette.divider}`,
-                                boxSizing: 'border-box',
-                                backgroundColor: '#fff',
-                                marginRight: '8px',
-                                position: 'relative',
-                                display: 'flex',
-                                flexDirection: 'column',
-                            }}>
+                            <div
+                                style={{
+                                    flex: '9',
+                                    height: '100%',
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    boxSizing: 'border-box',
+                                    backgroundColor: '#fff',
+                                    marginRight: '8px',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}
+                            >
                                 {/* 缩放控制按钮 */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                                     <IconButton onClick={handleZoomOut} aria-label="zoom out">
@@ -1562,15 +1512,17 @@ const SuppliersComponent = ({ user }) => {
                                         <ZoomInIcon />
                                     </IconButton>
                                 </div>
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '29px',
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    overflow: 'auto',
-                                    padding: '8px'
-                                }}>
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '29px',
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        overflow: 'auto',
+                                        padding: '8px'
+                                    }}
+                                >
                                     {selectedDocument ? (
                                         previewingFileType === 'pdf' ? (
                                             <Document
@@ -1583,87 +1535,90 @@ const SuppliersComponent = ({ user }) => {
                                                 ))}
                                             </Document>
                                         ) : previewingFileType === 'xlsx' ? (
-                                            <Typography variant='body1'>XLSX files cannot be previewed directly. Download to view.</Typography>
+                                            <Typography variant="body1">
+                                                XLSX files cannot be previewed directly. Download to view.
+                                            </Typography>
                                         ) : previewingFileType === 'txt' ? (
-                                            <iframe 
-                                                src={config[config.env].baseURL + selectedDocument.content} 
-                                                style={{ width: '100%', height: '100%', border: 'none' }} 
+                                            <iframe
+                                                src={config[config.env].baseURL + selectedDocument.content}
+                                                style={{ width: '100%', height: '100%', border: 'none' }}
                                                 title="Text Document Preview"
                                             />
                                         ) : (
-                                            <Typography variant='body1'>File type not supported for preview.</Typography>
+                                            <Typography variant="body1">File type not supported for preview.</Typography>
                                         )
                                     ) : (
-                                        <Typography variant='body1'>
-                                            No file available.
-                                        </Typography>
+                                        <Typography variant="body1">No file available.</Typography>
                                     )}
                                 </div>
                             </div>
-                            <div style={{
-                                flex: '13',
-                                height: '100%',
-                                border: `1px solid ${theme.palette.divider}`,
-                                boxSizing: 'border-box',
-                                backgroundColor: '#fff',
-                            }}>
+                            <div
+                                style={{
+                                    flex: '13',
+                                    height: '100%',
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    boxSizing: 'border-box',
+                                    backgroundColor: '#fff'
+                                }}
+                            >
                                 <DataGrid
                                     rows={selectedFeedback.map((feedback, index) => ({
                                         id: index,
                                         subject: feedback.subject || 'No Subject',
                                         content: feedback.content || 'No Content',
-                                        attachments: Array.isArray(feedback.attachments) && feedback.attachments.length > 0 
-                                                        ? feedback.attachments
-                                                        : [{ filename: 'No Document', url: '' }]
+                                        attachments:
+                                            Array.isArray(feedback.attachments) && feedback.attachments.length > 0
+                                                ? feedback.attachments
+                                                : [{ filename: 'No Document', url: '' }]
                                     }))}
                                     columns={[
                                         {
-                                        field: 'subject',
-                                        headerName: 'Subject',
-                                        width: 200,
-                                        renderCell: (params) => (
-                                            <Tooltip title={params.value || 'No Subject'} arrow>
-                                            <Typography noWrap>{params.value}</Typography>
-                                            </Tooltip>
-                                        ),
-                                        },
-                                        {
-                                        field: 'content',
-                                        headerName: 'Content',
-                                        width: 300,
-                                        renderCell: (params) => (
-                                            <Tooltip title={params.value || 'No Content'} arrow>
-                                            <Typography noWrap>{params.value}</Typography>
-                                            </Tooltip>
-                                        ),
-                                        },
-                                        {
-                                        field: 'attachments',
-                                        headerName: 'Document',
-                                        width: 600, // You may want to increase the width to fit multiple documents
-                                        renderCell: (params) => (
-                                            <div style={{ display: 'flex', flexDirection: 'row', gap: '12px' }}>
-                                              {params.value.map((attachment, index) => (
-                                                <Tooltip key={index} title={attachment.filename || 'No Document'} arrow>
-                                                  <IconButton
-                                                    size='small'
-                                                    color="primary"
-                                                    onClick={() => handleDocumentClick(attachment)}
-                                                  >
-                                                    {attachment.filename || 'No Document'}
-                                                  </IconButton>
+                                            field: 'subject',
+                                            headerName: 'Subject',
+                                            width: 200,
+                                            renderCell: (params) => (
+                                                <Tooltip title={params.value || 'No Subject'} arrow>
+                                                    <Typography noWrap>{params.value}</Typography>
                                                 </Tooltip>
-                                              ))}
-                                            </div>
-                                          ),                                          
+                                            )
                                         },
+                                        {
+                                            field: 'content',
+                                            headerName: 'Content',
+                                            width: 300,
+                                            renderCell: (params) => (
+                                                <Tooltip title={params.value || 'No Content'} arrow>
+                                                    <Typography noWrap>{params.value}</Typography>
+                                                </Tooltip>
+                                            )
+                                        },
+                                        {
+                                            field: 'attachments',
+                                            headerName: 'Document',
+                                            width: 600, // You may want to increase the width to fit multiple documents
+                                            renderCell: (params) => (
+                                                <div style={{ display: 'flex', flexDirection: 'row', gap: '12px' }}>
+                                                    {params.value.map((attachment, index) => (
+                                                        <Tooltip key={index} title={attachment.filename || 'No Document'} arrow>
+                                                            <IconButton
+                                                                size="small"
+                                                                color="primary"
+                                                                onClick={() => handleDocumentClick(attachment)}
+                                                            >
+                                                                {attachment.filename || 'No Document'}
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    ))}
+                                                </div>
+                                            )
+                                        }
                                     ]}
                                     pageSize={9}
                                     autoHeight
                                     disableSelectionOnClick
                                     density={'standard'}
                                     components={{
-                                        Toolbar: () => <CustomToolbar title={"Feedback & Documents"} length={selectedFeedback.length} />
+                                        Toolbar: () => <CustomToolbar title={'Feedback & Documents'} length={selectedFeedback.length} />
                                     }}
                                 />
                             </div>
@@ -1671,33 +1626,33 @@ const SuppliersComponent = ({ user }) => {
                     ) : (
                         <LocalizationProvider dateAdapter={AdapterDateFns}>
                             <div>
-                            <Typography variant="body1" style={{ marginBottom: '16px' }}>
-                                No Feedback Available. Please select a date and time:
-                            </Typography>
-                            <DateTimePicker
-                                value={dateTimePickerValue}
-                                onChange={setDateTimePickerValue}
-                                renderInput={(params) => <TextField {...params} fullWidth />}
-                                minutesStep={1} // 设置分钟步长为1，精确到分钟
-                                minDate={new Date()} // 禁止选择现在之前的时间
-                                minDateTime={new Date()} // 除了日期，时间也需要禁止选择当前时间之前
-                            />
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                style={{ marginTop: '16px' }}
-                                onClick={async () => {
-                                    await updateSupplier(selectedFeedbackSupplierId, { 
-                                        nextEmailSendTime: dateTimePickerValue,
-                                        isEmailSent: false
-                                    });
-                                    handleCloseDialogFeedback();
-                                    await loadData();
-                                }}
-                            >
-                                Confirm Timer
-                            </Button>
+                                <Typography variant="body1" style={{ marginBottom: '16px' }}>
+                                    No Feedback Available. Please select a date and time:
+                                </Typography>
+                                <DateTimePicker
+                                    value={dateTimePickerValue}
+                                    onChange={setDateTimePickerValue}
+                                    renderInput={(params) => <TextField {...params} fullWidth />}
+                                    minutesStep={1} // 设置分钟步长为1，精确到分钟
+                                    minDate={new Date()} // 禁止选择现在之前的时间
+                                    minDateTime={new Date()} // 除了日期，时间也需要禁止选择当前时间之前
+                                />
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    size="small"
+                                    style={{ marginTop: '16px' }}
+                                    onClick={async () => {
+                                        await updateSupplier(selectedFeedbackSupplierId, {
+                                            nextEmailSendTime: dateTimePickerValue,
+                                            isEmailSent: false
+                                        });
+                                        handleCloseDialogFeedback();
+                                        await loadData();
+                                    }}
+                                >
+                                    Confirm Timer
+                                </Button>
                             </div>
                         </LocalizationProvider>
                     )}
@@ -1732,7 +1687,7 @@ const SuppliersComponent = ({ user }) => {
                 <DialogContent dividers>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <DataGrid
-                            rows={ selectedRawMaterials || [] }
+                            rows={selectedRawMaterials || []}
                             columns={[
                                 {
                                     field: 'rawMaterialName',
@@ -1743,7 +1698,7 @@ const SuppliersComponent = ({ user }) => {
                                         <Tooltip title={params.value || ''} arrow>
                                             <Typography noWrap>{params.value}</Typography>
                                         </Tooltip>
-                                    ),
+                                    )
                                 },
                                 {
                                     field: 'rawMaterialPartNumber',
@@ -1754,7 +1709,7 @@ const SuppliersComponent = ({ user }) => {
                                         <Tooltip title={params.value || ''} arrow>
                                             <Typography noWrap>{params.value}</Typography>
                                         </Tooltip>
-                                    ),
+                                    )
                                 },
                                 {
                                     field: 'actions',
@@ -1773,7 +1728,7 @@ const SuppliersComponent = ({ user }) => {
                                                 <DeleteOutlined color="secondary" />
                                             </IconButton>
                                         </strong>
-                                    ),
+                                    )
                                 }
                             ]}
                             pageSize={5}
@@ -1782,7 +1737,7 @@ const SuppliersComponent = ({ user }) => {
                             disableSelectionOnClick
                             density={'standard'}
                         />
-                        <Divider style={{marginTop: "10px", marginBottom: "-10px"}}/>
+                        <Divider style={{ marginTop: '10px', marginBottom: '-10px' }} />
                         <div style={{ display: 'flex', gap: '16px' }}>
                             <TextField
                                 label="New Material Name"
@@ -1802,12 +1757,12 @@ const SuppliersComponent = ({ user }) => {
                                 value={newMaterial.rawMaterialPartNumber}
                                 onChange={handleAddRawMaterialInputChange}
                             />
-                            <Button 
+                            <Button
                                 fullWidth
-                                onClick={handleAddRawMaterial} 
+                                onClick={handleAddRawMaterial}
                                 color="primary"
                                 variant="contained"
-                                startIcon={<AddOutlined />}   
+                                startIcon={<AddOutlined />}
                                 // 上下居中
                                 style={{ marginTop: '17px', marginBottom: '10px', width: '50%' }}
                             >
