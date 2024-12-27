@@ -383,7 +383,7 @@ const SuppliersComponent = ({ user }) => {
 
                 let survey = surveys.find((s) => s._id === supplier.chooseSurvey);
 
-                if (supplier.rawMaterials?.length > 0) {
+                if (supplier?.rawMaterials?.length > 0 && survey) {
                     survey.rawMaterials = generateRawMaterialsCSV(supplier.rawMaterials);
                 }
 
