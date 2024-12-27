@@ -387,6 +387,11 @@ const SuppliersComponent = ({ user }) => {
                     survey.rawMaterials = generateRawMaterialsCSV(supplier.rawMaterials);
                 }
 
+                if (!survey) {
+                    console.error('Please assign a survey to all selected suppliers!');
+                    return toast.error('Please assign a survey to all selected suppliers!');
+                }
+
                 return {
                     email,
                     survey
