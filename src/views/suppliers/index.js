@@ -388,8 +388,7 @@ const SuppliersComponent = ({ user }) => {
                 }
 
                 if (!survey) {
-                    console.error('Please assign a survey to all selected suppliers!');
-                    return toast.error('Please assign a survey to all selected suppliers!');
+                    throw new Error('Please assign a survey to all selected suppliers!');
                 }
 
                 return {
