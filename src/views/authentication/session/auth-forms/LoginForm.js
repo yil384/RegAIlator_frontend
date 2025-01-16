@@ -65,7 +65,7 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
 
     return (
         <React.Fragment>
-            <Grid container direction='column' justifyContent='center' spacing={2}>
+            <Grid container direction="column" justifyContent="center" spacing={2}>
                 <Grid item xs={12}>
                     <Box
                         sx={{
@@ -73,10 +73,10 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                             display: 'flex'
                         }}
                     >
-                        <Divider className={classes.signDivider} orientation='horizontal' />
+                        <Divider className={classes.signDivider} orientation="horizontal" />
                         <AnimateButton>
                             <Button
-                                variant='outlined'
+                                variant="outlined"
                                 className={classes.signText}
                                 sx={{ borderRadius: customization.borderRadius + 'px' }}
                                 disableRipple
@@ -85,7 +85,7 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                                 {getGreetingTime()}!
                             </Button>
                         </AnimateButton>
-                        <Divider className={classes.signDivider} orientation='horizontal' />
+                        <Divider className={classes.signDivider} orientation="horizontal" />
                     </Box>
                 </Grid>
             </Grid>
@@ -122,15 +122,15 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                 {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                     <form noValidate onSubmit={handleSubmit}>
                         <FormControl fullWidth error={Boolean(errors.email)} className={classes.loginInput}>
-                            <InputLabel htmlFor='outlined-adornment-email-login'>Email Address</InputLabel>
+                            <InputLabel htmlFor="outlined-adornment-email-login">Email Address</InputLabel>
                             <OutlinedInput
-                                id='outlined-adornment-email-login'
-                                type='email'
+                                id="outlined-adornment-email-login"
+                                type="email"
                                 value={values.email}
-                                name='email'
+                                name="email"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
-                                label='Email Address'
+                                label="Email Address"
                                 inputProps={{
                                     classes: {
                                         notchedOutline: classes.notchedOutline
@@ -138,7 +138,7 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                                 }}
                             />
                             {errors.email && (
-                                <FormHelperText error id='standard-weight-helper-text-email-login'>
+                                <FormHelperText error id="standard-weight-helper-text-email-login">
                                     {' '}
                                     {errors.email}{' '}
                                 </FormHelperText>
@@ -146,27 +146,27 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                         </FormControl>
 
                         <FormControl fullWidth error={Boolean(errors.password)} className={classes.loginInput}>
-                            <InputLabel htmlFor='outlined-adornment-password-login'>Password</InputLabel>
+                            <InputLabel htmlFor="outlined-adornment-password-login">Password</InputLabel>
                             <OutlinedInput
-                                id='outlined-adornment-password-login'
+                                id="outlined-adornment-password-login"
                                 type={showPassword ? 'text' : 'password'}
                                 value={values.password}
-                                name='password'
+                                name="password"
                                 onBlur={handleBlur}
                                 onChange={handleChange}
                                 endAdornment={
-                                    <InputAdornment position='end'>
+                                    <InputAdornment position="end">
                                         <IconButton
-                                            aria-label='toggle password visibility'
+                                            aria-label="toggle password visibility"
                                             onClick={handleClickShowPassword}
                                             onMouseDown={handleMouseDownPassword}
-                                            edge='end'
+                                            edge="end"
                                         >
                                             {showPassword ? <Visibility /> : <VisibilityOff />}
                                         </IconButton>
                                     </InputAdornment>
                                 }
-                                label='Password'
+                                label="Password"
                                 inputProps={{
                                     classes: {
                                         notchedOutline: classes.notchedOutline
@@ -174,29 +174,29 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                                 }}
                             />
                             {errors.password && (
-                                <FormHelperText error id='standard-weight-helper-text-password-login'>
+                                <FormHelperText error id="standard-weight-helper-text-password-login">
                                     {' '}
                                     {errors.password}{' '}
                                 </FormHelperText>
                             )}
                         </FormControl>
-                        <Stack direction='row' alignItems='center' justifyContent='space-between' spacing={1}>
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
                             <FormControlLabel
                                 control={
                                     <Checkbox
                                         checked={rememberMeChecked}
                                         onChange={(event) => setRememberMeChecked(event.target.checked)}
-                                        name='checked'
-                                        color='primary'
+                                        name="checked"
+                                        color="primary"
                                     />
                                 }
-                                label='Remember me'
+                                label="Remember me"
                             />
                             <Typography
-                                variant='subtitle1'
+                                variant="subtitle1"
                                 component={Link}
                                 to={'/forgot-password'}
-                                color='secondary'
+                                color="secondary"
                                 sx={{ textDecoration: 'none' }}
                             >
                                 Forgot Password?
@@ -222,10 +222,10 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                                     disableElevation
                                     disabled={isSubmitting}
                                     fullWidth
-                                    size='large'
-                                    type='submit'
-                                    variant='contained'
-                                    color='primary'
+                                    size="large"
+                                    type="submit"
+                                    variant="contained"
+                                    color="primary"
                                 >
                                     Sign in
                                 </Button>
@@ -233,13 +233,11 @@ const LoginForm = ({ loginUserAction, isLoading, rememberMe, loginCredentials })
                         </Box>
                     </form>
                 )}
-
             </Formik>
             <LoaderBackdrop isLoading={isLoading} />
         </React.Fragment>
     );
 };
-
 
 const mapStateToProps = (state) => ({
     isLoading: state.authReducer.isLoading,
