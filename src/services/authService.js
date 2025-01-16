@@ -11,7 +11,7 @@ export const setSession = ({ user, tokens }) => {
 };
 
 export const clearSession = () => {
-    // localStorageService.removeItem(CONSTANTS.session_user);
+    localStorageService.removeItem(CONSTANTS.session_user);
     localStorageService.removeItem(CONSTANTS.session_tokens);
     cookieService.deleteCookie(CONSTANTS.access_token);
 };
