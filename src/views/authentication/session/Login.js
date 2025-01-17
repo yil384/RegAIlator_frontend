@@ -74,6 +74,24 @@ const Login = () => {
                                             </Typography>
                                         </Grid>
                                     </Grid>
+                                    {/* New message about cookies */}
+                                    <Typography variant="body4" color="textSecondary" align="left" sx={{ marginTop: 2 }}>
+                                        This website stores cookies on your computer. These cookies are used to collect information about
+                                        how you interact with our website and allow us to remember you. We use this information in order to
+                                        improve and customize your browsing experience and for analytics and metrics about our visitors both
+                                        on this website and other media. To find out more about the cookies we use, see our{' '}
+                                        <RouterLink
+                                            href="https://www.example.com/privacy-policy"
+                                            target="_blank"
+                                            style={{ textDecoration: 'underline', color: 'blue' }}
+                                        >
+                                            Privacy Policy
+                                        </RouterLink>
+                                        .
+                                        <br />
+                                        If you decline, your information won't be tracked when you visit this website. A single cookie will
+                                        be used in your browser to remember your preference not to be tracked.
+                                    </Typography>
                                 </Grid>
                             </AuthCardWrapper>
                         </Grid>
