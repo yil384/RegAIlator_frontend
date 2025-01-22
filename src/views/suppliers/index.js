@@ -65,8 +65,7 @@ import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import { DateTimePicker, LocalizationProvider } from '@mui/lab';
 import AdapterDateFns from '@date-io/date-fns';
-import { set } from 'date-fns';
-import { file } from 'jszip';
+import Box from '@material-ui/core/Box';
 // 设置 PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -640,6 +639,70 @@ const SuppliersComponent = ({ user }) => {
         setSelectedRawMaterials(result.rawMaterials.map((rawMaterial) => ({ id: rawMaterial._id, ...rawMaterial })));
     };
 
+    // 定义标签列表
+    let tagList = [];
+
+    // // 生成颜色的方法（基于 tagList 的长度）
+    // const generateColor = (length) => {
+    //     // 使用长度生成颜色，通过映射长度到 HSL 色彩空间
+    //     const h = (length * 37) % 360; // 色相 0-360，37 是一个素数，用于均匀分布
+    //     const s = 70; // 饱和度固定为 70%
+    //     const l = 50; // 亮度固定为 50%
+    //     return `hsl(${h}, ${s}%, ${l}%)`; // 返回 HSL 颜色
+    // };
+
+    // 生成颜色的方法
+    const generateColor = (tag) => {
+        // 简单的哈希函数，将字符串转成一个数值
+        let hash = 0;
+        for (let i = 0; i < tag.length; i++) {
+            hash = tag.charCodeAt(i) + ((hash << 5) - hash); // 左移位
+            hash = hash & hash; // 保持 32 位整数
+        }
+        // 转为 HSL 色彩空间，确保颜色均匀分布
+        const h = Math.abs(hash) % 360; // 色相 0-360
+        const s = 70 + (hash % 20); // 饱和度 70%-90%
+        const l = 50 + (hash % 10); // 亮度 50%-60%
+        return `hsl(${h}, ${s}%, ${l}%)`; // 返回 HSL 颜色
+    };
+
+    // 为每个反馈项渲染标签
+    const renderTags = (tags) => {
+        return tags.map((tag, index) => {
+            if (!tag) {
+                return null;
+            }
+            const tagText = tagList.find((t) => t.tag === tag)?.text;
+            if (!tagText) {
+                // generate a new color for the tag based on the length of the tagList
+                tagList.push({ tag, text: `${tag}`, color: generateColor(tag) });
+            }
+            const tagColor = tagList.find((t) => t.tag === tag)?.color;
+
+            return (
+                <Box
+                    key={index}
+                    style={{
+                        display: 'inline-flex', // 使用 inline-flex 使其能在行内显示
+                        alignItems: 'center', // 垂直居中
+                        justifyContent: 'center', // 水平居中
+                        padding: '4px 12px', // 上下左右的内边距，避免文本贴边
+                        margin: '0 4px', // 每个标签之间的间距
+                        height: '100%',
+                        borderRadius: '12px', // 设置圆角
+                        backgroundColor: tagColor, // 标签背景颜色
+                        color: 'white', // 白色字体
+                        fontSize: '12px', // 标签文字大小
+                        fontWeight: 'bold', // 标签文字加粗
+                        textAlign: 'center' // 确保文字居中
+                    }}
+                >
+                    {tagText}
+                </Box>
+            );
+        });
+    };
+
     // 列定义
     const columns = [
         // 选择列
@@ -998,17 +1061,38 @@ const SuppliersComponent = ({ user }) => {
                 const nextSendTime = params.row?.nextEmailSendTime;
                 const supplierId = params.row?.id;
                 const isEmailSent = params.row?.isEmailSent;
+
                 return (
                     <div
                         style={{ width: '100%', cursor: 'pointer' }}
                         onClick={() => handleOpenDialogFeedback(feedbackArray, supplierId, nextSendTime)}
                     >
                         {feedbackArray.length > 0 ? (
-                            <Typography variant="body1" noWrap>
-                                {`Feedbacks (${feedbackArray.length})`}
-                            </Typography>
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <div
+                                    style={{
+                                        alignItems: 'center', // 垂直居中
+                                        display: 'flex', // 使用 flex 布局
+                                        height: '30px'
+                                    }}
+                                >
+                                    {renderTags(feedbackArray.map((f) => f.tag))} {/* 渲染标签 */}
+                                </div>
+                                <Typography variant="body1" noWrap style={{ marginLeft: 8 }}>
+                                    {`Feedbacks (${feedbackArray.length})`}
+                                </Typography>
+                            </div>
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <div
+                                    style={{
+                                        alignItems: 'center', // 垂直居中
+                                        display: 'flex', // 使用 flex 布局
+                                        height: '30px',
+                                        width: '8px'
+                                    }}
+                                >
+                                </div>
                                 <Tooltip title="No feedback">
                                     <Typography variant="body1" noWrap>
                                         No Feedback
