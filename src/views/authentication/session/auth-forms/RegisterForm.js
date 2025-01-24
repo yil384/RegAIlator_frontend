@@ -42,7 +42,6 @@ import { useStyles } from './registerForm.style';
 import toast from 'react-hot-toast';
 import { getRegisterInstructor } from '../auth.helper';
 
-
 //===========================||  REGISTER ||===========================//
 
 const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
@@ -100,14 +99,14 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
 
     return (
         <React.Fragment>
-            <Grid container direction='column' justifyContent='center' spacing={2}>
-                <Grid item xs={12} container alignItems='center' justifyContent='center'>
+            <Grid container direction="column" justifyContent="center" spacing={2}>
+                <Grid item xs={12} container alignItems="center" justifyContent="center">
                     <Box
                         sx={{
                             mb: 2
                         }}
                     >
-                        <Typography variant='subtitle1'>Sign up with Email address</Typography>
+                        <Typography variant="subtitle1">Sign up with Email address</Typography>
                     </Box>
                 </Grid>
             </Grid>
@@ -128,7 +127,6 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                     role: Yup.string().required('Role is required'),
                     instructor: Yup.string().optional('Please select your instructor.')
                 })}
-
                 onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
                     try {
                         if (scriptedRef.current) {
@@ -147,28 +145,23 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                 }}
             >
                 {(formik) => {
-                    const {
-                        errors,
-                        handleBlur,
-                        handleChange,
-                        handleSubmit,
-                        isSubmitting,
-                        values,
-                        submitCount
-                    } = formik;
+                    const { errors, handleBlur, handleChange, handleSubmit, isSubmitting, values, submitCount } = formik;
                     return (
-                        <form onSubmit={handleSubmit} {...others} autoComplete='off'>
+                        <form onSubmit={handleSubmit} {...others} autoComplete="off">
                             <OnSubmitValidationError callback={onSubmitValidationError} />
                             <Grid container spacing={matchDownSM ? 0 : 2}>
                                 <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth error={Boolean(!!submitCount && errors.firstname)}
-                                                 className={classes.loginInput}>
-                                        <InputLabel htmlFor='outlined-adornment-fname-register'>First Name</InputLabel>
+                                    <FormControl
+                                        fullWidth
+                                        error={Boolean(!!submitCount && errors.firstname)}
+                                        className={classes.loginInput}
+                                    >
+                                        <InputLabel htmlFor="outlined-adornment-fname-register">First Name</InputLabel>
                                         <OutlinedInput
-                                            id='outlined-adornment-fname-register'
-                                            type='text'
+                                            id="outlined-adornment-fname-register"
+                                            type="text"
                                             value={values.firstname}
-                                            name='firstname'
+                                            name="firstname"
                                             onBlur={handleBlur}
                                             onChange={handleChange}
                                             inputProps={{
@@ -178,21 +171,20 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                             }}
                                         />
                                         {!!submitCount && errors.firstname && (
-                                            <FormHelperText error id='standard-weight-helper-fname-password-register'>
+                                            <FormHelperText error id="standard-weight-helper-fname-password-register">
                                                 {errors.firstname}
                                             </FormHelperText>
                                         )}
                                     </FormControl>
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth error={Boolean(!!submitCount && errors.lastname)}
-                                                 className={classes.loginInput}>
-                                        <InputLabel htmlFor='outlined-adornment-lname-register'>Last Name</InputLabel>
+                                    <FormControl fullWidth error={Boolean(!!submitCount && errors.lastname)} className={classes.loginInput}>
+                                        <InputLabel htmlFor="outlined-adornment-lname-register">Last Name</InputLabel>
                                         <OutlinedInput
-                                            id='outlined-adornment-lname-register'
-                                            type='text'
+                                            id="outlined-adornment-lname-register"
+                                            type="text"
                                             value={values.lastname}
-                                            name='lastname'
+                                            name="lastname"
                                             onBlur={handleBlur}
                                             onChange={handleChange}
                                             inputProps={{
@@ -205,7 +197,7 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                             }}
                                         />
                                         {!!submitCount && errors.lastname && (
-                                            <FormHelperText error id='standard-weight-helper-text--register'>
+                                            <FormHelperText error id="standard-weight-helper-text--register">
                                                 {errors.lastname}
                                             </FormHelperText>
                                         )}
@@ -213,15 +205,19 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                 </Grid>
                             </Grid>
 
-                            <FormControl fullWidth error={Boolean(!!submitCount && errors.email)}
-                                         className={classes.loginInput} autoComplete='off'>
-                                <InputLabel htmlFor='outlined-adornment-email-register'>Email Address</InputLabel>
+                            <FormControl
+                                fullWidth
+                                error={Boolean(!!submitCount && errors.email)}
+                                className={classes.loginInput}
+                                autoComplete="off"
+                            >
+                                <InputLabel htmlFor="outlined-adornment-email-register">Email Address</InputLabel>
                                 <OutlinedInput
-                                    id='outlined-adornment-email-register'
-                                    type='email'
-                                    autoComplete='off'
+                                    id="outlined-adornment-email-register"
+                                    type="email"
+                                    autoComplete="off"
                                     value={values.email}
-                                    name='email'
+                                    name="email"
                                     onBlur={handleBlur}
                                     onChange={handleChange}
                                     inputProps={{
@@ -234,34 +230,33 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                     }}
                                 />
                                 {!!submitCount && errors.email && (
-                                    <FormHelperText error id='standard-weight-helper-text--register'>
+                                    <FormHelperText error id="standard-weight-helper-text--register">
                                         {' '}
                                         {errors.email}{' '}
                                     </FormHelperText>
                                 )}
                             </FormControl>
 
-                            <FormControl fullWidth error={Boolean(!!submitCount && errors.password)}
-                                         className={classes.loginInput}>
-                                <InputLabel htmlFor='outlined-adornment-password-register'>Password</InputLabel>
+                            <FormControl fullWidth error={Boolean(!!submitCount && errors.password)} className={classes.loginInput}>
+                                <InputLabel htmlFor="outlined-adornment-password-register">Password</InputLabel>
                                 <OutlinedInput
-                                    id='outlined-adornment-password-register'
+                                    id="outlined-adornment-password-register"
                                     type={showPassword ? 'text' : 'password'}
                                     value={values.password}
-                                    name='password'
-                                    label='Password'
+                                    name="password"
+                                    label="Password"
                                     onBlur={handleBlur}
                                     onChange={(e) => {
                                         handleChange(e);
                                         changePassword(e.target.value);
                                     }}
                                     endAdornment={
-                                        <InputAdornment position='end'>
+                                        <InputAdornment position="end">
                                             <IconButton
-                                                aria-label='toggle password visibility'
+                                                aria-label="toggle password visibility"
                                                 onClick={handleClickShowPassword}
                                                 onMouseDown={handleMouseDownPassword}
-                                                edge='end'
+                                                edge="end"
                                             >
                                                 {showPassword ? <Visibility /> : <VisibilityOff />}
                                             </IconButton>
@@ -278,7 +273,7 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                     }}
                                 />
                                 {!!submitCount && errors.password && (
-                                    <FormHelperText error id='standard-weight-helper-text-password-register'>
+                                    <FormHelperText error id="standard-weight-helper-text-password-register">
                                         {' '}
                                         {errors.password}{' '}
                                     </FormHelperText>
@@ -288,7 +283,7 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                             {strength !== 0 && (
                                 <FormControl fullWidth>
                                     <Box sx={{ mb: 2 }}>
-                                        <Grid container spacing={2} alignItems='center'>
+                                        <Grid container spacing={2} alignItems="center">
                                             <Grid item>
                                                 <Box
                                                     backgroundColor={level.color}
@@ -301,7 +296,7 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                                 />
                                             </Grid>
                                             <Grid item>
-                                                <Typography variant='subtitle1' fontSize='0.75rem'>
+                                                <Typography variant="subtitle1" fontSize="0.75rem">
                                                     {level.label}
                                                 </Typography>
                                             </Grid>
@@ -380,34 +375,40 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                 )}
                             </FormControl> */}
 
-                            <Grid container alignItems='center' justifyContent='space-between'>
+                            <Grid container alignItems="center" justifyContent="space-between">
                                 <Grid item>
                                     <FormControlLabel
                                         control={
                                             <Checkbox
                                                 checked={agreementChecked}
                                                 onChange={(event) => setAgreementChecked(event.target.checked)}
-                                                name='checked'
-                                                color='primary'
+                                                name="checked"
+                                                color="primary"
                                             />
                                         }
                                         label={
-                                            <Typography variant='subtitle1' color='textSecondary' align='left'>
-                                                Agree with &nbsp;
-                                                <Link color={'inherit'}
-                                                      to={{ pathname: 'https://xr.kent.edu/praxi-privacy-policy' }}
-                                                      target='_blank'>
-                                                    privacy policy
-                                                </Link>
-                                                {' & '}
-                                                <Link color='inherit'
-                                                      to={{ pathname: 'https://xr.kent.edu/praxi-privacy-policy' }}
-                                                      target='_blank'>
-                                                    user agreement
-                                                </Link>
+                                            <Typography variant="subtitle1" color="textSecondary" align="left">
+                                                By submitting this form, you agree this website stores cookies on your computer.
                                             </Typography>
                                         }
                                     />
+                                    <Typography variant="body4" color="textSecondary" align="left" sx={{ marginTop: 2 }}>
+                                        These cookies are used to collect information about how you interact with our website and allow us
+                                        to remember you. We use this information in order to improve and customize your browsing experience
+                                        and for analytics and metrics about our visitors both on this website and other media. To find out
+                                        more about the cookies we use, see our{' '}
+                                        <Link
+                                            href="https://www.example.com/privacy-policy"
+                                            target="_blank"
+                                            style={{ textDecoration: 'underline', color: 'blue' }}
+                                        >
+                                            Privacy Policy
+                                        </Link>
+                                        .
+                                        <br />
+                                        If you decline, your information won't be tracked when you visit this website. A single cookie will
+                                        be used in your browser to remember your preference not to be tracked.
+                                    </Typography>
                                 </Grid>
                             </Grid>
                             <Box sx={{ mt: 2 }}>
@@ -416,10 +417,10 @@ const RegisterForm = ({ registerUserAction, isLoading, ...others }) => {
                                         disableElevation
                                         disabled={!agreementChecked || isSubmitting}
                                         fullWidth
-                                        size='large'
-                                        type='submit'
-                                        variant='contained'
-                                        color='primary'
+                                        size="large"
+                                        type="submit"
+                                        variant="contained"
+                                        color="primary"
                                     >
                                         Sign up
                                     </Button>
