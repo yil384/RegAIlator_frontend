@@ -66,6 +66,7 @@ import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import { DateTimePicker, LocalizationProvider } from '@mui/lab';
 import AdapterDateFns from '@date-io/date-fns';
 import Box from '@material-ui/core/Box';
+import FeedbackCell from './FeedbackCell'; // 确保路径正确
 // 设置 PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -1044,7 +1045,7 @@ const SuppliersComponent = ({ user }) => {
             sortable: true,
             width: 400,
             valueGetter: (params) => {
-                const feedbackArray = params.row?.feedback;
+                const feedbackArray = params.row?.feedback || [];
                 if (feedbackArray.length > 0) {
                     return `Feedbacks (${feedbackArray.length})`;
                 } else {
@@ -1057,60 +1058,26 @@ const SuppliersComponent = ({ user }) => {
                 }
             },
             renderCell: (params) => {
-                const feedbackArray = params.row?.feedback;
+                const feedbackArray = params.row?.feedback || [];
                 const nextSendTime = params.row?.nextEmailSendTime;
                 const supplierId = params.row?.id;
                 const isEmailSent = params.row?.isEmailSent;
 
+                // 假设你有一个函数用于刷新数据，可以从父组件传递下来
+                // 如果不在父组件，可以考虑使用 context 或其他状态管理方案
+                const refreshData = () => {
+                    // 实现刷新数据的逻辑，例如重新调用 fetchSuppliers
+                };
+
                 return (
-                    <div
-                        style={{ width: '100%', cursor: 'pointer' }}
-                        onClick={() => handleOpenDialogFeedback(feedbackArray, supplierId, nextSendTime)}
-                    >
-                        {feedbackArray.length > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <div
-                                    style={{
-                                        alignItems: 'center', // 垂直居中
-                                        display: 'flex', // 使用 flex 布局
-                                        height: '30px'
-                                    }}
-                                >
-                                    {renderTags(feedbackArray.map((f) => f.tag))} {/* 渲染标签 */}
-                                </div>
-                                <Typography variant="body1" noWrap style={{ marginLeft: 8 }}>
-                                    {`Feedbacks (${feedbackArray.length})`}
-                                </Typography>
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <div
-                                    style={{
-                                        alignItems: 'center', // 垂直居中
-                                        display: 'flex', // 使用 flex 布局
-                                        height: '30px',
-                                        width: '8px'
-                                    }}
-                                >
-                                </div>
-                                <Tooltip title="No feedback">
-                                    <Typography variant="body1" noWrap>
-                                        No Feedback
-                                    </Typography>
-                                </Tooltip>
-                                {nextSendTime && (
-                                    <Tooltip title={`${calculateTimeLeft(nextSendTime)}`}>
-                                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                                            <NotificationsActive style={{ marginLeft: 8, color: isEmailSent ? '#4caf50' : '#ff9800' }} />
-                                            <Typography variant="body2" color="textSecondary" style={{ marginLeft: 8 }}>
-                                                {`- ${calculateTimeLeft(nextSendTime)}`}
-                                            </Typography>
-                                        </div>
-                                    </Tooltip>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <FeedbackCell
+                        feedbackArray={feedbackArray}
+                        nextSendTime={nextSendTime}
+                        supplierId={supplierId}
+                        isEmailSent={isEmailSent}
+                        handleOpenDialogFeedback={handleOpenDialogFeedback}
+                        refreshData={loadData}
+                    />
                 );
             }
         },
