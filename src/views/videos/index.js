@@ -1,11 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast'; // Optional: For toast notifications
 
 import MainCard from '../../ui-component/cards/MainCard';
-import { DataGrid, GridToolbar } from '@material-ui/data-grid';
+import { DataGrid } from '@material-ui/data-grid';
 import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
@@ -14,6 +13,8 @@ import DeleteIcon from '@material-ui/icons/DeleteForever';
 import EditIcon from '@material-ui/icons/Edit';
 import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
+import Autocomplete from '@material-ui/lab/Autocomplete';
+import TextField from '@material-ui/core/TextField';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -36,51 +37,33 @@ import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; 
 
 import config from '../../configs';
 import { fetchSuppliers } from '../suppliers/helper';
-import { fetchSurveys } from '../survey-templates/helper';
-import { get } from 'jquery';
 
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
 import VisibilityIcon from '@material-ui/icons/Visibility'; // Import the visibility icon
-import JSZip, { filter } from 'jszip';
+import JSZip from 'jszip';
 
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 import { useDropzone } from 'react-dropzone';
 import LinearProgressBar from '../../ui-component/LinearProgress';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
-import useScriptRef from '../../hooks/useScriptRef';
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from '../../configs/endpoints';
 import FileUploadIcon from '@material-ui/icons/FileUpload';
 import ClearIcon from '@material-ui/icons/Clear';
 import { useStyles } from './videos.styles'; // Ensure this style file exists
-import {
-    Box,
-    FormControl,
-    FormHelperText,
-    Grid,
-    InputLabel, MenuItem,
-    Select,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper
-} from '@material-ui/core';
+import { Box, FormControl, FormHelperText, Grid } from '@material-ui/core';
 
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
-import { AddCircleOutlineOutlined, BlurCircularOutlined, Filter9PlusOutlined, PanoramaFishEyeOutlined, RunCircleOutlined } from '@material-ui/icons';
+import { RunCircleOutlined } from '@material-ui/icons';
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const VideosComponent = ({ user }) => {
     const theme = useTheme();
-    const history = useHistory();
     const userRole = user?.role;
     const classes = useStyles();
 
@@ -95,10 +78,10 @@ const VideosComponent = ({ user }) => {
     const [openAddVideoDialog, setOpenAddVideoDialog] = React.useState(false); // State for Add Video Dialog
 
     const handleZoomIn = () => {
-        setScale(prevScale => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // Max zoom 3.0
+        setScale((prevScale) => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // Max zoom 3.0
     };
     const handleZoomOut = () => {
-        setScale(prevScale => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // Min zoom 0.4
+        setScale((prevScale) => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // Min zoom 0.4
     };
 
     const [numPages, setNumPages] = React.useState(null);
@@ -114,9 +97,12 @@ const VideosComponent = ({ user }) => {
     const [selectedSupplier, setSelectedSupplier] = React.useState(null);
     const [suppliers, setSuppliers] = React.useState([]);
 
-    const onDrop = React.useCallback(acceptedFiles => {
-        setSelectedFiles([...selectedFiles, ...acceptedFiles]);
-    }, [selectedFiles]);
+    const onDrop = React.useCallback(
+        (acceptedFiles) => {
+            setSelectedFiles([...selectedFiles, ...acceptedFiles]);
+        },
+        [selectedFiles]
+    );
 
     const { getRootProps, getInputProps } = useDropzone({
         maxFiles: 100,
@@ -124,7 +110,7 @@ const VideosComponent = ({ user }) => {
         onDrop
     });
 
-    const removeFile = file => () => {
+    const removeFile = (file) => () => {
         const newFiles = [...selectedFiles];
         newFiles.splice(newFiles.indexOf(file), 1);
         setSelectedFiles(newFiles);
@@ -142,20 +128,23 @@ const VideosComponent = ({ user }) => {
     };
 
     const uploadFile = async (supplierId, data) => {
-        const response = await fetchApi({
-            method: 'POST',
-            url: `${endpoints.upload_file}/${supplierId}`,
-            data: data,
-            onUploadProgress: progressEvent => {
-                const { total, loaded } = progressEvent;
-                const uploadPercentage = (loaded / total) * 100;
-                setUploadPercentage(uploadPercentage.toFixed(2));
+        const response = await fetchApi(
+            {
+                method: 'POST',
+                url: `${endpoints.upload_file}/${supplierId}`,
+                data: data,
+                onUploadProgress: (progressEvent) => {
+                    const { total, loaded } = progressEvent;
+                    const uploadPercentage = (loaded / total) * 100;
+                    setUploadPercentage(uploadPercentage.toFixed(2));
 
-                if (uploadPercentage >= 100) {
-                    setProcessingFile(true);
+                    if (uploadPercentage >= 100) {
+                        setProcessingFile(true);
+                    }
                 }
-            }
-        }, true);
+            },
+            true
+        );
 
         return response;
     };
@@ -173,7 +162,7 @@ const VideosComponent = ({ user }) => {
             valueGetter: (params) => params.value?.toString() || '',
             renderCell: (params) => (
                 <Tooltip title={params.value?.toString() || ''} arrow>
-                    <Typography variant='body2' noWrap>
+                    <Typography variant="body2" noWrap>
                         {params.value}
                     </Typography>
                 </Tooltip>
@@ -181,14 +170,16 @@ const VideosComponent = ({ user }) => {
         }));
     };
 
-    const files = selectedFiles?.map(file => (
+    const files = selectedFiles?.map((file) => (
         <li key={file.path} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-            <Typography variant="body2">{file.path} - {(file.size / 1024).toFixed(2)} KB</Typography>
+            <Typography variant="body2">
+                {file.path} - {(file.size / 1024).toFixed(2)} KB
+            </Typography>
             <IconButton onClick={removeFile(file)} style={{ marginLeft: '10px' }}>
                 <ClearIcon />
             </IconButton>
         </li>
-    ));    
+    ));
 
     const loadData = React.useCallback(async () => {
         try {
@@ -230,7 +221,7 @@ const VideosComponent = ({ user }) => {
     // Handle individual row selection
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
-            setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+            setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
         } else {
             setSelectedIds([...selectedIds, id]);
         }
@@ -256,7 +247,7 @@ const VideosComponent = ({ user }) => {
         }
 
         setIsParseLoading(true);
-    
+
         try {
             // 解析选中的所有文件，parsedResults是一个数组
             const parsedResponse = await parseVideos(selectedIds);
@@ -265,11 +256,11 @@ const VideosComponent = ({ user }) => {
             setIsParseLoading(false);
             console.log('Parsed Results:', parsedResults);
             console.log('isParseLoading:', isParseLoading);
-    
+
             // 更新数据
             await loadData();
             setSelectedIds([]); // 清空选中的 ID
-    
+
             // 将解析结果在一个新的 dialog 以表格形式展示
             setParsedResults(parsedResults);
             setOpenParsedDialog(true);
@@ -280,16 +271,16 @@ const VideosComponent = ({ user }) => {
             toast.error('Failed to parse selected files.');
         }
     };
-    
+
     // 在 handleDownload 函数中实现多个文件下载
     // const handleDownload = () => {
     //     if (selectedIds.length === 0) {
     //         toast.warning('No videos selected for download.');
     //         return;
     //     }
-    
+
     //     const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
-    
+
     //     selectedVideos.forEach(async (video, index) => {
     //         try {
     //             const response = await fetch(config[config.env].baseURL + video.path);
@@ -307,9 +298,9 @@ const VideosComponent = ({ user }) => {
     //             toast.error(`Failed to download ${video.title}`);
     //         }
     //     });
-    
+
     //     toast.success('Download initiated for selected videos.');
-    // };    
+    // };
 
     // [Updated] Implement multiple file download as a zip using JSZip
     const handleDownload = async () => {
@@ -318,7 +309,7 @@ const VideosComponent = ({ user }) => {
             return;
         }
 
-        const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
+        const selectedVideos = videos.filter((video) => selectedIds.includes(video.id));
 
         if (selectedIds.length === 1) {
             // Single file download
@@ -345,17 +336,19 @@ const VideosComponent = ({ user }) => {
             const zip = new JSZip();
             const errors = [];
 
-            await Promise.all(selectedVideos.map(async (video) => {
-                try {
-                    const response = await fetch(config[config.env].baseURL + video.path);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const blob = await response.blob();
-                    zip.file(video.title || `file_${video.id}`, blob);
-                } catch (error) {
-                    console.error(`File download error for ${video.title}:`, error);
-                    errors.push(video.title);
-                }
-            }));
+            await Promise.all(
+                selectedVideos.map(async (video) => {
+                    try {
+                        const response = await fetch(config[config.env].baseURL + video.path);
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        const blob = await response.blob();
+                        zip.file(video.title || `file_${video.id}`, blob);
+                    } catch (error) {
+                        console.error(`File download error for ${video.title}:`, error);
+                        errors.push(video.title);
+                    }
+                })
+            );
 
             if (Object.keys(zip.files).length === 0) {
                 toast.error('No files were downloaded successfully.');
@@ -384,7 +377,7 @@ const VideosComponent = ({ user }) => {
                 toast.error('Failed to generate zip file.');
             }
         }
-    };    
+    };
 
     const handleDeleteMultiple = async () => {
         if (selectedIds.length === 0) {
@@ -405,7 +398,7 @@ const VideosComponent = ({ user }) => {
         if (result.isConfirmed) {
             try {
                 // Delete selected files
-                await Promise.all(selectedIds.map(id => deleteVideo(id)));
+                await Promise.all(selectedIds.map((id) => deleteVideo(id)));
 
                 await loadData(); // Reload data after deletion
                 setSelectedIds([]); // Clear selected IDs
@@ -415,7 +408,7 @@ const VideosComponent = ({ user }) => {
                 toast.error('Failed to delete selected files.');
             }
         }
-    };    
+    };
 
     // **Add state for viewing selected details**
     const [openSelectedDetailsDialog, setOpenSelectedDetailsDialog] = React.useState(false);
@@ -427,7 +420,7 @@ const VideosComponent = ({ user }) => {
             return;
         }
 
-        const selectedVideos = videos.filter(video => selectedIds.includes(video.id));
+        const selectedVideos = videos.filter((video) => selectedIds.includes(video.id));
 
         setSelectedVideosData(selectedVideos);
 
@@ -440,15 +433,12 @@ const VideosComponent = ({ user }) => {
             field: 'select',
             headerName: (
                 <Checkbox
-                    checked={
-                        filterIds.length > 0 &&
-                        filterIds.every((id) => selectedIds.includes(id))
-                    }
+                    checked={filterIds.length > 0 && filterIds.every((id) => selectedIds.includes(id))}
                     indeterminate={
                         filterIds.length > 0 &&
                         filterIds.some((id) => selectedIds.includes(id)) &&
                         !filterIds.every((id) => selectedIds.includes(id))
-                    }    
+                    }
                     onChange={handleSelectAll}
                     style={{ padding: 0 }}
                     color="primary"
@@ -467,11 +457,7 @@ const VideosComponent = ({ user }) => {
                 return (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <IconButton onClick={() => handleSelect(params.row.id)}>
-                            {isSelected ? (
-                                <CheckCircleIcon style={{ color: 'green' }} />
-                            ) : (
-                                <RadioButtonUncheckedIcon />
-                            )}
+                            {isSelected ? <CheckCircleIcon style={{ color: 'green' }} /> : <RadioButtonUncheckedIcon />}
                         </IconButton>
                     </div>
                 );
@@ -486,12 +472,12 @@ const VideosComponent = ({ user }) => {
             resizable: false,
             disableClickEventBubbling: true,
             renderCell: (params) => (
-                <Typography variant='body1'>
+                <Typography variant="body1">
                     {/* Use params.row?.supplier as ID to get the name */}
-                    {suppliers.find(supplier => supplier._id === params.row?.supplier)?.supplierName}
+                    {suppliers.find((supplier) => supplier._id === params.row?.supplier)?.supplierName}
                 </Typography>
             )
-        },        
+        },
         {
             field: 'title',
             headerName: 'File Name',
@@ -507,11 +493,7 @@ const VideosComponent = ({ user }) => {
             editable: false,
             resizable: false,
             disableClickEventBubbling: true,
-            renderCell: (params) => (
-                <Typography variant='body1'>
-                    {new Date(params.row?.updatedAt).toLocaleString()}
-                </Typography>
-            )
+            renderCell: (params) => <Typography variant="body1">{new Date(params.row?.updatedAt).toLocaleString()}</Typography>
         },
         {
             field: 'accessState',
@@ -522,11 +504,7 @@ const VideosComponent = ({ user }) => {
             editable: false,
             resizable: false,
             disableClickEventBubbling: true,
-            renderCell: (params) => (
-                <Typography variant='body1'>
-                    {params.row?.accessState.toUpperCase()}
-                </Typography>
-            )
+            renderCell: (params) => <Typography variant="body1">{params.row?.accessState.toUpperCase()}</Typography>
         },
         {
             field: 'Parsed',
@@ -537,7 +515,7 @@ const VideosComponent = ({ user }) => {
             editable: false,
             resizable: false,
             renderCell: (params) => (
-                <Typography variant='body1' marginLeft={'15px'}>
+                <Typography variant="body1" marginLeft={'15px'}>
                     {params.row?.json ? '✔️' : ''}
                 </Typography>
             )
@@ -555,9 +533,9 @@ const VideosComponent = ({ user }) => {
             renderCell: (params) => (
                 <strong>
                     <Button
-                        variant='contained'
-                        color='primary'
-                        size='small'
+                        variant="contained"
+                        color="primary"
+                        size="small"
                         startIcon={<EditIcon />}
                         style={{ marginLeft: 16 }}
                         onClick={() => handleOpenDialog(params.row)}
@@ -579,11 +557,7 @@ const VideosComponent = ({ user }) => {
                                 if (result.isConfirmed) {
                                     await deleteVideo(params.row.id);
                                     await loadData();
-                                    Swal.fire(
-                                        'Deleted!',
-                                        'Your item has been deleted.',
-                                        'success'
-                                    );
+                                    Swal.fire('Deleted!', 'Your item has been deleted.', 'success');
                                 }
                             });
                         }}
@@ -603,7 +577,7 @@ const VideosComponent = ({ user }) => {
             width: 100 + key.length * 10,
             renderCell: (params) => (
                 <Tooltip title={params.value}>
-                    <Typography variant='body1' noWrap>
+                    <Typography variant="body1" noWrap>
                         {params.value}
                     </Typography>
                 </Tooltip>
@@ -624,10 +598,10 @@ const VideosComponent = ({ user }) => {
             toast.warning('No data available to export.');
             return;
         }
-    
+
         // 准备合并后的数据数组
         const mergedData = [];
-    
+
         selectedVideosData.forEach((video) => {
             // 如果数据不合法，则跳过
             if (!video.json?.data) return;
@@ -636,20 +610,20 @@ const VideosComponent = ({ user }) => {
                 video.json.data.forEach((row) => {
                     mergedData.push({
                         ...row,
-                        SourceVideo: video.title || 'Unknown',
+                        SourceVideo: video.title || 'Unknown'
                     });
                 });
             }
         });
-    
+
         if (mergedData.length === 0) {
             toast.warning('No data available to export.');
             return;
         }
-    
+
         // 使用 PapaParse 将 JSON 转换为 CSV
         const csv = Papa.unparse(mergedData);
-    
+
         // 创建一个 Blob 对象并触发下载
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
@@ -662,48 +636,44 @@ const VideosComponent = ({ user }) => {
         // 构建文件名，确保没有非法字符
         const fileName = `Exported_data_${selectedVideosData.length}_Created_at_${formattedDate}_${formattedTime}`;
         saveAs(blob, `${fileName}.csv`);
-        
+
         toast.success('All data has been exported successfully.');
     };
-    
+
     return (
-        <MainCard title='All Files' boxShadow shadow={theme.shadows[2]}>
+        <MainCard title="All Files" boxShadow shadow={theme.shadows[2]}>
             {/* **Action Buttons** */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
                 <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
-                    onClick={() => 
-                        {
-                            setOpenAddVideoDialog(true)
-                            setSelectedSupplier(null)
-                            setSelectedFiles([])
-                            setUploadPercentage(null)
-                            setTableData([])
-                        }
-                    }
+                    onClick={() => {
+                        setOpenAddVideoDialog(true);
+                        setSelectedSupplier(null);
+                        setSelectedFiles([]);
+                        setUploadPercentage(null);
+                        setTableData([]);
+                    }}
                 >
                     Add Files
                 </Button>
                 <Button
-                    variant='contained'
-                    color='success'
-                    size='small'
+                    variant="contained"
+                    color="success"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
                     onClick={handleParseMultiple}
                     disabled={selectedIds.length === 0}
-                    startIcon={ isParseLoading ? <CircularProgress 
-                            style={{ height : "20px", width: "20px"}}
-                        /> : <RunCircleOutlined /> }
+                    startIcon={isParseLoading ? <CircularProgress style={{ height: '20px', width: '20px' }} /> : <RunCircleOutlined />}
                 >
                     Parse Selected
                 </Button>
                 <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
                     onClick={handleDownload}
                     disabled={selectedIds.length === 0}
@@ -712,9 +682,9 @@ const VideosComponent = ({ user }) => {
                     Download Selected
                 </Button>
                 <Button
-                    variant='contained'
-                    color='secondary'
-                    size='small'
+                    variant="contained"
+                    color="secondary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
                     onClick={handleDeleteMultiple}
                     disabled={selectedIds.length === 0}
@@ -724,9 +694,9 @@ const VideosComponent = ({ user }) => {
                 </Button>
                 {/* **New View Selected Details Button** */}
                 <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
+                    variant="contained"
+                    color="primary"
+                    size="small"
                     style={{ top: -70, marginLeft: '10px' }}
                     onClick={handleViewSelectedDetails}
                     disabled={selectedIds.length === 0}
@@ -737,88 +707,57 @@ const VideosComponent = ({ user }) => {
             </div>
 
             <div style={{ width: '100%', marginTop: -31 }}>
-                {
-                    isLoading ? <LoaderInnerCircular /> :
-                        (
-                        <DataGrid
-                            rows={videos}
-                            columns={columns}
-                            pageSize={10}
-                            rowsPerPageOptions={[100]}
-                            checkboxSelection={false} // Disabled since we're using custom selection
-                            autoHeight
-                            autoPageSize
-                            density='standard'
-                            disableSelectionOnClick
-                            loading={isLoading}
-                            components={{
-                                Toolbar: () => <CustomToolbar title={'All Files'} length={videos.length} />,
-                                LoadingOverlay: CustomLoadingOverlay,
-                                NoRowsOverlay: CustomNoRowsOverlay
-                            }}
-                            onFilterModelChange={(model) => {
-                                const filter = model.items.map((item) => {
-                                    return [
-                                        item.columnField,
-                                        item.operatorValue,
-                                        item.value
-                                    ];
-                                });
-                                const filterids = videos
-                                    .filter((video) => {
-                                        return filter.every(
-                                            ([field, operator, value]) => {
-                                                const cellValue = video[field];
-                                                if (operator === 'isEmpty') {
-                                                    return (
-                                                        cellValue === '' ||
-                                                        cellValue === undefined
-                                                    );
-                                                } else if (operator === 'isNotEmpty') {
-                                                    return (
-                                                        cellValue !== '' &&
-                                                        cellValue !== undefined
-                                                    );
-                                                } else if (value === undefined) {
-                                                    return true;
-                                                } else if (operator === 'contains') {
-                                                    return cellValue
-                                                        ?.toString()
-                                                        .toLowerCase()
-                                                        .includes(
-                                                            value.toLowerCase()
-                                                        );
-                                                } else if (operator === 'equals') {
-                                                    return (
-                                                        cellValue
-                                                            ?.toString()
-                                                            .toLowerCase() ===
-                                                        value.toLowerCase()
-                                                    );
-                                                } else if (operator === 'startsWith') {
-                                                    return cellValue
-                                                        ?.toString()
-                                                        .toLowerCase()
-                                                        .startsWith(
-                                                            value.toLowerCase()
-                                                        );
-                                                } else if (operator === 'endsWith') {
-                                                    return cellValue
-                                                        ?.toString()
-                                                        .toLowerCase()
-                                                        .endsWith(value.toLowerCase());
-                                                } else {
-                                                    return false;
-                                                }
-                                            }
-                                        );
-                                    })
-                                    .map((video) => video.id);
-                                setFilterIds(filterids);
-                            }}
-                        />
-                        )
-                }
+                {isLoading ? (
+                    <LoaderInnerCircular />
+                ) : (
+                    <DataGrid
+                        rows={videos}
+                        columns={columns}
+                        pageSize={10}
+                        rowsPerPageOptions={[100]}
+                        checkboxSelection={false} // Disabled since we're using custom selection
+                        autoHeight
+                        autoPageSize
+                        density="standard"
+                        disableSelectionOnClick
+                        loading={isLoading}
+                        components={{
+                            Toolbar: () => <CustomToolbar title={'All Files'} length={videos.length} />,
+                            LoadingOverlay: CustomLoadingOverlay,
+                            NoRowsOverlay: CustomNoRowsOverlay
+                        }}
+                        onFilterModelChange={(model) => {
+                            const filter = model.items.map((item) => {
+                                return [item.columnField, item.operatorValue, item.value];
+                            });
+                            const filterids = videos
+                                .filter((video) => {
+                                    return filter.every(([field, operator, value]) => {
+                                        const cellValue = video[field];
+                                        if (operator === 'isEmpty') {
+                                            return cellValue === '' || cellValue === undefined;
+                                        } else if (operator === 'isNotEmpty') {
+                                            return cellValue !== '' && cellValue !== undefined;
+                                        } else if (value === undefined) {
+                                            return true;
+                                        } else if (operator === 'contains') {
+                                            return cellValue?.toString().toLowerCase().includes(value.toLowerCase());
+                                        } else if (operator === 'equals') {
+                                            return cellValue?.toString().toLowerCase() === value.toLowerCase();
+                                        } else if (operator === 'startsWith') {
+                                            return cellValue?.toString().toLowerCase().startsWith(value.toLowerCase());
+                                        } else if (operator === 'endsWith') {
+                                            return cellValue?.toString().toLowerCase().endsWith(value.toLowerCase());
+                                        } else {
+                                            return false;
+                                        }
+                                    });
+                                })
+                                .map((video) => video.id);
+                            setFilterIds(filterids);
+                        }}
+                    />
+                )}
             </div>
 
             {/* Add File Dialog */}
@@ -833,174 +772,198 @@ const VideosComponent = ({ user }) => {
                     Add File
                     <IconButton
                         aria-label="close"
-                        onClick={() => { setOpenAddVideoDialog(false); loadData(); }}
+                        onClick={() => {
+                            setOpenAddVideoDialog(false);
+                            loadData();
+                        }}
                         style={{ position: 'absolute', right: 8, top: 8 }}
                     >
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
                 <DialogContent>
-                        <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
-                            <Formik
-                                initialValues={{
-                                    survey: null
-                                }}
-                                validationSchema={
-                                    Yup.object().shape({ supplier: Yup.object().nullable().required('Supplier is required') })
-                                }
-                                onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
-                                    try {
-                                        const data = new FormData();
-                                        if (selectedFiles?.length) {
-                                            for (const file of selectedFiles) {
-                                                data.append('file', file);
-                                            }
+                    <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
+                        <Formik
+                            initialValues={{
+                                survey: null
+                            }}
+                            validationSchema={Yup.object().shape({ supplier: Yup.object().nullable().required('Supplier is required') })}
+                            onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+                                try {
+                                    const data = new FormData();
+                                    if (selectedFiles?.length) {
+                                        for (const file of selectedFiles) {
+                                            data.append('file', file);
                                         }
-                                        const response = await uploadFile(selectedSupplier?._id, data);
-                                        if (response?.status) {
-                                            toast.success('Upload successful!');
-                                            handleFilePreview(response);
-                                            // Clear form fields
-                                            setSelectedFiles([]);
-                                            setUploadPercentage(null);
-                                            setTableData([]);
-                                        }
-                                        setProcessingFile(false);
-                                    } catch (err) {
-                                        if (err.status === 413) {
-                                            setErrors({ submit: 'File size too large. Please upload a smaller file' });
-                                            toast.error('File size too large. Please upload a smaller file');
-                                        }
-                                        console.error('Error uploading file', err);
-                                        setErrors({ submit: err.message });
-                                        setSubmitting(false);
-                                        setProcessingFile(false);
                                     }
-                                }}
-                            >
-                                {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
-                                    <form onSubmit={handleSubmit}>
-                                        <Box sx={{ mt: 2, mb: 2 }}>
-                                            <Grid container spacing={2}>
-                                                <Grid item xs={12} sm={12} md={12}>
-                                                    <FormControl
-                                                        fullWidth
-                                                        error={Boolean(touched.supplier && errors.supplier)}
-                                                    >
-                                                        <InputLabel id="select-supplier-label"
-                                                                    classes={{
-                                                                        shrink: classes.shrinkLabel
-                                                                    }}
-                                                        >Select Supplier</InputLabel>
-                                                        <Select
-                                                            labelId="select-supplier-label"
-                                                            id="select-supplier"
-                                                            name="supplier"
-                                                            value={selectedSupplier? selectedSupplier : null}
-                                                            onChange={(e) => {
-                                                                console.log('selected supplier', e.target.value);
-                                                                setSelectedSupplier(e.target.value);
-                                                                handleChange(e);
-                                                            }}
+                                    const response = await uploadFile(selectedSupplier?._id, data);
+                                    if (response?.status) {
+                                        toast.success('Upload successful!');
+                                        handleFilePreview(response);
+                                        // Clear form fields
+                                        setSelectedFiles([]);
+                                        setUploadPercentage(null);
+                                        setTableData([]);
+                                    }
+                                    setProcessingFile(false);
+                                } catch (err) {
+                                    if (err.status === 413) {
+                                        setErrors({ submit: 'File size too large. Please upload a smaller file' });
+                                        toast.error('File size too large. Please upload a smaller file');
+                                    }
+                                    console.error('Error uploading file', err);
+                                    setErrors({ submit: err.message });
+                                    setSubmitting(false);
+                                    setProcessingFile(false);
+                                }
+                            }}
+                        >
+                            {({ errors, handleBlur, handleSubmit, isSubmitting, touched, values }) => (
+                                <form onSubmit={handleSubmit}>
+                                    <Box sx={{ mt: 2, mb: 2 }}>
+                                        <Grid container spacing={2}>
+                                            <Grid item xs={12} sm={12} md={12}>
+                                                <FormControl fullWidth error={Boolean(touched.supplier && errors.supplier)}>
+                                                    <Grid item xs={12} sm={12} md={12}>
+                                                        <Autocomplete
+                                                            options={[...suppliers].sort((a, b) =>
+                                                                a.supplierName.localeCompare(b.supplierName)
+                                                            )} // Sorting suppliers alphabetically
+                                                            getOptionLabel={(option) => option.supplierName} // Display supplier name
+                                                            value={selectedSupplier} // Currently selected value
+                                                            onChange={(event, newValue) => setSelectedSupplier(newValue)} // Handle selection
                                                             onBlur={handleBlur}
-                                                            style={{ paddingTop: '10px' }}
-                                                        >
-                                                            <MenuItem value={null}>
-                                                                <em>None</em>
+                                                            renderInput={(params) => (
+                                                                <TextField
+                                                                    {...params}
+                                                                    label="Select Supplier"
+                                                                    variant="outlined"
+                                                                    fullWidth
+                                                                    error={Boolean(touched.supplier && errors.supplier)}
+                                                                    helperText={touched.supplier && errors.supplier}
+                                                                />
+                                                            )}
+                                                        />
+                                                    </Grid>
+                                                    {/* <InputLabel
+                                                        id="select-supplier-label"
+                                                        classes={{
+                                                            shrink: classes.shrinkLabel
+                                                        }}
+                                                    >
+                                                        Select Supplier
+                                                    </InputLabel>
+                                                    <Select
+                                                        labelId="select-supplier-label"
+                                                        id="select-supplier"
+                                                        name="supplier"
+                                                        value={selectedSupplier ? selectedSupplier : null}
+                                                        onChange={(e) => {
+                                                            console.log('selected supplier', e.target.value);
+                                                            setSelectedSupplier(e.target.value);
+                                                            handleChange(e);
+                                                        }}
+                                                        onBlur={handleBlur}
+                                                        style={{ paddingTop: '10px' }}
+                                                    >
+                                                        <MenuItem value={null}>
+                                                            <em>None</em>
+                                                        </MenuItem>
+                                                        {suppliers.map((supplier) => (
+                                                            <MenuItem key={supplier._id} value={supplier}>
+                                                                {supplier.supplierName}
                                                             </MenuItem>
-                                                            {suppliers.map((supplier) => (
-                                                                <MenuItem key={supplier._id} value={supplier}>
-                                                                    {supplier.supplierName}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </Select>
-                                                        {touched.supplier && errors.supplier && (
-                                                            <FormHelperText error>{errors.supplier}</FormHelperText>
-                                                        )}
-                                                    </FormControl>
-                                                </Grid>
-                                                <Grid item xs={12} sm={12} md={12}>
-                                                    <section className='container'>
-                                                        {!uploadPercentage && (
-                                                            <div {...getRootProps({ className: 'dropzone' })}>
-                                                                <input {...getInputProps()} />
-                                                                <FileUploadIcon />
-                                                                <p>Drag 'n' drop some files here, or click to select files</p>
+                                                        ))}
+                                                    </Select> */}
+                                                    {touched.supplier && errors.supplier && (
+                                                        <FormHelperText error>{errors.supplier}</FormHelperText>
+                                                    )}
+                                                </FormControl>
+                                            </Grid>
+                                            <Grid item xs={12} sm={12} md={12}>
+                                                <section className="container" style={{ paddingTop: '16px' }}>
+                                                    {!uploadPercentage && (
+                                                        <div {...getRootProps({ className: 'dropzone' })}>
+                                                            <input {...getInputProps()} />
+                                                            <FileUploadIcon />
+                                                            <p>Drag 'n' drop some files here, or click to select files</p>
+                                                        </div>
+                                                    )}
+                                                    {!!selectedFiles?.length && (
+                                                        <aside>
+                                                            <div className={classes.selectedFileTitle}>
+                                                                <h4>Selected Files</h4>
                                                             </div>
-                                                        )}
-                                                        {!!selectedFiles?.length && (
-                                                            <aside>
-                                                                <div className={classes.selectedFileTitle}>
-                                                                    <h4>Selected Files</h4>
-                                                                </div>
-                                                                <ul>{files}</ul>
-                                                                <Grid item xs={4} sm={4} md={4} lg={4}>
-                                                                    {files.length > 1 && 
+                                                            <ul>{files}</ul>
+                                                            <Grid item xs={4} sm={4} md={4} lg={4}>
+                                                                {files.length > 1 && (
                                                                     <Button variant="outlined" color="secondary" onClick={removeAll}>
                                                                         Remove All
-                                                                    </Button>}
-                                                                </Grid>
-                                                            </aside>
-                                                        )}
-                                                    </section>
-                                                    <Box sx={{ mt: 4, mb: 2 }}>
-                                                        {(!!uploadPercentage) &&
+                                                                    </Button>
+                                                                )}
+                                                            </Grid>
+                                                        </aside>
+                                                    )}
+                                                </section>
+                                                <Box sx={{ mt: 4, mb: 2 }}>
+                                                    {!!uploadPercentage && (
                                                         <div>
                                                             Upload Status: <LinearProgressBar progress={uploadPercentage || 0} />
                                                         </div>
-                                                        }
-                                                    </Box>
-                                                </Grid>
+                                                    )}
+                                                </Box>
                                             </Grid>
-                                        </Box>
-                                        <Box sx={{ mt: 4, mb: 2 }}>
-                                            <Grid item xs={12} sm={12} md={12} lg={12}>
-                                                {(!!processingFile && (Math.abs(uploadPercentage || 0) === 100)) &&
+                                        </Grid>
+                                    </Box>
+                                    <Box sx={{ mt: 4, mb: 2 }}>
+                                        <Grid item xs={12} sm={12} md={12} lg={12}>
+                                            {!!processingFile && Math.abs(uploadPercentage || 0) === 100 && (
                                                 <div>
                                                     Processing Uploaded file: <LoaderInnerCircular />
                                                     This may take a few minutes...
-                                                </div>}
-                                                {((Math.abs(uploadPercentage || 0) !== 100) && !processingFile) && (
-                                                    <AnimateButton>
-                                                        <Button
-                                                            disableElevation
-                                                            fullWidth
-                                                            size='large'
-                                                            type='submit'
-                                                            variant='contained'
-                                                            color='primary'
-                                                            disabled={!selectedFiles?.length || !!uploadPercentage}
-                                                        >
-                                                            Start Upload
-                                                        </Button>
-                                                    </AnimateButton>
-                                                )}
-                                                {((Math.abs(uploadPercentage || 0) === 100) && !processingFile) && (
-                                                    <AnimateButton>
-                                                        <Button
-                                                            disableElevation
-                                                            fullWidth
-                                                            size='large'
-                                                            variant='contained'
-                                                            color='primary'
-                                                            onClick={() => {
-                                                                selectedFiles.length = 0;
-                                                                setSelectedFiles([]);
-                                                                setUploadPercentage(null);
-                                                                setTableData([]);
-                                                            }}
-                                                        >
-                                                            Upload more files
-                                                        </Button>
-                                                    </AnimateButton>
-                                                )}
-                                            </Grid>
-                                        </Box>
-                                    </form>
-                                )}
-                            </Formik>
-                        </Box>
-                        {/* {tableData.length > 0 && (
+                                                </div>
+                                            )}
+                                            {Math.abs(uploadPercentage || 0) !== 100 && !processingFile && (
+                                                <AnimateButton>
+                                                    <Button
+                                                        disableElevation
+                                                        fullWidth
+                                                        size="large"
+                                                        type="submit"
+                                                        variant="contained"
+                                                        color="primary"
+                                                        disabled={!selectedFiles?.length || !!uploadPercentage}
+                                                    >
+                                                        Start Upload
+                                                    </Button>
+                                                </AnimateButton>
+                                            )}
+                                            {Math.abs(uploadPercentage || 0) === 100 && !processingFile && (
+                                                <AnimateButton>
+                                                    <Button
+                                                        disableElevation
+                                                        fullWidth
+                                                        size="large"
+                                                        variant="contained"
+                                                        color="primary"
+                                                        onClick={() => {
+                                                            selectedFiles.length = 0;
+                                                            setSelectedFiles([]);
+                                                            setUploadPercentage(null);
+                                                            setTableData([]);
+                                                        }}
+                                                    >
+                                                        Upload more files
+                                                    </Button>
+                                                </AnimateButton>
+                                            )}
+                                        </Grid>
+                                    </Box>
+                                </form>
+                            )}
+                        </Formik>
+                    </Box>
+                    {/* {tableData.length > 0 && (
                             <Box sx={{ ml: 2, mb: 2, overflow: 'hidden' }}>
                                 <DataGrid
                                     rows={tableData.map((row, index) => ({
@@ -1025,27 +988,23 @@ const VideosComponent = ({ user }) => {
                         )} */}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => { setOpenAddVideoDialog(false); loadData(); }} color="primary">
+                    <Button
+                        onClick={() => {
+                            setOpenAddVideoDialog(false);
+                            loadData();
+                        }}
+                        color="primary"
+                    >
                         Close
                     </Button>
                 </DialogActions>
-            </Dialog>        
+            </Dialog>
 
             {/* **Dialog Component** */}
-            <Dialog
-                open={openDialog}
-                onClose={handleCloseDialog}
-                fullWidth
-                maxWidth="lg"
-                aria-labelledby="video-details-dialog"
-            >
+            <Dialog open={openDialog} onClose={handleCloseDialog} fullWidth maxWidth="lg" aria-labelledby="video-details-dialog">
                 <DialogTitle id="video-details-dialog">
                     File Details
-                    <IconButton
-                        aria-label="close"
-                        onClick={handleCloseDialog}
-                        style={{ position: 'absolute', right: 8, top: 8 }}
-                    >
+                    <IconButton aria-label="close" onClick={handleCloseDialog} style={{ position: 'absolute', right: 8, top: 8 }}>
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
@@ -1053,17 +1012,19 @@ const VideosComponent = ({ user }) => {
                     {selectedVideo ? (
                         <div style={{ display: 'flex', height: 666, width: '100%' }}>
                             {/* **PDF Preview Area** */}
-                            <div style={{
-                                flex: '9',
-                                height: '100%',
-                                border: `1px solid ${theme.palette.divider}`,
-                                boxSizing: 'border-box',
-                                backgroundColor: '#fff',
-                                marginRight: '8px',
-                                position: 'relative',
-                                display: 'flex',
-                                flexDirection: 'column',
-                            }}>
+                            <div
+                                style={{
+                                    flex: '9',
+                                    height: '100%',
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    boxSizing: 'border-box',
+                                    backgroundColor: '#fff',
+                                    marginRight: '8px',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}
+                            >
                                 {/* **Zoom Control Buttons** */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                                     <IconButton onClick={handleZoomOut} aria-label="zoom out">
@@ -1077,15 +1038,17 @@ const VideosComponent = ({ user }) => {
                                     </IconButton>
                                 </div>
                                 {/* **PDF Content Area** */}
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '29px', // Adjust based on button height
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    overflow: 'auto',
-                                    padding: '8px'
-                                }}>
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: '29px', // Adjust based on button height
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        overflow: 'auto',
+                                        padding: '8px'
+                                    }}
+                                >
                                     {selectedVideo.path ? (
                                         <Document
                                             file={config[config.env].baseURL + selectedVideo.path}
@@ -1093,32 +1056,29 @@ const VideosComponent = ({ user }) => {
                                             onLoadSuccess={onDocumentLoadSuccess}
                                             loading={<LoaderInnerCircular />}
                                         >
-                                            {Array.from(
-                                                new Array(numPages),
-                                                (el, index) => (
-                                                    <Page
-                                                        key={`page_${index + 1}`}
-                                                        pageNumber={index + 1}
-                                                        scale={scale} // Use zoom scale
-                                                        // If needed, you can use the width property instead of scale
-                                                    />
-                                                )
-                                            )}
+                                            {Array.from(new Array(numPages), (el, index) => (
+                                                <Page
+                                                    key={`page_${index + 1}`}
+                                                    pageNumber={index + 1}
+                                                    scale={scale} // Use zoom scale
+                                                    // If needed, you can use the width property instead of scale
+                                                />
+                                            ))}
                                         </Document>
                                     ) : (
-                                        <Typography variant='body1'>
-                                            No file available.
-                                        </Typography>
+                                        <Typography variant="body1">No file available.</Typography>
                                     )}
                                 </div>
                             </div>
-                            <div style={{
-                                flex: '13',
-                                height: '100%',
-                                border: `1px solid ${theme.palette.divider}`,
-                                boxSizing: 'border-box',
-                                backgroundColor: '#fff',
-                            }}>
+                            <div
+                                style={{
+                                    flex: '13',
+                                    height: '100%',
+                                    border: `1px solid ${theme.palette.divider}`,
+                                    boxSizing: 'border-box',
+                                    backgroundColor: '#fff'
+                                }}
+                            >
                                 <DataGrid
                                     rows={dialogRows}
                                     columns={dialogColumns}
@@ -1127,15 +1087,15 @@ const VideosComponent = ({ user }) => {
                                     disableSelectionOnClick
                                     hideFooter
                                     autoHeight
-                                    density='standard'
+                                    density="standard"
                                     components={{
-                                        Toolbar: () => <CustomToolbar title={selectedVideo.title} length={dialogRows.length} />,
+                                        Toolbar: () => <CustomToolbar title={selectedVideo.title} length={dialogRows.length} />
                                     }}
                                 />
                             </div>
                         </div>
                     ) : (
-                        <Typography variant='body1'>No data available.</Typography>
+                        <Typography variant="body1">No data available.</Typography>
                     )}
                 </DialogContent>
                 <DialogActions>
@@ -1157,7 +1117,7 @@ const VideosComponent = ({ user }) => {
                     style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
+                        alignItems: 'center'
                     }}
                 >
                     <Typography variant="h6">Selected Files Details</Typography>
@@ -1171,10 +1131,7 @@ const VideosComponent = ({ user }) => {
                         >
                             Export All
                         </Button>
-                        <IconButton
-                            aria-label="close"
-                            onClick={() => setOpenSelectedDetailsDialog(false)}
-                        >
+                        <IconButton aria-label="close" onClick={() => setOpenSelectedDetailsDialog(false)}>
                             <CloseIcon />
                         </IconButton>
                     </div>
@@ -1189,7 +1146,7 @@ const VideosComponent = ({ user }) => {
                                 width: 100 + key.length * 10,
                                 renderCell: (params) => (
                                     <Tooltip title={params.value}>
-                                        <Typography variant='body1' noWrap>
+                                        <Typography variant="body1" noWrap>
                                             {params.value}
                                         </Typography>
                                     </Tooltip>
@@ -1203,7 +1160,7 @@ const VideosComponent = ({ user }) => {
 
                             return (
                                 <div key={video.id} style={{ marginBottom: '20px' }}>
-                                    <Typography variant='h6' gutterBottom>
+                                    <Typography variant="h6" gutterBottom>
                                         {video.title}
                                     </Typography>
                                     <DataGrid
@@ -1213,16 +1170,16 @@ const VideosComponent = ({ user }) => {
                                         rowsPerPageOptions={[5]}
                                         disableSelectionOnClick
                                         autoHeight
-                                        density='standard'
+                                        density="standard"
                                         components={{
-                                            Toolbar: () => <CustomToolbar title={video.title} length={rows.length} />,
+                                            Toolbar: () => <CustomToolbar title={video.title} length={rows.length} />
                                         }}
                                     />
                                 </div>
                             );
                         })
                     ) : (
-                        <Typography variant='body1'>No data available.</Typography>
+                        <Typography variant="body1">No data available.</Typography>
                     )}
                 </DialogContent>
                 <DialogActions>
@@ -1256,7 +1213,7 @@ const VideosComponent = ({ user }) => {
                         <DataGrid
                             rows={parsedResults.map((row, index) => ({
                                 ...row,
-                                id: index + 1,
+                                id: index + 1
                             }))}
                             columns={generateColumnsWithTooltip(parsedResults)}
                             pageSize={10}
@@ -1273,7 +1230,7 @@ const VideosComponent = ({ user }) => {
                             }}
                         />
                     ) : (
-                        <Typography variant='body1'>No data available.</Typography>
+                        <Typography variant="body1">No data available.</Typography>
                     )}
                 </DialogContent>
                 <DialogActions>
