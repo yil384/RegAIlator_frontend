@@ -1,16 +1,15 @@
-// FeedbackCell.jsx
 import React, { useState } from 'react';
 import { Typography, Tooltip, IconButton, TextField, Button, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
 import { NotificationsActive, Add as AddIcon } from '@mui/icons-material';
-import { updateSupplier } from './helper'; // 确保路径正确
+import { updateSupplier } from './helper'; // Make sure the path is correct
 import Box from '@mui/material/Box';
 
-// 计算剩余时间，返回一个友好的格式
+// Calculate the remaining time, return a friendly format
 const calculateTimeLeft = (nextSendTime) => {
     const now = new Date();
     let timeDifference = new Date(nextSendTime) - now;
 
-    // 前缀后缀设置为 “in” 或 “ago” 取决于时间差是否小于等于0
+    // Prefix and suffix are set to "in" or "ago" depending on whether the time difference is less than or equal to 0
     const prefix = timeDifference > 0 ? 'Next email in' : 'Emailed';
     const suffix = timeDifference > 0 ? '' : 'ago';
     timeDifference = Math.abs(timeDifference);
@@ -30,34 +29,25 @@ const calculateTimeLeft = (nextSendTime) => {
     return prefix + ' ' + timeLeft + ' ' + suffix;
 };
 
-// 定义标签列表
+// Define the tag list
 let tagList = [];
 
-// // 生成颜色的方法（基于 tagList 的长度）
-// const generateColor = (length) => {
-//     // 使用长度生成颜色，通过映射长度到 HSL 色彩空间
-//     const h = (length * 37) % 360; // 色相 0-360，37 是一个素数，用于均匀分布
-//     const s = 70; // 饱和度固定为 70%
-//     const l = 50; // 亮度固定为 50%
-//     return `hsl(${h}, ${s}%, ${l}%)`; // 返回 HSL 颜色
-// };
-
-// 生成颜色的方法
+// Generate color method based on tag
 const generateColor = (tag) => {
-    // 简单的哈希函数，将字符串转成一个数值
+    // Simple hash function to convert a string into a numeric value
     let hash = 0;
     for (let i = 0; i < tag.length; i++) {
-        hash = tag.charCodeAt(i) + ((hash << 5) - hash); // 左移位
-        hash = hash & hash; // 保持 32 位整数
+        hash = tag.charCodeAt(i) + ((hash << 5) - hash); // Left shift
+        hash = hash & hash; // Keep 32-bit integer
     }
-    // 转为 HSL 色彩空间，确保颜色均匀分布
-    const h = Math.abs(hash) % 360; // 色相 0-360
-    const s = 70 + (hash % 20); // 饱和度 70%-90%
-    const l = 50 + (hash % 10); // 亮度 50%-60%
-    return `hsl(${h}, ${s}%, ${l}%)`; // 返回 HSL 颜色
+    // Convert to HSL color space to ensure even color distribution
+    const h = Math.abs(hash) % 360; // Hue 0-360
+    const s = 70 + (hash % 20); // Saturation 70%-90%
+    const l = 50 + (hash % 10); // Lightness 50%-60%
+    return `hsl(${h}, ${s}%, ${l}%)`; // Return HSL color
 };
 
-// 为每个反馈项渲染标签
+// Render tags for each feedback item
 const renderTags = (tags) => {
     return tags.map((tag, index) => {
         if (!tag) {
@@ -65,7 +55,7 @@ const renderTags = (tags) => {
         }
         const tagText = tagList.find((t) => t.tag === tag)?.text;
         if (!tagText) {
-            // generate a new color for the tag based on the length of the tagList
+            // Generate a new color for the tag based on the length of the tag list
             tagList.push({ tag, text: `${tag}`, color: generateColor(tag) });
         }
         const tagColor = tagList.find((t) => t.tag === tag)?.color;
@@ -74,18 +64,18 @@ const renderTags = (tags) => {
             <Box
                 key={index}
                 style={{
-                    display: 'inline-flex', // 使用 inline-flex 使其能在行内显示
-                    alignItems: 'center', // 垂直居中
-                    justifyContent: 'center', // 水平居中
-                    padding: '4px 12px', // 上下左右的内边距，避免文本贴边
-                    margin: '0 4px', // 每个标签之间的间距
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '4px 12px',
+                    margin: '0 4px',
                     height: '100%',
-                    borderRadius: '12px', // 设置圆角
-                    backgroundColor: tagColor, // 标签背景颜色
-                    color: 'white', // 白色字体
-                    fontSize: '12px', // 标签文字大小
-                    fontWeight: 'bold', // 标签文字加粗
-                    textAlign: 'center' // 确保文字居中
+                    borderRadius: '12px',
+                    backgroundColor: tagColor,
+                    color: 'white',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    textAlign: 'center'
                 }}
             >
                 {tagText}
@@ -113,28 +103,28 @@ const FeedbackCell = (props) => {
 
     const handleAddTag = async () => {
         if (!newTag.trim()) {
-            setError('标签不能为空');
+            setError('Tag cannot be empty');
             return;
         }
 
         setLoading(true);
         try {
             if (feedbackArray.find((f) => f.tags.includes(newTag.trim()))) {
-                setError('标签已存在');
+                setError('Tag already exists');
                 return;
             }
-            // 构造新的标签数组
+            // Construct a new tag array
             feedbackArray.forEach((f) => {
                 f.tags.push(newTag.trim());
             });
-            // 调用后端更新供应商的反馈标签
+            // Call backend to update the supplier feedback tags
             await updateSupplier(supplierId, { feedback: feedbackArray });
-            // 刷新数据（假设有一个 refreshData 函数传递进来用于刷新表格数据）
+            // Refresh data (assumed that a refreshData function is passed in to refresh the table data)
             await refreshData();
             handleClose();
         } catch (err) {
             console.error(err);
-            setError('添加标签失败，请重试');
+            setError('Failed to add tag, please try again');
         } finally {
             setLoading(false);
         }
@@ -148,11 +138,11 @@ const FeedbackCell = (props) => {
                         <Typography variant="body1" noWrap>
                             {`Feedbacks (${feedbackArray.length})`}
                         </Typography>
-                        {/* 加号按钮 */}
+                        {/* Add button */}
                         <IconButton
                             size="small"
                             onClick={(e) => {
-                                e.stopPropagation(); // 阻止触发父级点击事件
+                                e.stopPropagation(); // Prevent triggering the parent click event
                                 handleClickOpen();
                             }}
                         >
@@ -186,14 +176,14 @@ const FeedbackCell = (props) => {
                     </div>
                 )}
             </div>
-            {/* 添加标签对话框 */}
+            {/* Add tag dialog */}
             <Dialog open={open} onClose={handleClose}>
-                <DialogTitle>添加新标签</DialogTitle>
+                <DialogTitle>Add New Tag</DialogTitle>
                 <DialogContent>
                     <TextField
                         autoFocus
                         margin="dense"
-                        label="标签"
+                        label="Tag"
                         type="text"
                         fullWidth
                         value={newTag}
@@ -204,10 +194,10 @@ const FeedbackCell = (props) => {
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleClose} color="primary">
-                        取消
+                        Cancel
                     </Button>
                     <Button onClick={handleAddTag} color="primary" disabled={loading}>
-                        添加
+                        Add
                     </Button>
                 </DialogActions>
             </Dialog>
