@@ -1058,11 +1058,23 @@ const SuppliersComponent = ({ user }) => {
                 }
             },
             renderCell: (params) => {
-                const feedbackArray = params.row?.feedback || [];
+                // 筛选feedback中surveyId与当前supplier的chooseSurvey相同的feedback
+                console.log('params.row', params.row);
+                let feedbackArrayTmp = params.row?.feedback.filter((feedback) => feedback.surveyId === params.row?.chooseSurvey) || [];
+                if (feedbackArrayTmp.length === 0) {
+                    console.log('No feedback for this survey, checking for empty surveyId feedback');
+                    feedbackArrayTmp = params.row?.feedback.filter((feedback) => feedback.surveyId === null) || [];
+                }
+                if (feedbackArrayTmp.length === 0) {
+                    console.log('No feedback for empty surveyId, checking for any feedback');
+                    feedbackArrayTmp = params.row?.feedback || [];
+                }
+                // 按照时间排序，最新的在第0个index
+                const feedbackArray = feedbackArrayTmp.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 const nextSendTime = params.row?.nextEmailSendTime;
                 const supplierId = params.row?.id;
                 const isEmailSent = params.row?.isEmailSent;
-
+                const surveyId = params.row?.chooseSurvey;
                 // 假设你有一个函数用于刷新数据，可以从父组件传递下来
                 // 如果不在父组件，可以考虑使用 context 或其他状态管理方案
                 const refreshData = () => {
@@ -1074,6 +1086,7 @@ const SuppliersComponent = ({ user }) => {
                         feedbackArray={feedbackArray}
                         nextSendTime={nextSendTime}
                         supplierId={supplierId}
+                        surveyId={surveyId}
                         isEmailSent={isEmailSent}
                         handleOpenDialogFeedback={handleOpenDialogFeedback}
                         refreshData={loadData}

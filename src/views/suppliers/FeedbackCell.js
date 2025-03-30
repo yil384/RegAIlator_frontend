@@ -102,7 +102,7 @@ const renderTags = (tags) => {
 };
 
 // Add Feedback Dialog Component
-const AddFeedbackDialog = ({ open, handleClose, supplierId, refreshData }) => {
+const AddFeedbackDialog = ({ open, handleClose, supplierId, refreshData, surveyId }) => {
     const handleSubmitFeedback = async (values) => {
         try {
             // Call API to add feedback
@@ -112,7 +112,8 @@ const AddFeedbackDialog = ({ open, handleClose, supplierId, refreshData }) => {
                 date: new Date().toISOString(), // Add current date
                 to: values.to, // Add "to" field
                 from: values.from, // Add "from" field
-                subject: values.subject // Add "subject" field
+                subject: values.subject, // Add "subject" field
+                surveyId: surveyId
             };
 
             // Update supplier with new feedback
@@ -260,7 +261,7 @@ const AddFeedbackDialog = ({ open, handleClose, supplierId, refreshData }) => {
 };
 
 const FeedbackCell = (props) => {
-    const { feedbackArray, nextSendTime, supplierId, isEmailSent, handleOpenDialogFeedback, refreshData } = props;
+    const { feedbackArray, nextSendTime, supplierId, surveyId, isEmailSent, handleOpenDialogFeedback, refreshData } = props;
     const [open, setOpen] = useState(false);
     const [newTag, setNewTag] = useState('');
     const [loading, setLoading] = useState(false);
@@ -285,19 +286,10 @@ const FeedbackCell = (props) => {
 
         setLoading(true);
         try {
-            if (feedbackArray.find((f) => f.tags.includes(newTag.trim()))) {
-                setError('Tag already exists');
-                return;
-            }
-            // Construct a new tag array
-            feedbackArray.forEach((f) => {
-                f.tags.push(newTag.trim());
-            });
-            handleClose();
-            // Call backend to update the supplier feedback tags
-            await updateSupplier(supplierId, { feedback: feedbackArray });
+            await updateSupplier(supplierId, { tags: newTag.split(',').map((tag) => tag.trim()) });
             // Refresh data (assumed that a refreshData function is passed in to refresh the table data)
             await refreshData();
+            handleClose();
         } catch (err) {
             console.error(err);
             setError('Failed to add tag, please try again');
@@ -373,6 +365,7 @@ const FeedbackCell = (props) => {
                 handleClose={() => setOpenFeedback(false)}
                 supplierId={supplierId}
                 refreshData={refreshData}
+                surveyId={surveyId}
             />
 
             {/* Add Tag Dialog */}
