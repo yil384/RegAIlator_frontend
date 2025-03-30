@@ -87,3 +87,14 @@ export const sendEmailsToSuppliers = (emailData) => {
         )
     );
 };
+
+export const sendReplyEmail = (emailData) => {
+    return fetchApi(
+        {
+            method: 'POST',
+            url: endpoints.replyEmail,
+            data: emailData
+        },
+        true // 包含身份验证
+    );
+}

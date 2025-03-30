@@ -10,9 +10,17 @@ The Regailator
 ```
 npm install
 ```
+then,
 ```
-export NODE_OPTIONS=--openssl-legacy-provider
+export NODE_OPTIONS=--openssl-legacy-provider && npm start
 ```
+or
 ```
-npm run build && serve -s build -l 3001
+export NODE_OPTIONS=--openssl-legacy-provider && npm run build && serve -s build -l 3001
+```
+
+
+## Deploy
+```
+git pull && export NODE_OPTIONS=--openssl-legacy-provider && npm run build && tar -czvf ~/RegAIlator_frontend/build.tar.gz -C ~/RegAIlator_frontend build && scp -i ~/web_server_key.pem ~/RegAIlator_frontend/build.tar.gz ubuntu@3.137.84.84:/home/ubuntu/
 ```

@@ -16,10 +16,17 @@ import {
     Grid
 } from '@mui/material';
 import { NotificationsActive, Add as AddIcon, Close as CloseIcon } from '@mui/icons-material';
-import { updateSupplier } from './helper'; // Make sure the path is correct
+import { updateSupplier, sendReplyEmail } from './helper'; // Make sure the path is correct
 import Box from '@mui/material/Box';
 import { Formik, Field } from 'formik';
+import { toast } from 'react-hot-toast';
 import * as Yup from 'yup';
+
+// 验证邮箱格式的函数
+const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
 
 // Calculate the remaining time, return a friendly format
 const calculateTimeLeft = (nextSendTime) => {
@@ -302,12 +309,21 @@ const FeedbackCell = (props) => {
         setOpenFeedback(true);
     };
 
+    const [openReplyDialog, setOpenReplyDialog] = React.useState(false);
+    const [selectedReplyFeedback, setSelectedReplyFeedback] = React.useState(null);
+    const [replySubject, setReplySubject] = React.useState('');
+    const [replyContent, setReplyContent] = React.useState('');
+
     return (
         <div style={{ width: '100%', cursor: 'pointer' }}>
-            <div onClick={() => handleOpenDialogFeedback(feedbackArray, supplierId, nextSendTime)}>
+            <div>
                 {feedbackArray.length > 0 ? (
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <Typography variant="body1" noWrap>
+                        <Typography
+                            variant="body1"
+                            noWrap
+                            onClick={() => handleOpenDialogFeedback(feedbackArray, supplierId, nextSendTime)}
+                        >
                             {`Feedbacks (${feedbackArray.length})`}
                         </Typography>
                         {/* Add button */}
@@ -329,6 +345,23 @@ const FeedbackCell = (props) => {
                         >
                             {renderTags(feedbackArray[0].tags)}
                         </div>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                                if (feedbackArray[0]?.reply) {
+                                    setReplySubject(feedbackArray[0].reply.subject);
+                                    setReplyContent(feedbackArray[0].reply.content);
+                                } else {
+                                    setReplySubject('');
+                                    setReplyContent('');
+                                }
+                                setSelectedReplyFeedback(feedbackArray[0]);
+                                setOpenReplyDialog(true);
+                            }}
+                        >
+                            View Reply
+                        </Button>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -390,6 +423,57 @@ const FeedbackCell = (props) => {
                     </Button>
                     <Button onClick={handleAddTag} color="primary" disabled={loading}>
                         Add
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={openReplyDialog} onClose={() => setOpenReplyDialog(false)} fullWidth maxWidth="sm">
+                <DialogTitle>Edit & Send Reply</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        fullWidth
+                        label="Reply Subject"
+                        value={replySubject}
+                        onChange={(e) => setReplySubject(e.target.value)}
+                        margin="normal"
+                    />
+                    <TextField
+                        fullWidth
+                        multiline
+                        minRows={4}
+                        label="Reply Content"
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        margin="normal"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenReplyDialog(false)}>Cancel</Button>
+                    <Button onClick={async () => {
+                        if (!selectedReplyFeedback) return;
+                        console.log('subject:', replySubject);
+                        await updateSupplier(supplierId, { reply: { subject: replySubject, content: replyContent } });
+                        await refreshData();
+                        setOpenReplyDialog(false);
+                    }
+                    }>Save</Button>
+                    <Button
+                        color="primary"
+                        variant="contained"
+                        onClick={async () => {
+                            if (!selectedReplyFeedback) return;
+                            const response = await sendReplyEmail({
+                                email: selectedReplyFeedback.from,
+                                subject: replySubject,
+                                content: replyContent
+                            });
+                            if (response) {
+                                toast.success('Reply sent successfully');
+                            }
+                            setOpenReplyDialog(false);
+                        }}
+                    >
+                        Send Reply
                     </Button>
                 </DialogActions>
             </Dialog>

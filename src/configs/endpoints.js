@@ -8,6 +8,7 @@ const endpoints = {
     forgotPassword: `/auth/forgot-password`,
     resetPassword: `/auth/reset-password`,
     mentionUsers: `/auth/send-mention-email`,
+    replyEmail: `/auth/send-reply-email`,
     users: `/users`,
     userById: (id) => `/users/${id}`,
     suppliers: '/auth/my-suppliers',
@@ -24,7 +25,7 @@ const endpoints = {
     errorLogById: (id) => `/error-logs/${id}`,
     upload_file: `videos/upload_file`,
     billOfMaterials: '/auth/my-bill-of-materials',
-    billOfMaterialsBatchAdd: '/auth/my-bill-of-materials-batch-add',
+    billOfMaterialsBatchAdd: '/auth/my-bill-of-materials-batch-add'
 };
 
 export default endpoints;
