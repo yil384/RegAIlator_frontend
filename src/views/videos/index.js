@@ -1,10 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast'; // Optional: For toast notifications
 
 import MainCard from '../../ui-component/cards/MainCard';
-import { DataGrid } from '@material-ui/data-grid';
+import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { CustomToolbar } from '../../ui-component/CustomNoRowOverlay';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
@@ -13,8 +14,6 @@ import DeleteIcon from '@material-ui/icons/DeleteForever';
 import EditIcon from '@material-ui/icons/Edit';
 import ZoomInIcon from '@material-ui/icons/ZoomIn';
 import ZoomOutIcon from '@material-ui/icons/ZoomOut';
-import Autocomplete from '@material-ui/lab/Autocomplete';
-import TextField from '@material-ui/core/TextField';
 import LoaderInnerCircular from '../../ui-component/LoaderInnerCircular';
 
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -37,33 +36,58 @@ import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; 
 
 import config from '../../configs';
 import { fetchSuppliers } from '../suppliers/helper';
+import { fetchSurveys } from '../survey-templates/helper';
+import { get } from 'jquery';
 
 // **Import DownloadIcon**
 import DownloadIcon from '@material-ui/icons/CloudDownload'; // You can choose any suitable download icon
 import VisibilityIcon from '@material-ui/icons/Visibility'; // Import the visibility icon
-import JSZip from 'jszip';
+import JSZip, { filter } from 'jszip';
 
 import * as Yup from 'yup';
 import { Formik } from 'formik';
 import { useDropzone } from 'react-dropzone';
 import LinearProgressBar from '../../ui-component/LinearProgress';
 import AnimateButton from '../../ui-component/extended/AnimateButton';
+import useScriptRef from '../../hooks/useScriptRef';
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from '../../configs/endpoints';
 import FileUploadIcon from '@material-ui/icons/FileUpload';
 import ClearIcon from '@material-ui/icons/Clear';
 import { useStyles } from './videos.styles'; // Ensure this style file exists
-import { Box, FormControl, FormHelperText, Grid } from '@material-ui/core';
+import {
+    Box,
+    FormControl,
+    FormHelperText,
+    Grid,
+    InputLabel,
+    MenuItem,
+    Select,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Paper
+} from '@material-ui/core';
 
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
-import { RunCircleOutlined } from '@material-ui/icons';
+import {
+    AddCircleOutlineOutlined,
+    BlurCircularOutlined,
+    Filter9PlusOutlined,
+    PanoramaFishEyeOutlined,
+    RunCircleOutlined
+} from '@material-ui/icons';
 
 // Set PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const VideosComponent = ({ user }) => {
     const theme = useTheme();
+    const history = useHistory();
     const userRole = user?.role;
     const classes = useStyles();
 
@@ -184,7 +208,7 @@ const VideosComponent = ({ user }) => {
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
-            const response = await fetchVideos({ sortBy: '-updatedAt' });
+            const response = await fetchVideos({ sortBy: '-updatedAt', addedBy: user.id });
             setVideos(response?.results || []);
             const suppliersResponse = await fetchSuppliers();
             setSuppliers(suppliersResponse);
@@ -818,34 +842,13 @@ const VideosComponent = ({ user }) => {
                                 }
                             }}
                         >
-                            {({ errors, handleBlur, handleSubmit, isSubmitting, touched, values }) => (
+                            {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
                                 <form onSubmit={handleSubmit}>
                                     <Box sx={{ mt: 2, mb: 2 }}>
                                         <Grid container spacing={2}>
                                             <Grid item xs={12} sm={12} md={12}>
                                                 <FormControl fullWidth error={Boolean(touched.supplier && errors.supplier)}>
-                                                    <Grid item xs={12} sm={12} md={12}>
-                                                        <Autocomplete
-                                                            options={[...suppliers].sort((a, b) =>
-                                                                a.supplierName.localeCompare(b.supplierName)
-                                                            )} // Sorting suppliers alphabetically
-                                                            getOptionLabel={(option) => option.supplierName} // Display supplier name
-                                                            value={selectedSupplier} // Currently selected value
-                                                            onChange={(event, newValue) => setSelectedSupplier(newValue)} // Handle selection
-                                                            onBlur={handleBlur}
-                                                            renderInput={(params) => (
-                                                                <TextField
-                                                                    {...params}
-                                                                    label="Select Supplier"
-                                                                    variant="outlined"
-                                                                    fullWidth
-                                                                    error={Boolean(touched.supplier && errors.supplier)}
-                                                                    helperText={touched.supplier && errors.supplier}
-                                                                />
-                                                            )}
-                                                        />
-                                                    </Grid>
-                                                    {/* <InputLabel
+                                                    <InputLabel
                                                         id="select-supplier-label"
                                                         classes={{
                                                             shrink: classes.shrinkLabel
@@ -869,19 +872,21 @@ const VideosComponent = ({ user }) => {
                                                         <MenuItem value={null}>
                                                             <em>None</em>
                                                         </MenuItem>
-                                                        {suppliers.map((supplier) => (
-                                                            <MenuItem key={supplier._id} value={supplier}>
-                                                                {supplier.supplierName}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select> */}
+                                                            {[...suppliers]
+                                                                .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
+                                                                .map((supplier) => (
+                                                                    <MenuItem key={supplier._id} value={supplier}>
+                                                                        {supplier.supplierName}
+                                                                    </MenuItem>
+                                                                ))}
+                                                    </Select>
                                                     {touched.supplier && errors.supplier && (
                                                         <FormHelperText error>{errors.supplier}</FormHelperText>
                                                     )}
                                                 </FormControl>
                                             </Grid>
                                             <Grid item xs={12} sm={12} md={12}>
-                                                <section className="container" style={{ paddingTop: '16px' }}>
+                                                <section className="container">
                                                     {!uploadPercentage && (
                                                         <div {...getRootProps({ className: 'dropzone' })}>
                                                             <input {...getInputProps()} />
