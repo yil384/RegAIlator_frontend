@@ -1043,11 +1043,11 @@ const SuppliersComponent = ({ user }) => {
             field: 'feedback',
             headerName: 'Feedback & Documents',
             sortable: true,
-            width: 400,
+            width: 800,
             valueGetter: (params) => {
                 const feedbackArray = params.row?.feedback || [];
                 if (feedbackArray.length > 0) {
-                    return `Feedbacks (${feedbackArray.length})`;
+                    return `Feedbacks (${feedbackArray.length}) - ${feedbackArray[0].tags.join(', ')}`;
                 } else {
                     const nextSendTime = params.row?.nextEmailSendTime;
                     if (nextSendTime) {
