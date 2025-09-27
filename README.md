@@ -6,21 +6,23 @@
 
 The Regailator
 
-## Quick Start
+## Start
 ```
 npm install
 ```
 then,
 ```
-export NODE_OPTIONS=--openssl-legacy-provider && npm start
-```
-or
-```
 export NODE_OPTIONS=--openssl-legacy-provider && npm run build && serve -s build -l 3001
 ```
-
-
-## Deploy
+next, deploy:
 ```
-git pull && export NODE_OPTIONS=--openssl-legacy-provider && npm run build && tar -czvf ~/RegAIlator_frontend/build.tar.gz -C ~/RegAIlator_frontend build && scp -i ~/web_server_key.pem ~/RegAIlator_frontend/build.tar.gz ubuntu@3.137.84.84:/home/ubuntu/
+tar -czvf build.tar.gz -C ./ build && scp build.tar.gz ubuntu@3.140.152.13:/home/ubuntu/
+```
+next, enter the ubuntu@3.140.152.13:
+```
+ssh ubuntu@3.140.152.13
+```
+last, run:
+```
+sudo tar -xzvf ~/build.tar.gz -C /var/www/regailator --strip-components=1
 ```
