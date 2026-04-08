@@ -113,7 +113,7 @@ const VideosComponent = ({ user }) => {
         setNumPages(numPages);
     };
 
-    // 添加文件对话框的状态变量
+    // State variables for the add file dialog
     const [selectedFiles, setSelectedFiles] = React.useState([]);
     const [uploadPercentage, setUploadPercentage] = React.useState(null);
     const [processingFile, setProcessingFile] = React.useState(false);
@@ -273,19 +273,19 @@ const VideosComponent = ({ user }) => {
         setIsParseLoading(true);
 
         try {
-            // 解析选中的所有文件，parsedResults是一个数组
+            // Parse all selected files, parsedResults is an array
             const parsedResponse = await parseVideos(selectedIds);
-            // 把里面的files的data字段提取拼接成一个数组
+            // Extract and concatenate the data field from each file into a single array
             const parsedResults = parsedResponse.files.map((file) => file.result.data).flat();
             setIsParseLoading(false);
             console.log('Parsed Results:', parsedResults);
             console.log('isParseLoading:', isParseLoading);
 
-            // 更新数据
+            // Refresh data
             await loadData();
-            setSelectedIds([]); // 清空选中的 ID
+            setSelectedIds([]); // Clear selected IDs
 
-            // 将解析结果在一个新的 dialog 以表格形式展示
+            // Display parsed results in a new dialog as a table
             setParsedResults(parsedResults);
             setOpenParsedDialog(true);
             // toast.success('Selected files have been parsed successfully.');
@@ -296,7 +296,7 @@ const VideosComponent = ({ user }) => {
         }
     };
 
-    // 在 handleDownload 函数中实现多个文件下载
+    // Implement multiple file download in the handleDownload function
     // const handleDownload = () => {
     //     if (selectedIds.length === 0) {
     //         toast.warning('No videos selected for download.');
@@ -312,11 +312,11 @@ const VideosComponent = ({ user }) => {
     //             const link = document.createElement('a');
     //             const url = URL.createObjectURL(blob);
     //             link.href = url;
-    //             link.setAttribute('download', video.title || 'download'); // 设置下载文件名
+    //             link.setAttribute('download', video.title || 'download'); // Set download file name
     //             document.body.appendChild(link);
     //             link.click();
     //             document.body.removeChild(link);
-    //             URL.revokeObjectURL(url); // 清理 URL 对象
+    //             URL.revokeObjectURL(url); // Clean up URL object
     //         } catch (error) {
     //             console.error('File download error:', error);
     //             toast.error(`Failed to download ${video.title}`);
@@ -623,14 +623,14 @@ const VideosComponent = ({ user }) => {
             return;
         }
 
-        // 准备合并后的数据数组
+        // Prepare the merged data array
         const mergedData = [];
 
         selectedVideosData.forEach((video) => {
-            // 如果数据不合法，则跳过
+            // Skip if data is invalid
             if (!video.json?.data) return;
             if (video.json?.data?.length > 0) {
-                // 在每条数据中添加一个字段以标识其来源视频
+                // Add a field to each row to identify its source video
                 video.json.data.forEach((row) => {
                     mergedData.push({
                         ...row,
@@ -645,19 +645,19 @@ const VideosComponent = ({ user }) => {
             return;
         }
 
-        // 使用 PapaParse 将 JSON 转换为 CSV
+        // Use PapaParse to convert JSON to CSV
         const csv = Papa.unparse(mergedData);
 
-        // 创建一个 Blob 对象并触发下载
+        // Create a Blob object and trigger download
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
 
-        // 获取当前日期和时间
+        // Get the current date and time
         const currentDate = new Date();
-        // 格式化日期为 YYYY-MM-DD
-        const formattedDate = currentDate.toISOString().split('T')[0]; // 例如: 2024-04-27
-        // 格式化时间为 HH-MM-SS，替换特殊字符以适应文件名
-        const formattedTime = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-'); // 例如: 14-30-45
-        // 构建文件名，确保没有非法字符
+        // Format date as YYYY-MM-DD
+        const formattedDate = currentDate.toISOString().split('T')[0]; // e.g.: 2024-04-27
+        // Format time as HH-MM-SS, replacing special characters for file name compatibility
+        const formattedTime = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-'); // e.g.: 14-30-45
+        // Build file name, ensuring no illegal characters
         const fileName = `Exported_data_${selectedVideosData.length}_Created_at_${formattedDate}_${formattedTime}`;
         saveAs(blob, `${fileName}.csv`);
 

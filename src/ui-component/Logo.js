@@ -6,7 +6,7 @@ import logo from './../../src/assets/images/RegAIlator.ico'
 
 const Logo = () => {
     return (
-        <img src={logo} alt="Berry" width="100" />
+        <img src={logo} alt="RegAIlator Logo" width="100" />
     );
 };
 

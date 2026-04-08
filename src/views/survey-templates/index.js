@@ -98,7 +98,7 @@ const SurveysComponent = ({ user }) => {
         loadData();
     }, [loadData]);
 
-    // 新增 useEffect，监听 surveys 的变化，并更新 currentAttachments
+    // Add useEffect to watch for changes in surveys and update currentAttachments
     React.useEffect(() => {
         if (openAttachmentsDialog && currentSurveyId) {
             const updatedSurvey = surveys.find((survey) => survey.id === currentSurveyId);
@@ -226,7 +226,7 @@ const SurveysComponent = ({ user }) => {
             headerName: 'Survey Subject',
             width: 200,
             sortable: true,
-            editable: true, // 可编辑
+            editable: true, // Editable
             valueGetter: (params) => params.row?.title || '',
             renderCell: (params) => (
                 <Tooltip title={params.row.title || ''} arrow>
@@ -433,7 +433,7 @@ const SurveysComponent = ({ user }) => {
                                     }}
                                     value={sampleTemplate}
                                     onChange={(e) => {
-                                        // 解析 JSON 字符串并加载到 EmailEditor
+                                        // Parse JSON string and load into EmailEditor
                                         emailEditorRef.current.editor.loadDesign(JSON.parse(e.target.value));
                                         setSampleTemplate(e.target.value);
                                     }}
@@ -725,7 +725,7 @@ const SurveysComponent = ({ user }) => {
                                                 }}
                                                 value={sampleTemplate}
                                                 onChange={(e) => {
-                                                    // 解析 JSON 字符串并加载到 EmailEditor
+                                                    // Parse JSON string and load into EmailEditor
                                                     emailEditorRef.current.editor.loadDesign(JSON.parse(e.target.value));
                                                     setSampleTemplate(e.target.value);
                                                 }}
@@ -1072,7 +1072,7 @@ const SurveysComponent = ({ user }) => {
     const handleCellEditCommit = React.useCallback(
         async (params) => {
             const { id, field, value } = params;
-            // 如果没有变化，不执行任何操作
+            // If no changes, do not perform any action
             if (surveys.find((survey) => survey.id === id)[field] === value) {
                 return;
             }
@@ -1142,7 +1142,7 @@ const SurveysComponent = ({ user }) => {
                         const filterIds = surveys
                             .filter((survey) => {
                                 return filter.every(([field, operator, value]) => {
-                                    // [TODO] [FIXME] 特殊处理 Attachments 列
+                                    // [TODO] [FIXME] Special handling for the Attachments column
                                     // const cellValue = survey[field];
                                     const cellValue =
                                         field === 'attachments'

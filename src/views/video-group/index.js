@@ -49,7 +49,7 @@ import useScriptRef from '../../hooks/useScriptRef';
 import { deleteVideoGroup } from './video-groups.helper';
 import { fetchVideos } from '../videos/videos.helper'; // Adjust the path if necessary
 
-// 主组件
+// Main component
 const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLoading, videoGroups, user }) => {
     const history = useHistory();
     const theme = useTheme();
@@ -80,7 +80,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
     };
 
     const handleAddSuccess = () => {
-        fetchVideoGroupsAction(); // 刷新列表
+        fetchVideoGroupsAction(); // Refresh list
     };
 
     const fetchGroupFiles = React.useCallback(async (groupId) => {
@@ -191,7 +191,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
         fetchVideoGroupsAction();
     }, [fetchVideoGroupsAction]);
 
-    // 添加视频组对话框组件
+    // Add video group dialog component
     const AddVideoGroupDialog = ({ open, handleClose }) => {
         return (
             <Dialog
@@ -227,8 +227,8 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
                                     await addVideoGroupAction(values);
                                     setStatus({ success: true });
                                     setSubmitting(false);
-                                    handleClose(); // 成功后关闭对话框
-                                    handleAddSuccess(); // 通知父组件刷新数据
+                                    handleClose(); // Close dialog on success
+                                    handleAddSuccess(); // Notify parent component to refresh data
                                 }
                             } catch (err) {
                                 if (scriptedRef.current) {
@@ -321,7 +321,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
         );
     };
 
-    // 显示组内文件的对话框组件
+    // Dialog component to display files within a group
     const GroupFilesDialog = ({ open, onClose, group, files, isLoading }) => {
         const theme = useTheme();
 
@@ -347,7 +347,7 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
                     </Typography>
                 )
             },
-            // 你可以根据需要添加更多的列
+            // You can add more columns as needed
         ];
 
         return (
@@ -429,10 +429,10 @@ const VideoGroupComponent = ({ fetchVideoGroupsAction, addVideoGroupAction, isLo
                     }}
                 />
             </div>
-            {/* 添加对话框组件 */}
+            {/* Add dialog component */}
             <AddVideoGroupDialog open={openDialog} handleClose={handleCloseDialog} />
 
-            {/* 显示组内文件的对话框组件 */}
+            {/* Dialog component to display files within a group */}
             <GroupFilesDialog
                 open={openDetailsDialog}
                 onClose={() => setOpenDetailsDialog(false)}

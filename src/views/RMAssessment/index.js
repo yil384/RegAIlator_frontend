@@ -32,7 +32,7 @@ const RMAssessment = () => {
             const complianceResponse = await fetchVideos(); // Assuming fetchVideos fetches the files data
             const complianceDataTemp = complianceResponse?.results || [];
 
-            // 从 complianceDataTemp 中提取出需要的数据
+            // Extract the required data from complianceDataTemp
             let complianceData = [];
             for (let i = 0; i < complianceDataTemp.length; i++) {
                 const file = complianceDataTemp[i];
@@ -56,7 +56,7 @@ const RMAssessment = () => {
                 const regulation = item['Regulation or substance name'] || '';
                 const complianceStatus = item['Compliant conclusion\n(Compliant, not compliant, not applicable or unclear)'] || item['Compliant conclusion'] || '';
 
-                // 遇到不合法的数据就跳过这个数据
+                // Skip invalid data entries
                 if (!supplierName || !rawMaterialName || !regulation || !complianceStatus) {
                     console.log('Invalid data:', item);
                     return;
@@ -64,7 +64,7 @@ const RMAssessment = () => {
 
                 // Build materialKey
                 // const materialKey = `${supplierName}||${materialName}`;
-                const materialKey = rawMaterialName; // 只用 materialName 作为 key
+                const materialKey = rawMaterialName; // Use only materialName as key
 
                 if (!complianceMap[materialKey]) {
                     complianceMap[materialKey] = {};
@@ -86,7 +86,7 @@ const RMAssessment = () => {
                 const rawMaterialName = material.rawMaterialName || '';
 
                 // const materialKey = `${supplierName}||${materialName}`;
-                const materialKey = rawMaterialName; // 只用 materialName 作为 key
+                const materialKey = rawMaterialName; // Use only materialName as key
 
                 const row = {
                     id: material.id || index,
@@ -178,7 +178,7 @@ const RMAssessment = () => {
         ...regulations.map(regulation => ({
             field: regulation,
             headerName: regulation,
-            // width 和 regulation 的长度有关，可以根据需要调整
+            // Width depends on the regulation name length, adjust as needed
             width: regulation.length * 5 + 180,
             renderCell: (params) => {
                 const status = params.value;

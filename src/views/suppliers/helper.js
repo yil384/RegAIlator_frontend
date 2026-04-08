@@ -13,7 +13,7 @@ export const fetchSuppliers = () =>
             method: 'GET',
             url: endpoints.suppliers,
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 /**
@@ -26,7 +26,7 @@ export const addSupplier = (data) =>
             url: endpoints.suppliers,
             data
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 export const batchAddSuppliers = (data) =>
@@ -36,7 +36,7 @@ export const batchAddSuppliers = (data) =>
             url: endpoints.suppliersBatch,
             data
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 /**
  * Update an existing supplier
@@ -48,7 +48,7 @@ export const updateSupplier = (supplierId, data) =>
             url: `${endpoints.suppliers}/${supplierId}`,
             data
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 export const updateSuppliers = (supplierIds, data) =>
     fetchApi(
@@ -67,7 +67,7 @@ export const deleteSuppliers = (supplierIds) =>
             url: `${endpoints.suppliers}`,
             data: { supplierIds }
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 /**
@@ -79,10 +79,10 @@ export const sendEmailsToSuppliers = (emailData) => {
             fetchApi(
                 {
                     method: 'POST',
-                    url: endpoints.mentionUsers,  // 假设在 endpoints 中定义了此端点
+                    url: endpoints.mentionUsers,  // Assuming this endpoint is defined in endpoints
                     data
                 },
-                true // 包含身份验证
+                true // Include authentication
             )
         )
     );
@@ -95,6 +95,6 @@ export const sendReplyEmail = (emailData) => {
             url: endpoints.replyEmail,
             data: emailData
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 }

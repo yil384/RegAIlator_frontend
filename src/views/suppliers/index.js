@@ -66,8 +66,8 @@ import ZoomOutIcon from '@material-ui/icons/ZoomOut';
 import { DateTimePicker, LocalizationProvider } from '@mui/lab';
 import AdapterDateFns from '@date-io/date-fns';
 import Box from '@material-ui/core/Box';
-import FeedbackCell from './FeedbackCell'; // 确保路径正确
-// 设置 PDF Worker
+import FeedbackCell from './FeedbackCell'; // Ensure the path is correct
+// Set up PDF Worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const statusOptions = ['inactive', 'replied', 'read', 'unread'];
@@ -121,7 +121,7 @@ const SuppliersComponent = ({ user }) => {
         console.log('file extension', fileExtension);
         setPreviewingFileType(fileExtension);
     };
-    // 加载供应商数据
+    // Load supplier data
     const loadData = React.useCallback(async () => {
         try {
             setIsLoading(true);
@@ -143,13 +143,13 @@ const SuppliersComponent = ({ user }) => {
         }
     }, []);
 
-    const [lastEmailSentTime, setLastEmailSentTime] = React.useState(null); // 记录上次发送邮件的时间
+    const [lastEmailSentTime, setLastEmailSentTime] = React.useState(null); // Record the last email sent time
 
     React.useEffect(() => {
         const checkEmailReminders = async () => {
             let suppliersEmailing = [];
             const now = new Date();
-            // 如果上次发送邮件的时间存在，且距离现在小于10s，则跳过发送
+            // If the last email sent time exists and is less than 10s ago, skip sending
             if (lastEmailSentTime && now - lastEmailSentTime < 10000) {
                 console.log('Email already sent within the last minute. Skipping...');
                 return;
@@ -166,7 +166,7 @@ const SuppliersComponent = ({ user }) => {
             if (suppliersEmailing.length === 0) {
                 return;
             }
-            setSendingEmails(true); // 设置发送邮件中...
+            setSendingEmails(true); // Set sending emails in progress...
             const response = await sendEmailsToSuppliers(suppliersEmailing);
             if (response) {
                 toast.success(`${suppliersEmailing.length} email(s) sent successfully`);
@@ -178,16 +178,16 @@ const SuppliersComponent = ({ user }) => {
                     }
                 );
                 loadData();
-                // 更新上次发送邮件的时间
+                // Update the last email sent time
                 setLastEmailSentTime(new Date());
             }
-            setSendingEmails(false); // 结束发送邮件的状态
+            setSendingEmails(false); // End sending emails state
         };
 
         checkEmailReminders();
-    }, [suppliers]); // 只在 suppliers 更新时触发
+    }, [suppliers]); // Only triggered when suppliers updates
 
-    // 加载调查数据
+    // Load survey data
     React.useEffect(() => {
         const loadSurveys = async () => {
             try {
@@ -205,7 +205,7 @@ const SuppliersComponent = ({ user }) => {
         loadData();
     }, [loadData, emailUpdateCount]);
 
-    // 处理 Excel 文件上传
+    // Handle Excel file upload
     const handleExcelUpload = async (event) => {
         const file = event.target.files[0];
         if (!file) {
@@ -293,7 +293,7 @@ const SuppliersComponent = ({ user }) => {
                     return;
                 }
 
-                // 将 supplierName, contact, chooseSurvey 都相同的suppliers合并为一个（如果都不存在字段也视为相同）
+                // Merge suppliers with identical supplierName, contact, and chooseSurvey into one (missing fields are also treated as equal)
                 const uniqueSuppliers = suppliersToAdd.reduce((acc, supplier) => {
                     const existingSupplier = acc.find(
                         (s) =>
@@ -334,7 +334,7 @@ const SuppliersComponent = ({ user }) => {
         reader.readAsArrayBuffer(file);
     };
 
-    // 验证邮箱格式的函数
+    // Function to validate email format
     const isValidEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
@@ -347,7 +347,7 @@ const SuppliersComponent = ({ user }) => {
         return [separatorHeader, header, ...rows].join('\n');
     };
 
-    // 处理发送邮件
+    // Handle sending emails
     const handleSendEmails = async () => {
         if (selectedIds.length === 0) {
             toast.error('No suppliers selected');
@@ -421,7 +421,7 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // 处理删除供应商
+    // Handle deleting suppliers
     const handleDeleteSuppliers = async () => {
         if (selectedIds.length === 0) {
             toast.error('No suppliers selected');
@@ -456,7 +456,7 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // 处理选择单个供应商
+    // Handle selecting a single supplier
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
@@ -465,7 +465,7 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // 处理全选/取消全选
+    // Handle select all / deselect all
     const handleSelectAll = () => {
         const allRowIds = filterIds.map((id) => id);
         if (filterIds.every((id) => selectedIds.includes(id))) {
@@ -475,7 +475,7 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    // 打开和关闭添加供应商的对话框
+    // Open and close the add supplier dialog
     const handleOpenDialog = () => {
         setOpenDialog(true);
     };
@@ -494,7 +494,7 @@ const SuppliersComponent = ({ user }) => {
         // For example, set a state with survey details and open a new Dialog component
     };
 
-    // 删除单个供应商
+    // Delete a single supplier
     const handleDeleteSingleSupplier = async (id) => {
         const result = await Swal.fire({
             title: 'Confirm Deletion',
@@ -559,20 +559,20 @@ const SuppliersComponent = ({ user }) => {
         }
     };
 
-    const [scale, setScale] = React.useState(1.0); // 初始缩放比例为1.0
+    const [scale, setScale] = React.useState(1.0); // Initial zoom scale is 1.0
     const handleZoomIn = () => {
-        setScale((prevScale) => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // 最大缩放到3.0
+        setScale((prevScale) => (prevScale < 3.0 ? prevScale + 0.2 : prevScale)); // Maximum zoom to 3.0
     };
     const handleZoomOut = () => {
-        setScale((prevScale) => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // 最小缩小到0.4
+        setScale((prevScale) => (prevScale > 0.4 ? prevScale - 0.2 : prevScale)); // Minimum zoom to 0.4
     };
 
-    // 计算剩余时间，返回一个友好的格式
+    // Calculate remaining time and return a human-friendly format
     const calculateTimeLeft = (nextSendTime) => {
         const now = new Date();
         let timeDifference = new Date(nextSendTime) - now;
 
-        // 前缀后缀设置为 “in” 或 “ago” 取决于时间差是否小于等于0
+        // Set prefix/suffix to “in” or “ago” depending on whether the time difference is positive or negative
         const prefix = timeDifference > 0 ? 'Next email in' : 'Emailed';
         const suffix = timeDifference > 0 ? '' : 'ago';
         timeDifference = Math.abs(timeDifference);
@@ -640,34 +640,34 @@ const SuppliersComponent = ({ user }) => {
         setSelectedRawMaterials(result.rawMaterials.map((rawMaterial) => ({ id: rawMaterial._id, ...rawMaterial })));
     };
 
-    // 定义标签列表
+    // Define the tag list
     let tagList = [];
 
-    // // 生成颜色的方法（基于 tagList 的长度）
+    // // Method to generate colors (based on tagList length)
     // const generateColor = (length) => {
-    //     // 使用长度生成颜色，通过映射长度到 HSL 色彩空间
-    //     const h = (length * 37) % 360; // 色相 0-360，37 是一个素数，用于均匀分布
-    //     const s = 70; // 饱和度固定为 70%
-    //     const l = 50; // 亮度固定为 50%
-    //     return `hsl(${h}, ${s}%, ${l}%)`; // 返回 HSL 颜色
+    //     // Generate color using length by mapping length to HSL color space
+    //     const h = (length * 37) % 360; // Hue 0-360, 37 is a prime number for even distribution
+    //     const s = 70; // Saturation fixed at 70%
+    //     const l = 50; // Lightness fixed at 50%
+    //     return `hsl(${h}, ${s}%, ${l}%)`; // Return HSL color
     // };
 
-    // 生成颜色的方法
+    // Method to generate colors
     const generateColor = (tag) => {
-        // 简单的哈希函数，将字符串转成一个数值
+        // Simple hash function to convert a string into a numeric value
         let hash = 0;
         for (let i = 0; i < tag.length; i++) {
-            hash = tag.charCodeAt(i) + ((hash << 5) - hash); // 左移位
-            hash = hash & hash; // 保持 32 位整数
+            hash = tag.charCodeAt(i) + ((hash << 5) - hash); // Left bit shift
+            hash = hash & hash; // Keep as 32-bit integer
         }
-        // 转为 HSL 色彩空间，确保颜色均匀分布
-        const h = Math.abs(hash) % 360; // 色相 0-360
-        const s = 70 + (hash % 20); // 饱和度 70%-90%
-        const l = 50 + (hash % 10); // 亮度 50%-60%
-        return `hsl(${h}, ${s}%, ${l}%)`; // 返回 HSL 颜色
+        // Convert to HSL color space, ensuring even color distribution
+        const h = Math.abs(hash) % 360; // Hue 0-360
+        const s = 70 + (hash % 20); // Saturation 70%-90%
+        const l = 50 + (hash % 10); // Lightness 50%-60%
+        return `hsl(${h}, ${s}%, ${l}%)`; // Return HSL color
     };
 
-    // 为每个反馈项渲染标签
+    // Render tags for each feedback item
     const renderTags = (tags) => {
         return tags.map((tag, index) => {
             if (!tag) {
@@ -684,18 +684,18 @@ const SuppliersComponent = ({ user }) => {
                 <Box
                     key={index}
                     style={{
-                        display: 'inline-flex', // 使用 inline-flex 使其能在行内显示
-                        alignItems: 'center', // 垂直居中
-                        justifyContent: 'center', // 水平居中
-                        padding: '4px 12px', // 上下左右的内边距，避免文本贴边
-                        margin: '0 4px', // 每个标签之间的间距
+                        display: 'inline-flex', // Use inline-flex for inline display
+                        alignItems: 'center', // Vertical centering
+                        justifyContent: 'center', // Horizontal centering
+                        padding: '4px 12px', // Padding on all sides to prevent text from touching edges
+                        margin: '0 4px', // Spacing between each tag
                         height: '100%',
-                        borderRadius: '12px', // 设置圆角
-                        backgroundColor: tagColor, // 标签背景颜色
-                        color: 'white', // 白色字体
-                        fontSize: '12px', // 标签文字大小
-                        fontWeight: 'bold', // 标签文字加粗
-                        textAlign: 'center' // 确保文字居中
+                        borderRadius: '12px', // Set border radius
+                        backgroundColor: tagColor, // Tag background color
+                        color: 'white', // White font color
+                        fontSize: '12px', // Tag text size
+                        fontWeight: 'bold', // Tag text bold
+                        textAlign: 'center' // Ensure text is centered
                     }}
                 >
                     {tagText}
@@ -704,9 +704,9 @@ const SuppliersComponent = ({ user }) => {
         });
     };
 
-    // 列定义
+    // Column definitions
     const columns = [
-        // 选择列
+        // Selection column
         {
             field: 'select',
             headerName: (
@@ -746,13 +746,13 @@ const SuppliersComponent = ({ user }) => {
                 );
             }
         },
-        // 供应商名称列
+        // Supplier name column
         {
             field: 'supplierName',
             headerName: 'Supplier Name',
             sortable: true,
             width: 190,
-            editable: true, // 可编辑
+            editable: true, // Editable
             valueGetter: (params) => params.row?.supplierName || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.supplierName || ''} arrow>
@@ -762,13 +762,13 @@ const SuppliersComponent = ({ user }) => {
                 </Tooltip>
             )
         },
-        // 联系方式列（假设是邮箱）
+        // Contact column (assumed to be email)
         {
             field: 'contact',
             headerName: 'Contact',
             sortable: true,
             width: 270,
-            editable: true, // 可编辑
+            editable: true, // Editable
             valueGetter: (params) => params.row?.contact || '',
             renderCell: (params) => (
                 <Tooltip title={params.row?.contact || ''} arrow>
@@ -778,7 +778,7 @@ const SuppliersComponent = ({ user }) => {
                 </Tooltip>
             )
         },
-        // 材料名称列
+        // Material name column
         {
             field: 'materialName',
             headerName: 'Raw Material Name',
@@ -796,9 +796,9 @@ const SuppliersComponent = ({ user }) => {
                                     <div key={index} style={{ display: 'table-row' }}>
                                         <span
                                             style={{
-                                                fontStyle: 'italic', // 设置斜体
-                                                color: 'lightblue', // 设置特殊颜色
-                                                marginRight: '8px' // 给斜体的索引一些右侧间距
+                                                fontStyle: 'italic', // Set italic
+                                                color: 'lightblue', // Set special color
+                                                marginRight: '8px' // Add right margin to italic index
                                             }}
                                         >
                                             {index + 1 + '.'}
@@ -823,11 +823,11 @@ const SuppliersComponent = ({ user }) => {
                                 paddingLeft: 0,
                                 marginLeft: '-2%',
                                 display: 'flex',
-                                flexDirection: 'column', // 使子元素垂直排列
+                                flexDirection: 'column', // Arrange child elements vertically
                                 justifyContent: 'flex-start',
                                 alignItems: 'flex-start',
-                                overflowY: 'auto', // 允许垂直滚动
-                                maxHeight: '100%' // 设置最大高度
+                                overflowY: 'auto', // Allow vertical scrolling
+                                maxHeight: '100%' // Set maximum height
                             }}
                         >
                             {rawMaterials.map((rawMaterial, index) => (
@@ -843,7 +843,7 @@ const SuppliersComponent = ({ user }) => {
                                         marginTop: '10px',
                                         marginBottom: '10px'
                                     }}
-                                    // 设置颜色，不断交替
+                                    // Set color, alternating continuously
                                     color={index % 2 === 0 ? 'primary' : 'secondary'}
                                 >
                                     {rawMaterial.rawMaterialName}
@@ -854,7 +854,7 @@ const SuppliersComponent = ({ user }) => {
                 );
             }
         },
-        // 零件编号列
+        // Part number column
         {
             field: 'partNumber',
             headerName: 'Raw Material Part Number',
@@ -872,9 +872,9 @@ const SuppliersComponent = ({ user }) => {
                                     <div key={index} style={{ display: 'table-row' }}>
                                         <span
                                             style={{
-                                                fontStyle: 'italic', // 设置斜体
-                                                color: 'lightblue', // 设置特殊颜色
-                                                marginRight: '8px' // 给斜体的索引一些右侧间距
+                                                fontStyle: 'italic', // Set italic
+                                                color: 'lightblue', // Set special color
+                                                marginRight: '8px' // Add right margin to italic index
                                             }}
                                         >
                                             {index + 1 + '.'}
@@ -899,11 +899,11 @@ const SuppliersComponent = ({ user }) => {
                                 paddingLeft: 0,
                                 marginLeft: '-2%',
                                 display: 'flex',
-                                flexDirection: 'column', // 使子元素垂直排列
+                                flexDirection: 'column', // Arrange child elements vertically
                                 justifyContent: 'flex-start',
                                 alignItems: 'flex-start',
-                                overflowY: 'auto', // 允许垂直滚动
-                                maxHeight: '100%' // 设置最大高度
+                                overflowY: 'auto', // Allow vertical scrolling
+                                maxHeight: '100%' // Set maximum height
                             }}
                         >
                             {rawMaterials.map((rawMaterial, index) => (
@@ -919,7 +919,7 @@ const SuppliersComponent = ({ user }) => {
                                         marginTop: '10px',
                                         marginBottom: '10px'
                                     }}
-                                    // 设置颜色，不断交替
+                                    // Set color, alternating continuously
                                     color={index % 2 === 0 ? 'primary' : 'secondary'}
                                 >
                                     {rawMaterial.rawMaterialPartNumber}
@@ -930,7 +930,7 @@ const SuppliersComponent = ({ user }) => {
                 );
             }
         },
-        // 选择调查列
+        // Choose survey column
         {
             field: 'chooseSurvey',
             headerName: 'Choose Survey',
@@ -996,7 +996,7 @@ const SuppliersComponent = ({ user }) => {
                 );
             }
         },
-        // // 状态列
+        // // Status column
         // {
         //     field: 'status',
         //     headerName: 'Status',
@@ -1038,7 +1038,7 @@ const SuppliersComponent = ({ user }) => {
         //         </Select>
         //     )
         // },
-        // 反馈列
+        // Feedback column
         {
             field: 'feedback',
             headerName: 'Feedback & Documents',
@@ -1058,7 +1058,7 @@ const SuppliersComponent = ({ user }) => {
                 }
             },
             renderCell: (params) => {
-                // 筛选feedback中surveyId与当前supplier的chooseSurvey相同的feedback
+                // Filter feedback where surveyId matches the current supplier's chooseSurvey
                 console.log('params.row', params.row);
                 let feedbackArrayTmp = params.row?.feedback.filter((feedback) => feedback.surveyId === params.row?.chooseSurvey) || [];
                 if (feedbackArrayTmp.length === 0) {
@@ -1069,16 +1069,16 @@ const SuppliersComponent = ({ user }) => {
                     console.log('No feedback for empty surveyId, checking for any feedback');
                     feedbackArrayTmp = params.row?.feedback || [];
                 }
-                // 按照时间排序，最新的在第0个index
+                // Sort by time, newest first at index 0
                 const feedbackArray = feedbackArrayTmp.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 const nextSendTime = params.row?.nextEmailSendTime;
                 const supplierId = params.row?.id;
                 const isEmailSent = params.row?.isEmailSent;
                 const surveyId = params.row?.chooseSurvey;
-                // 假设你有一个函数用于刷新数据，可以从父组件传递下来
-                // 如果不在父组件，可以考虑使用 context 或其他状态管理方案
+                // Assuming you have a function to refresh data, which can be passed down from the parent component
+                // If not in the parent component, consider using context or other state management solutions
                 const refreshData = () => {
-                    // 实现刷新数据的逻辑，例如重新调用 fetchSuppliers
+                    // Implement data refresh logic, e.g., re-call fetchSuppliers
                 };
 
                 return (
@@ -1129,11 +1129,11 @@ const SuppliersComponent = ({ user }) => {
     const handleCellEditCommit = React.useCallback(
         async (params) => {
             const { id, field, value } = params;
-            // 如果没有变化，不执行任何操作
+            // If no change, do not perform any operation
             if (suppliers.find((supplier) => supplier.id === id)[field] === value) {
                 return;
             }
-            // 更新供应商数据
+            // Update supplier data
             try {
                 setLoadingUpdate(true);
                 await updateSupplier(id, { [field]: value });
@@ -1147,7 +1147,7 @@ const SuppliersComponent = ({ user }) => {
             } finally {
                 setLoadingUpdate(false);
             }
-            // 你可以在这里添加其他逻辑，比如发送更新到服务器
+            // You can add other logic here, such as sending updates to the server
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
         },
         [suppliers]
@@ -1156,11 +1156,11 @@ const SuppliersComponent = ({ user }) => {
     const handleRawMaterialsDialogDataGridCellEditCommit = React.useCallback(
         async (params) => {
             const { id, field, value } = params;
-            // 如果没有变化，不执行任何操作
+            // If no change, do not perform any operation
             if (selectedRawMaterials.find((rawMaterial) => rawMaterial.id === id)[field] === value) {
                 return;
             }
-            // 更新供应商数据
+            // Update supplier data
             try {
                 setLoadingUpdate(true);
                 const updatedRawMaterials = selectedRawMaterials.map((rawMaterial) =>
@@ -1175,15 +1175,15 @@ const SuppliersComponent = ({ user }) => {
             } finally {
                 setLoadingUpdate(false);
             }
-            // 你可以在这里添加其他逻辑，比如发送更新到服务器
+            // You can add other logic here, such as sending updates to the server
             console.log(`Row with id ${id} updated. Field: ${field}, New Value: ${value}`);
         },
         [selectedRawMaterials, selectedRawMaterialsSupplierId]
     );
 
-    // 添加供应商对话框
+    // Add supplier dialog
     const AddSupplierDialog = ({ open, handleClose }) => {
-        const [dateTimePickerValue, setDateTimePickerValue] = React.useState(null); // 记录选择的时间
+        const [dateTimePickerValue, setDateTimePickerValue] = React.useState(null); // Record the selected time
 
         return (
             <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm" aria-labelledby="add-supplier-dialog-title">
@@ -1212,7 +1212,7 @@ const SuppliersComponent = ({ user }) => {
                             status: 'inactive',
                             feedback: '',
                             supplierDocuments: '',
-                            nextEmailSendTime: null // 初始化为 null，可以为空
+                            nextEmailSendTime: null // Initialize as null, can be empty
                         }}
                         validationSchema={Yup.object().shape({
                             supplierName: Yup.string().required('Supplier Name is required'),
@@ -1234,7 +1234,7 @@ const SuppliersComponent = ({ user }) => {
                                 }
                                 const dataToSubmit = {
                                     ...values,
-                                    nextEmailSendTime: dateTimePickerValue || null // 如果时间选择器为空，传递 null
+                                    nextEmailSendTime: dateTimePickerValue || null // If the date time picker is empty, pass null
                                 };
 
                                 if (scriptedRef.current) {
@@ -1351,8 +1351,8 @@ const SuppliersComponent = ({ user }) => {
                                                     value={dateTimePickerValue}
                                                     onChange={setDateTimePickerValue}
                                                     renderInput={(params) => <TextField {...params} />}
-                                                    minDate={new Date()} // 禁止选择过去的时间
-                                                    minDateTime={new Date()} // 禁止选择过去的时间
+                                                    minDate={new Date()} // Prevent selecting past dates
+                                                    minDateTime={new Date()} // Prevent selecting past date and time
                                                 />
                                             </LocalizationProvider>
                                             {errors.nextEmailSendTime && <FormHelperText error>{errors.nextEmailSendTime}</FormHelperText>}
@@ -1415,10 +1415,9 @@ const SuppliersComponent = ({ user }) => {
         );
     };
 
-    // 主渲染部分
     return (
         <MainCard title="Suppliers" boxShadow shadow={theme.shadows[2]}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <Select
                     value={selectedSurveyId}
                     onChange={handleAssignSurvey}
@@ -1426,7 +1425,6 @@ const SuppliersComponent = ({ user }) => {
                     displayEmpty
                     color="primary"
                     size="small"
-                    style={{ marginLeft: '10px', top: -63, right: -124, marginTop: -10 }}
                 >
                     <MenuItem value="" disabled>
                         Assign Survey
@@ -1441,7 +1439,6 @@ const SuppliersComponent = ({ user }) => {
                     variant="contained"
                     color="primary"
                     size="small"
-                    style={{ top: -70, marginLeft: '10px', right: -124 }}
                     startIcon={<DownloadOutlined />}
                     component="label"
                     onClick={handleOpenDialog}
@@ -1452,29 +1449,26 @@ const SuppliersComponent = ({ user }) => {
                     variant="contained"
                     color="primary"
                     size="small"
-                    style={{ top: -70, marginLeft: '10px', right: -124 }}
                     startIcon={<DownloadOutlined />}
                     component="label"
                 >
-                    {importingSuppliers ? 'Importing...' : 'Batch Import Suppliers from Excel'}
+                    {importingSuppliers ? 'Importing...' : 'Batch Import'}
                     <input type="file" accept=".xlsx, .xls" style={{ display: 'none' }} onChange={handleExcelUpload} />
                 </Button>
                 <Button
                     variant="contained"
                     color="secondary"
                     size="small"
-                    style={{ top: -70, marginLeft: '10px', right: -124 }}
                     startIcon={<DeleteOutlined />}
                     onClick={handleDeleteSuppliers}
                     disabled={deletingSuppliers || selectedIds.length === 0}
                 >
-                    {deletingSuppliers ? 'Deleting...' : 'Delete Suppliers'}
+                    {deletingSuppliers ? 'Deleting...' : 'Delete'}
                 </Button>
                 <Button
                     variant="contained"
                     color="secondary"
                     size="small"
-                    style={{ zIndex: 1 }}
                     startIcon={<NotificationsActive />}
                     onClick={handleSendEmails}
                     disabled={sendingEmails || selectedIds.length === 0}
@@ -1482,7 +1476,7 @@ const SuppliersComponent = ({ user }) => {
                     {sendingEmails ? 'Sending...' : 'Send Emails'}
                 </Button>
             </div>
-            <div style={{ width: '100%', marginTop: -31 }}>
+            <div style={{ width: '100%', marginTop: 8 }}>
                 <DataGrid
                     rows={suppliers}
                     columns={columns}
@@ -1505,7 +1499,7 @@ const SuppliersComponent = ({ user }) => {
                         const filterids = suppliers
                             .filter((supplier) => {
                                 return filter.every(([field, operator, value]) => {
-                                    // [TODO] [FIXME] 特殊处理 Choose Survey 列 和 Feedback 列
+                                    // Special handling for Choose Survey and Feedback columns (display values differ from raw data)
                                     const cellValue =
                                         field === 'chooseSurvey'
                                             ? surveys.find((s) => s._id === supplier.chooseSurvey)?.name
@@ -1568,7 +1562,7 @@ const SuppliersComponent = ({ user }) => {
                                     flexDirection: 'column'
                                 }}
                             >
-                                {/* 缩放控制按钮 */}
+                                {/* Zoom control buttons */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                                     <IconButton onClick={handleZoomOut} aria-label="zoom out">
                                         <ZoomOutIcon />
@@ -1701,9 +1695,9 @@ const SuppliersComponent = ({ user }) => {
                                     value={dateTimePickerValue}
                                     onChange={setDateTimePickerValue}
                                     renderInput={(params) => <TextField {...params} fullWidth />}
-                                    minutesStep={1} // 设置分钟步长为1，精确到分钟
-                                    minDate={new Date()} // 禁止选择现在之前的时间
-                                    minDateTime={new Date()} // 除了日期，时间也需要禁止选择当前时间之前
+                                    minutesStep={1} // Set minute step to 1 for minute-level precision
+                                    minDate={new Date()} // Prevent selecting dates before now
+                                    minDateTime={new Date()} // In addition to date, also prevent selecting times before now
                                 />
                                 <Button
                                     variant="contained"
@@ -1831,7 +1825,7 @@ const SuppliersComponent = ({ user }) => {
                                 color="primary"
                                 variant="contained"
                                 startIcon={<AddOutlined />}
-                                // 上下居中
+                                // Vertically centered
                                 style={{ marginTop: '17px', marginBottom: '10px', width: '50%' }}
                             >
                                 Add Raw Material

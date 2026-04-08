@@ -2,7 +2,7 @@
 
 const initialState = {
     emailUpdateCount: 0,
-    // 其他状态
+    // Other state
 };
 
 const emailReducer = (state = initialState, action) => {
@@ -12,7 +12,7 @@ const emailReducer = (state = initialState, action) => {
                 ...state,
                 emailUpdateCount: state.emailUpdateCount + 1,
             };
-        // 其他 case
+        // Other cases
         default:
             return state;
     }

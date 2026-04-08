@@ -22,7 +22,7 @@ import { Formik, Field } from 'formik';
 import { toast } from 'react-hot-toast';
 import * as Yup from 'yup';
 
-// 验证邮箱格式的函数
+// Function to validate email format
 const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);

@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Link, useHistory } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import * as XLSX from 'xlsx';  // 导入 xlsx 库
+import * as XLSX from 'xlsx';  // Import xlsx library
 
 import MainCard from '../../ui-component/cards/MainCard';
 import Button from '@material-ui/core/Button';
@@ -11,9 +11,9 @@ import IconButton from '@material-ui/core/IconButton';
 import DeleteIcon from '@material-ui/icons/DeleteForever';
 import { DataGrid, GridToolbar } from '@material-ui/data-grid';
 import { useTheme } from '@material-ui/styles';
-import Select from '@material-ui/core/Select'; // 导入 Select 组件
-import MenuItem from '@material-ui/core/MenuItem'; // 导入 MenuItem 组件
-import Tooltip from '@material-ui/core/Tooltip'; // 导入 Tooltip 组件
+import Select from '@material-ui/core/Select'; // Import Select component
+import MenuItem from '@material-ui/core/MenuItem'; // Import MenuItem component
+import Tooltip from '@material-ui/core/Tooltip'; // Import Tooltip component
 
 import { fetchUsers, deleteUser } from './users.helper';
 import { CustomLoadingOverlay, CustomNoRowsOverlay } from '../../ui-component/CustomNoRowOverlay';
@@ -21,11 +21,11 @@ import Typography from '@material-ui/core/Typography';
 import EditIcon from '@material-ui/icons/Edit';
 import { NotificationsActive } from '@material-ui/icons';
 
-import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // 实心圆带对号
-import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // 空心圆
-import Checkbox from '@material-ui/core/Checkbox'; // 用于全选
+import CheckCircleIcon from '@material-ui/icons/CheckCircle'; // Filled circle with checkmark
+import RadioButtonUncheckedIcon from '@material-ui/icons/RadioButtonUnchecked'; // Empty circle
+import Checkbox from '@material-ui/core/Checkbox'; // Used for select all
 
-const statusOptions = ['inactive', 'replied', 'read', 'unread']; // 定义状态选项
+const statusOptions = ['inactive', 'replied', 'read', 'unread']; // Define status options
 
 const StudentsComponent = ({ user }) => {
     const theme = useTheme();
@@ -33,24 +33,24 @@ const StudentsComponent = ({ user }) => {
 
     const [students, setStudents] = React.useState([]);
     const [isLoading, setIsLoading] = React.useState(false);
-    const [selectedIds, setSelectedIds] = React.useState([]); // 记录选中的行
-    const [filterIds, setFilterIds] = React.useState([]); // 记录筛选的行
+    const [selectedIds, setSelectedIds] = React.useState([]); // Track selected rows
+    const [filterIds, setFilterIds] = React.useState([]); // Track filtered rows
 
     const loadData = React.useCallback(async () => {
         if (user.role === 'user') {
-            return; // 如果 role 为 user，则不显示
+            return; // Do not display if role is user
         }
         try {
             setIsLoading(true);
             const response = await fetchUsers();
             const tempStudents = response?.results || [];
-            // 将students的每个元素做转换：
+            // Transform each element of students:
             tempStudents.forEach((student) => {
-                student.fullName = `${student.firstname} ${student.lastname}`; // 生成全名
-                // 其他字段已经在原数据中
+                student.fullName = `${student.firstname} ${student.lastname}`; // Generate full name
+                // Other fields are already in the original data
             });
             setStudents(tempStudents);
-            setFilterIds(tempStudents.map((student) => student.id)); // 初始化filterIds
+            setFilterIds(tempStudents.map((student) => student.id)); // Initialize filterIds
             setIsLoading(false);
         } catch (e) {
             setIsLoading(false);
@@ -70,7 +70,7 @@ const StudentsComponent = ({ user }) => {
         setStudents(updatedStudents);
     };
 
-    // 切换某一行的选中状态
+    // Toggle the selection state of a row
     const handleSelect = (id) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter((selectedId) => selectedId !== id));
@@ -79,14 +79,14 @@ const StudentsComponent = ({ user }) => {
         }
     };
 
-    // 全选/取消全选功能
+    // Select all / deselect all functionality
     const handleSelectAll = () => {
-        const allRowIds = filterIds.map((id) => id); // 获取所有行的id
+        const allRowIds = filterIds.map((id) => id); // Get all row IDs
         if (filterIds.every((id) => selectedIds.includes(id))) {
-            // 如果所有行已被选中，则取消全选filterIds
+            // If all rows are already selected, deselect all filterIds
             setSelectedIds(selectedIds.filter((id) => !filterIds.includes(id)));
         } else {
-            // 否则，选中所有行，去重，保证不会重复添加，之前的selectedIds不会被覆盖
+            // Otherwise, select all rows, deduplicate to prevent duplicate additions, previous selectedIds are preserved
             setSelectedIds([...new Set([...selectedIds, ...allRowIds])]);
         }
     };
@@ -223,7 +223,7 @@ const StudentsComponent = ({ user }) => {
             resizable: false,
             disableClickEventBubbling: true,
             hide: false,
-            editable: true, // 允许编辑
+            editable: true, // Allow editing
             valueGetter: (params) => params.row?.status,
             renderCell: (params) => (
                 <Tooltip title={params.row?.status || ''} arrow>
@@ -248,7 +248,7 @@ const StudentsComponent = ({ user }) => {
             }
         },
         // {
-        //     field: 'reply', // 回信字段
+        //     field: 'reply', // Reply field
         //     headerName: 'Reply Status',
         //     width: 200,
         //     sortable: false,

@@ -15,7 +15,7 @@ import LogoSection from '../LogoSection';
 import ProfileSection from './ProfileSection';
 import NotificationSection from './NotificationSection';
 import { getGreetingTime } from '../../../views/utilities/Greetings';
-import Pipeline from './PipelineSection'; // 引入 Pipeline 组件
+import Pipeline from './PipelineSection'; // Import Pipeline component
 
 // assets
 import { IconMenu2 } from '@tabler/icons';
@@ -78,7 +78,7 @@ const Header = ({ handleLeftDrawerToggle }) => {
             <div className={classes.grow} />
             <div className={classes.grow} />
 
-            {/* Pipeline 组件
+            {/* Pipeline component
             <Grid item>
                 <Pipeline activeStep={2} />
             </Grid> */}

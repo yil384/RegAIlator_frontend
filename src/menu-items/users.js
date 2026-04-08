@@ -8,7 +8,7 @@ import {ReactComponent as DeliveryIconSvg} from '../assets/images/delivery.svg';
 function DeliveryIcon(props) {
     return (
       <SvgIcon {...props}>
-        {/* 在这里嵌入你的 SVG */}
+        {/* Embed your SVG here */}
         <DeliveryIconSvg />
       </SvgIcon>
     );

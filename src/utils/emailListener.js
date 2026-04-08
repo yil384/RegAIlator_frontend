@@ -2,19 +2,19 @@
 
 import React, { useEffect } from 'react';
 import io from 'socket.io-client';
-import { useDispatch } from 'react-redux'; // 引入 useDispatch
+import { useDispatch } from 'react-redux'; // Import useDispatch
 import config from './../configs';
 import toast from 'react-hot-toast';
 
 const EmailListener = () => {
-    const dispatch = useDispatch(); // 获取 dispatch
+    const dispatch = useDispatch(); // Get dispatch
 
     useEffect(() => {
         const socket = io(config[config.env].baseURL, {
             path: '/socket.io',
         });
 
-        // 初始邮件
+        // Initial emails
         socket.on('initialEmails', (initialEmails) => {
             console.log('Received initial emails:', initialEmails);
             for (const email of initialEmails) {
@@ -24,18 +24,18 @@ const EmailListener = () => {
             }
         });
 
-        // 监听新邮件
+        // Listen for new emails
         socket.on('newEmail', (email) => {
             console.log('Received new email:', email);
             toast.success(`New Email from: ${email.from.text}`, {
                 position: 'top-right',
             });
 
-            // 派发 Redux Action
+            // Dispatch Redux Action
             dispatch({ type: 'EMAIL_RECEIVED' });
         });
 
-        // 组件卸载时清理
+        // Cleanup on component unmount
         return () => {
             socket.disconnect();
         };

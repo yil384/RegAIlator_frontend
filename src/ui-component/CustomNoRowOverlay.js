@@ -34,7 +34,10 @@ const useStyles = makeStyles(
       },
     },
     label: {
-      marginTop: theme.spacing(1),
+      marginTop: theme.spacing(1.5),
+      fontSize: '0.95rem',
+      fontWeight: 500,
+      color: theme.palette.type === 'light' ? '#8c8c8c' : '#a6a6a6',
     },
   }),
   { defaultTheme },
@@ -84,7 +87,7 @@ export const CustomNoRowsOverlay = () => {
           </g>
         </g>
       </svg>
-      <div className={classes.label}>No Rows</div>
+      <div className={classes.label}>No data available</div>
     </GridOverlay>
   );
 }
@@ -99,15 +102,11 @@ export const CustomLoadingOverlay = () => {
   );
 }
 
-// CustomToolbar 接受 title 和 length 作为参数
+// CustomToolbar accepts title and row count as props for CSV export filename
 export function CustomToolbar({ title, length }) {
-  // 获取当前日期和时间
   const currentDate = new Date();
-  // 格式化日期为 YYYY-MM-DD
-  const formattedDate = currentDate.toISOString().split('T')[0]; // 例如: 2024-04-27
-  // 格式化时间为 HH-MM-SS，替换特殊字符以适应文件名
-  const formattedTime = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-'); // 例如: 14-30-45
-  // 构建文件名，确保没有非法字符
+  const formattedDate = currentDate.toISOString().split('T')[0];
+  const formattedTime = currentDate.toTimeString().split(' ')[0].replace(/:/g, '-');
   const fileName = `${title}_${length}_Created_at_${formattedDate}_${formattedTime}`;
 
   return (

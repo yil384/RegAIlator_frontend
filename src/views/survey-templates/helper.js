@@ -9,7 +9,7 @@ export const fetchSurveys = () =>
             method: 'GET',
             url: endpoints.surveys,
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 export const addSurvey = (data) =>
@@ -19,7 +19,7 @@ export const addSurvey = (data) =>
             url: endpoints.surveys,
             data
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 export const updateSurvey = (surveyId, data) =>
@@ -29,7 +29,7 @@ export const updateSurvey = (surveyId, data) =>
             url: `${endpoints.surveys}/${surveyId}`,
             data
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 export const addSurveyAttachment = (surveyId, data) =>
@@ -39,7 +39,7 @@ export const addSurveyAttachment = (surveyId, data) =>
             url: `${endpoints.surveys}/${surveyId}/attachments`,
             data
         },
-        true // 包含身份验证
+        true // Include authentication
     );
 
 export const deleteSurveys = (surveyIds) =>
@@ -49,5 +49,5 @@ export const deleteSurveys = (surveyIds) =>
             url: `${endpoints.surveys}`,
             data: { surveyIds }
         },
-        true // 包含身份验证
+        true // Include authentication
     );
