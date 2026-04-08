@@ -1,43 +1,53 @@
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from './../../configs/endpoints';
 
-export const addVideo = (videoDetails) =>
+export const addDocument = (documentDetails) =>
     fetchApi({
         method: 'POST',
-        url: endpoints.videos,
-        data: videoDetails
+        url: endpoints.documents,
+        data: documentDetails
     }, true);
 
-export const fetchVideos = (params) =>
+export const fetchDocuments = (params) =>
     fetchApi({
         method: 'GET',
-        url: endpoints.videos,
+        url: endpoints.documents,
         params: params
     }, true);
 
 
-export const fetchVideoDetails = (id) =>
+export const fetchDocumentDetails = (id) =>
     fetchApi({
         method: 'GET',
-        url: endpoints.videosById(id)
+        url: endpoints.documentsById(id)
     }, true);
 
-export const updateVideo = (id, videoDetails) =>
+export const updateDocument = (id, documentDetails) =>
     fetchApi({
         method: 'PATCH',
-        url: endpoints.videosById(id),
-        data: videoDetails
+        url: endpoints.documentsById(id),
+        data: documentDetails
     }, true);
 
-export const deleteVideo = (id) =>
+export const deleteDocument = (id) =>
     fetchApi({
         method: 'DELETE',
-        url: endpoints.videosById(id)
+        url: endpoints.documentsById(id)
     }, true);
 
-export const parseVideos = (ids) =>
+export const parseDocuments = (ids) =>
     fetchApi({
         method: 'POST',
-        url: `${endpoints.videos}/parse`,
+        url: `${endpoints.documents}/parse`,
         data: ids
     }, true);
+
+// Backwards-compatible aliases
+export {
+    addDocument as addVideo,
+    fetchDocuments as fetchVideos,
+    fetchDocumentDetails as fetchVideoDetails,
+    updateDocument as updateVideo,
+    deleteDocument as deleteVideo,
+    parseDocuments as parseVideos
+};

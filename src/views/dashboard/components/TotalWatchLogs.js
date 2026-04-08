@@ -12,7 +12,7 @@ import TotalIncomeCard from './../../../ui-component/cards/Skeleton/TotalIncomeC
 
 // assets
 import TableChartOutlinedIcon from '@material-ui/icons/TableChartOutlined';
-import { fetchWatchLogs } from '../../watch-logs/watch-logs.helper';
+import { fetchAuditLogs } from '../../watch-logs/watch-logs.helper';
 import { IconListSearch } from '@tabler/icons';
 
 // style constant
@@ -80,7 +80,7 @@ const TotalWatchLogs = () => {
     const loadData = React.useCallback(async () => {
         try {
             await setIsLoading(true);
-            const response = await fetchWatchLogs({
+            const response = await fetchAuditLogs({
                 limit: 1
             });
             setWatchLogs(response?.totalResults || []);
@@ -124,7 +124,7 @@ const TotalWatchLogs = () => {
                                                 }
                                                 secondary={
                                                     <Typography variant='subtitle2' className={classes.secondary}>
-                                                        Total Watch logs
+                                                        Total Audit Logs
                                                     </Typography>
                                                 }
                                             />

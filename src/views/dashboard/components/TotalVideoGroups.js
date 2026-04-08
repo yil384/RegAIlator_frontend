@@ -148,7 +148,7 @@ const TotalVideoGroups = ({ fetchVideoGroupsAction, isLoading, videoGroups }) =>
                             </Grid>
                         </Grid>
                         <Grid item sx={{ mb: 1.25 }}>
-                            <Typography className={classes.subHeading}>Total Video Groups</Typography>
+                            <Typography className={classes.subHeading}>Total Document Groups</Typography>
                         </Grid>
                     </Grid>
                 </MainCard>

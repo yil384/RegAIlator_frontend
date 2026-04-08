@@ -1,35 +1,44 @@
 import { fetchApi } from '../../utils/fetchHelper';
 import endpoints from './../../configs/endpoints';
 
-export const addWatchLog = (watchLogDetails) =>
+export const addAuditLog = (auditLogDetails) =>
     fetchApi({
         method: 'POST',
-        url: endpoints.watchLogs,
-        data: watchLogDetails
+        url: endpoints.auditLogs,
+        data: auditLogDetails
     }, true);
 
-export const fetchWatchLogs = (params) =>
+export const fetchAuditLogs = (params) =>
     fetchApi({
         method: 'GET',
-        url: endpoints.watchLogs,
+        url: endpoints.auditLogs,
         params: params
     }, true);
 
-export const fetchWatchLogDetails = (id) =>
+export const fetchAuditLogDetails = (id) =>
     fetchApi({
         method: 'GET',
-        url: endpoints.watchLogById(id)
+        url: endpoints.auditLogById(id)
     }, true);
 
-export const updateWatchLog = (id, watchLogDetails) =>
+export const updateAuditLog = (id, auditLogDetails) =>
     fetchApi({
         method: 'PATCH',
-        url: endpoints.watchLogById(id),
-        data: watchLogDetails
+        url: endpoints.auditLogById(id),
+        data: auditLogDetails
     }, true);
 
-export const deleteWatchLog = (id) =>
+export const deleteAuditLog = (id) =>
     fetchApi({
         method: 'DELETE',
-        url: endpoints.watchLogById(id)
+        url: endpoints.auditLogById(id)
     }, true);
+
+// Backwards-compatible aliases
+export {
+    addAuditLog as addWatchLog,
+    fetchAuditLogs as fetchWatchLogs,
+    fetchAuditLogDetails as fetchWatchLogDetails,
+    updateAuditLog as updateWatchLog,
+    deleteAuditLog as deleteWatchLog
+};

@@ -11,7 +11,7 @@ import SkeletonTotalOrderCard from './../../../ui-component/cards/Skeleton/Earni
 
 import { IconFile, IconVideo } from '@tabler/icons';
 import { useHistory } from 'react-router-dom';
-import { fetchVideos } from '../../videos/videos.helper';
+import { fetchDocuments } from '../../videos/videos.helper';
 
 // style constant
 const useStyles = makeStyles((theme) => ({
@@ -104,7 +104,7 @@ const TotalVideos = () => {
 
     const loadData = React.useCallback(async () => {
         await setIsLoading(true);
-        const response = await fetchVideos();
+        const response = await fetchDocuments();
         setVideos(response?.results || []);
         setIsLoading(false);
     });
@@ -157,7 +157,7 @@ const TotalVideos = () => {
                             </Grid>
                         </Grid>
                         <Grid item sx={{ mb: 1.25 }}>
-                            <Typography className={classes.subHeading}>Total Files</Typography>
+                            <Typography className={classes.subHeading}>Total Documents</Typography>
                         </Grid>
                     </Grid>
                 </MainCard>
